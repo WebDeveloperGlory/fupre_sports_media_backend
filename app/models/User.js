@@ -25,18 +25,14 @@ const userSchema = new Schema({
     },
     associatedTeam: {
         type: Schema.Types.ObjectId,
-        ref: 'Team',
-        required: function() {
-            return this.role === 'team-admin'
-        }
+        ref: 'Team'
     },
-    associatedCompetition: {
-        type: Schema.Types.ObjectId,
-        ref: 'Competition',
-        required: function() {
-            return this.role === 'competition-admin'
+    associatedCompetitions: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'Competition'
         }
-    },
+    ],
     status: {
         type: String,
         enum: [ 'active', 'inactive', 'suspended' ],

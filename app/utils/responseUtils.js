@@ -1,13 +1,13 @@
-exports.success = ( res, status, message, data ) => {
-    return res.status( status ).json({
+exports.success = ( res, message, data, status ) => {
+    return res.status( status || 400 ).json({
         code: '00',
         message,
         data
     })
 }
 
-exports.error = ( res, status, message ) => {
-    return res.status( status ).json({
+exports.error = ( res, message, status ) => {
+    return res.status( status || 400 ).json({
         code: '99',
         message
     })
