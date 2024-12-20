@@ -38,9 +38,6 @@ const fixtureSchema = new Schema({
         awayScore: { type: Number, default: null },
         homePenalty: { type: Number, default: null },
         awayPenalty: { type: Number, default: null },
-        required: function() {
-            return this.status === 'completed'
-        }
     },
     statistics: {
         type: Schema.Types.ObjectId,

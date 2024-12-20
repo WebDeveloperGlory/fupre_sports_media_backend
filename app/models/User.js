@@ -13,11 +13,7 @@ const userSchema = new Schema({
         unique: true,
         lowercase: true
     },
-    password: {
-        type: String,
-        required: true,
-        select: false
-    },
+    password: { type: String },
     role: {
         type: String,
         enum: [ 'team-admin', 'super-admin', 'competition-admin' ],
@@ -58,8 +54,8 @@ userSchema.pre('save', async function (next) {
     next();
 });
 
-userSchema.methods.comparePassword = async function( candidatePassword ) {
-    return bcrypt.compare( candidatePassword, this.password );
+userSchema.methods.comparePassword = function(candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
 };
 
 module.exports = mongoose.model( 'User', userSchema );

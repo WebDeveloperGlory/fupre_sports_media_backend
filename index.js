@@ -1,6 +1,7 @@
 const express = require('express');
-const { PORT } = require('./app/config/env');
 const cors = require('cors');
+const { PORT } = require('./app/config/env');
+const authRoutes = require('./app/routes/authRoutes');
 
 const app = express();
 const APP_PORT = PORT;
@@ -18,7 +19,7 @@ app.get( '/', ( req, res ) => {
 //END OF TEST ROUTES //
 
 // ROUTES //
-
+app.use( '/api/auth', authRoutes );
 // END OF ROUTES //
 
 app.listen( PORT, () => {
