@@ -50,7 +50,13 @@ const teamSchema = new Schema({
                 type: String,
                 enum: [ 'accepted', 'pending', 'rejected' ],
                 default: 'pending'
-            }
+            },
+            type: {
+                type: String,
+                enum: [ 'sent', 'recieved' ]
+            },
+            date: { type: Date },
+            location: { type: String }
         }
     ],
     fixtures: [
