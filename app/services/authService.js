@@ -70,13 +70,30 @@ exports.changePassword = async ( { userId }, { oldPassword, newPassword, confirm
     return { success: true, message: 'Password Changed Successfully', data: null };
 }
 
+exports.getAllUsers = async () => {
+    // Find all users
+    const foundUsers = await db.User.find().select( '-password' );
+
+    // Return success
+    return { success: true, message: 'All Users Aquired', data: foundUsers };
+}
+
 exports.getUserProfile = async ({ userId }) => {
     // Find user in database
-    const foundUser = await db.User.findById( userId );
+    const foundUser = await db.User.findById( userId ).select( '-password' );
     if( !foundUser ) return { success: false, message: 'User Not Found' };
 
     // Return success
     return { success: true, message: 'User Aquired', data: foundUser };
+}
+
+exports.deleteUser = async ({ userId }) => {
+    // Delete user from database
+    const deletedUser = await db.User.findByIdAndDelete( userId ).select( '-password' );
+    if( !deletedUser ) return { success: false, message: 'Invalid User' }
+
+    // Return success
+    return { success: true, message: 'User Deleted', data: deletedUser }
 }
 
 module.exports = exports;

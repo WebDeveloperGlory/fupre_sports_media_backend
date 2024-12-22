@@ -28,6 +28,45 @@ exports.loginUser = async ( req, res ) => {
     }
 }
 
+exports.getAllUsers = async ( req, res ) => {
+    try {
+        const result = await authService.getAllUsers();
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.getUserProfile = async ( req, res ) => {
+    try {
+        const result = await authService.getUserProfile( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.deleteUser = async ( req, res ) => {
+    try {
+        const result = await authService.deleteUser( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 // exports.updateUserProfile = async ( req, res ) => {
 //     try {
 //         // Get user profile
