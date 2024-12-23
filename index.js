@@ -21,7 +21,7 @@ app.get( '/', ( req, res ) => {
 
 // ROUTES //
 app.use( '/api/auth', authRoutes );
-app.use( '/api/team', teamRoutes );
+app.use( '/api/teams', teamRoutes );
 // END OF ROUTES //
 
 app.listen( PORT, () => {
