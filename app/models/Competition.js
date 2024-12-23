@@ -17,6 +17,11 @@ const competitionSchema = new Schema({
         enum: [ 'knockout', 'hybrid', 'league' ],
         required: true
     }, 
+    status: {
+        type: String,
+        enum: [ 'ongoing', 'completed', 'pending' ],
+        default: 'pending'
+    },
     fixtures: [
         {
             type: Schema.Types.ObjectId,

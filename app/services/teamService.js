@@ -30,6 +30,45 @@ exports.getSingleTeam = async ({ teamId }) => {
     return { success: true, message: 'Team Acquired', data: foundTeam };
 }
 
+exports.getTeamPlayers = async ({ teamId }) => {
+    // Check if team exists
+    const foundTeam = await db.Team.findById( teamId ).populate({ path: 'players' });
+    if( !foundTeam ) return { success: false, message: 'Team Not Found' };
+
+    // Return success
+    return { success: true, message: 'Players Retrieved', data: foundTeam.players };
+}
+
+exports.getFriendlyRequests = async ({ teamId }) => {
+    // Check if team exists
+    const foundTeam = await db.Team.findById( teamId ).populate({ 
+        path: 'friendlyRequests', 
+        populate: { 
+            path: 'team', 
+            select: 'name department shorthand level' 
+        } 
+    });
+    if( !foundTeam ) return { success: false, message: 'Team Not Found' };
+
+    // Return success
+    return { success: true, message: 'Friendly Requests Retrieved', data: foundTeam.players };
+}
+
+exports.getCompetitionRequests = async ({ teamId }) => {
+    // Check if team exists
+    const foundTeam = await db.Team.findById( teamId ).populate({ 
+        path: 'competitionInvitations', 
+        populate: { 
+            path: 'competition', 
+            select: 'name type status' 
+        } 
+    });
+    if( !foundTeam ) return { success: false, message: 'Team Not Found' };
+
+    // Return success
+    return { success: true, message: 'Friendly Requests Retrieved', data: foundTeam.players };
+}
+
 exports.sendMatchRequest = async ( { teamId }, { date, location, recipientTeamId } ) => {
     // Check if recipient exists
     const foundReciepientTeam = await db.Team.findById( recipientTeamId );

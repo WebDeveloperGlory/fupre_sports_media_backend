@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { PORT } = require('./app/config/env');
 const authRoutes = require('./app/routes/authRoutes');
+const teamRoutes = require('./app/routes/teamRoutes');
 
 const app = express();
 const APP_PORT = PORT;
@@ -20,6 +21,7 @@ app.get( '/', ( req, res ) => {
 
 // ROUTES //
 app.use( '/api/auth', authRoutes );
+app.use( '/api/team', teamRoutes );
 // END OF ROUTES //
 
 app.listen( PORT, () => {
