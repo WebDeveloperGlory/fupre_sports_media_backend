@@ -8,8 +8,17 @@ const competitionSchema = new Schema({
     rules: [ { type: String } ],
     teams: [
         {
-            type: Schema.Types.ObjectId,
-            ref: 'Team'
+            team: {
+                type: Schema.Types.ObjectId,
+                ref: 'Team',
+                required: true
+            },
+            squadList: [
+                {
+                    type: Schema.Types.ObjectId,
+                    ref: 'Player'
+                }
+            ]
         }
     ],
     type: {
