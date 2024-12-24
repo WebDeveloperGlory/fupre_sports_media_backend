@@ -1,8 +1,8 @@
 const db = require('../config/db');
 
-exports.createFriendlyFixture = async ({ homeTeam, awayTeam, type, date, stadium, competition }) => {
+exports.createFixture = async ({ homeTeam, awayTeam, type, date, stadium, competition }) => {
     // Create fixture
-    const createdFixture = await db.Fixture.create({ homeTeam, awayTeam, type, date, stadium });
+    const createdFixture = await db.Fixture.create({ homeTeam, awayTeam, type, date, stadium, competition });
 
     // Return success
     return { success: true, message: 'Fixture Created', data: createdFixture };

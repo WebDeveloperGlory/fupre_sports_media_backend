@@ -2,9 +2,9 @@ const fixtureService = require('../services/fixtureService');
 const dynamicUpdateService = require('../services/dynamicUpdateService');
 const { success, error, serverError } = require('../utils/responseUtils');
 
-exports.createFriendlyFixture = async ( req, res ) => {
+exports.createFixture = async ( req, res ) => {
     try {
-        const result = await fixtureService.createFriendlyFixture( req.body );
+        const result = await fixtureService.createFixture( req.body );
 
         if( result.success ) {
             return success( res, result.message, result.data );

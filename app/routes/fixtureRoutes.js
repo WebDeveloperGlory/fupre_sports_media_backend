@@ -4,7 +4,7 @@ const controller = require('../controllers/fixtureController');
 const router = Router();
 
 router.get( '/', controller.getAllFixtures );
-router.post( '/', controller.createFriendlyFixture );
+router.post( '/', controller.createFixture );
 router.get( '/:fixtureId', controller.getOneFixture );
 router.patch( '/:fixtureId', controller.updateFixture );
 router.put( '/:fixtureId/result', controller.updateFixtureResult );
