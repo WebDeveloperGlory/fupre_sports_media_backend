@@ -3,6 +3,7 @@ const cors = require('cors');
 const { PORT } = require('./app/config/env');
 const authRoutes = require('./app/routes/authRoutes');
 const teamRoutes = require('./app/routes/teamRoutes');
+const fixtureRoutes = require('./app/routes/fixtureRoutes');
 
 const app = express();
 const APP_PORT = PORT;
@@ -22,6 +23,7 @@ app.get( '/', ( req, res ) => {
 // ROUTES //
 app.use( '/api/auth', authRoutes );
 app.use( '/api/teams', teamRoutes );
+app.use( '/api/fixture', fixtureRoutes );
 // END OF ROUTES //
 
 app.listen( PORT, () => {
