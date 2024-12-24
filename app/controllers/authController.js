@@ -9,7 +9,7 @@ exports.createUser = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }

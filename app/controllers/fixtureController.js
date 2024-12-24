@@ -9,7 +9,7 @@ exports.createFixture = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -22,7 +22,7 @@ exports.getAllFixtures = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -35,7 +35,7 @@ exports.getOneFixture = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -50,7 +50,7 @@ exports.updateFixture = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -63,7 +63,7 @@ exports.updateFixtureResult = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }

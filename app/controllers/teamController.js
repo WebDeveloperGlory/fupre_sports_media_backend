@@ -9,7 +9,7 @@ exports.createTeam = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -22,7 +22,7 @@ exports.getAllTeams = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -35,7 +35,7 @@ exports.getSingleTeam = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -48,7 +48,7 @@ exports.sendMatchRequest = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -61,7 +61,7 @@ exports.updateMatchRequestStatus = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -74,7 +74,7 @@ exports.updateCompetitionInvitationStatus = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -86,7 +86,7 @@ exports.getTeamPlayers = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -97,7 +97,7 @@ exports.addPlayerToTeam = async ( req, res ) => {
         // Get team
         const getTeam = await teamService.getSingleTeam( req.params );
         if( !getTeam.success ) {
-            return error( res, res.message );
+            return error( res, getTeam.message );
         }
 
         // Add players
@@ -105,7 +105,7 @@ exports.addPlayerToTeam = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -117,7 +117,7 @@ exports.getFriendlyRequests = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
@@ -129,7 +129,7 @@ exports.getCompetitionRequests = async ( req, res ) => {
         if( result.success ) {
             return success( res, result.message, result.data );
         }
-        return error( res, res.message );
+        return error( res, result.message );
     } catch ( err ) {
         return serverError( res, err );
     }
