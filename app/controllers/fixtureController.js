@@ -44,6 +44,9 @@ exports.updateFixture = async ( req, res ) => {
     try {
         // Get fixture
         const getFixture = await fixtureService.getOneFixture( req.params );
+        if( !getFixture.success ) {
+            return error( res, getFixture.message );
+        }
         // Update the fixture
         const result = await dynamicUpdateService.dynamicUpdate( getFixture.data, req.body, [ 'type', 'competition', 'result', 'statistics', 'createdAt' ] );
 

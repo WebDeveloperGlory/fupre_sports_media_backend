@@ -1,5 +1,5 @@
 exports.success = ( res, message, data, status ) => {
-    return res.status( status || 400 ).json({
+    return res.status( status || 200 ).json({
         code: '00',
         message,
         data
