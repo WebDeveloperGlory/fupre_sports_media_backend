@@ -1,5 +1,5 @@
 const { verifyToken } = require('../utils/jwtUtils');
-const message = require('../utils/responseUtils');
+const { error, serverError } = require('../utils/responseUtils');
 
 const authenticateUser = ( req, res, next ) => {
     const token = req.header('Authorization').split(' ')[1];
@@ -7,13 +7,13 @@ const authenticateUser = ( req, res, next ) => {
 
     try {
         const decoded = verifyToken(token);
-        if ( !decoded ) return message.error( res, 'Invalid or Expired Token', 401 );
+        if ( !decoded ) return error( res, 'Invalid or Expired Token', 401 );
     
         req.user = decoded;
         next();            
     } catch ( err ) {
-        return message.serverError( res, err )
+        return serverError( res, err )
     }
 };
 
-module.exports = authenticateUser;
+module.exports = { authenticateUser };
