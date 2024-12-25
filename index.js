@@ -4,6 +4,7 @@ const { PORT } = require('./app/config/env');
 const authRoutes = require('./app/routes/authRoutes');
 const teamRoutes = require('./app/routes/teamRoutes');
 const fixtureRoutes = require('./app/routes/fixtureRoutes');
+const competitionRoutes = require('./app/routes/competitionRoutes');
 
 const app = express();
 const APP_PORT = PORT;
@@ -24,6 +25,7 @@ app.get( '/', ( req, res ) => {
 app.use( '/api/auth', authRoutes );
 app.use( '/api/teams', teamRoutes );
 app.use( '/api/fixture', fixtureRoutes );
+app.use( '/api/competition', competitionRoutes );
 // END OF ROUTES //
 
 app.listen( PORT, () => {
