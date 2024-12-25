@@ -43,7 +43,7 @@ exports.getAllUsers = async ( req, res ) => {
 
 exports.getUserProfile = async ( req, res ) => {
     try {
-        const result = await authService.getUserProfile( req.params );
+        const result = await authService.getUserProfile( req.user );
 
         if( result.success ) {
             return success( res, result.message, result.data );
