@@ -1,17 +1,20 @@
 const { Router } = require('express');
 const controller = require('../controllers/teamController');
+const { authenticateUser } = require('../middlewares/authMiddleware');
+const { isSuperAdmin, hasTeamPermissions } = require('../middlewares/adminMiddleware');
 
 const router = Router();
 
 router.get( '/', controller.getAllTeams );
-router.post( '/', controller.createTeam );
+router.post( '/', authenticateUser, isSuperAdmin, controller.createTeam );
 router.get( '/:teamId', controller.getSingleTeam );
+router.patch( '/:teamId/admin', authenticateUser, isSuperAdmin, controller.updateTeamAdmin );
 router.get( '/:teamId/players', controller.getTeamPlayers );
-router.put( '/:teamId/players', controller.addPlayerToTeam );
-router.get( '/:teamId/friendly-request', controller.getFriendlyRequests );
-router.post( '/:teamId/friendly-request', controller.sendMatchRequest );
-router.put( '/:teamId/friendly-request/:requestId', controller.updateMatchRequestStatus );
-router.get( '/:teamId/competition-invitation', controller.getCompetitionRequests );
-router.put( '/:teamId/competition-invitation/:competitionId', controller.updateCompetitionInvitationStatus );
+router.put( '/:teamId/players', authenticateUser, hasTeamPermissions, controller.addPlayerToTeam );
+router.get( '/:teamId/friendly-request', authenticateUser, hasTeamPermissions, controller.getFriendlyRequests );
+router.post( '/:teamId/friendly-request', authenticateUser, hasTeamPermissions, controller.sendMatchRequest );
+router.put( '/:teamId/friendly-request/:requestId', authenticateUser, hasTeamPermissions, controller.updateMatchRequestStatus );
+router.get( '/:teamId/competition-invitation', authenticateUser, hasTeamPermissions, controller.getCompetitionRequests );
+router.put( '/:teamId/competition-invitation/:competitionId', authenticateUser, hasTeamPermissions, controller.updateCompetitionInvitationStatus );
 
 module.exports = router;

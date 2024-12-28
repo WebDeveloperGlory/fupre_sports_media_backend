@@ -67,7 +67,8 @@ const teamSchema = new Schema({
     ],
     admin: {
         type: Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'User',
+        default: null
     },
     createdAt: {
         type: Date,

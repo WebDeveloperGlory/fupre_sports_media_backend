@@ -40,18 +40,20 @@ exports.getTeamPlayers = async ({ teamId }) => {
 }
 
 exports.getFriendlyRequests = async ({ teamId }) => {
+    // Validate teamId
+    if (!mongoose.Types.ObjectId.isValid(teamId)) {
+        return { success: false, message: 'Invalid Team ID' };
+    }
+
     // Check if team exists
     const foundTeam = await db.Team.findById( teamId ).populate({ 
-        path: 'friendlyRequests', 
-        populate: { 
-            path: 'team', 
-            select: 'name department shorthand level' 
-        } 
+        path: 'friendlyRequests.team', 
+        select: 'name department shorthand level' 
     });
     if( !foundTeam ) return { success: false, message: 'Team Not Found' };
 
     // Return success
-    return { success: true, message: 'Friendly Requests Retrieved', data: foundTeam.players };
+    return { success: true, message: 'Friendly Requests Retrieved', data: foundTeam.friendlyRequests };
 }
 
 exports.getCompetitionRequests = async ({ teamId }) => {
@@ -89,7 +91,7 @@ exports.sendMatchRequest = async ( { teamId }, { date, location, recipientTeamId
     await foundSenderTeam.save();
 
     // Return success
-    return { success: true, message: 'Friendly Request Sent Successfully', data: { foundReciepientTeam, requestRecipient } };
+    return { success: true, message: 'Friendly Request Sent Successfully', data: { foundSenderTeam, requestRecipient } };
 }
 
 // exports.getRecievedMatchRequests = async ({  })
@@ -100,19 +102,48 @@ exports.updateMatchRequestStatus = async ({ teamId, requestId }, { status }) => 
     if( !foundTeam ) return { success: false, message: 'Team Not Found' };
 
     // Check if request exists
-    const requestExists = foundTeam.friendlyRequests.some( request => request.requestId === requestId );
+    const requestExists = foundTeam.friendlyRequests.some( request => request.requestId.equals( requestId ) );
     if( !requestExists ) return { success: false, message: 'Request Not Found' };
 
-    // Update request status
-    const updatedRequests = foundTeam.friendlyRequests.map( request => {
-        if( request.requestId === requestId ) return { ...request, status };
-        return request;
+    // Update request status for reciever
+    const updatedRequests = foundTeam.friendlyRequests.map( async ( request ) => {
+        if( request.requestId.equals( requestId ) ) {
+            if( request.type === "recieved" ) {
+                // Update the request on the sender and reciever too
+                const updatedSender = await db.Team.updateOne(
+                    { 
+                        _id: request.team,
+                        "friendlyRequests.requestId": requestId
+                    },
+                    {
+                        $set: { "friendlyRequests.$.status": status }
+                    },
+                    { new: true }
+                );
+                const updatedReciever = await db.Team.updateOne(
+                    { 
+                        _id: teamId,
+                        "friendlyRequests.requestId": requestId
+                    },
+                    {
+                        $set: { "friendlyRequests.$.status": status }
+                    },
+                    { new: true }
+                );
+            }
+        }
     });
-    foundTeam.friendlyRequests = updatedRequests;
-    await foundTeam.save();
+
+    await Promise.all( updatedRequests );
+
+    // Refresh Team
+    const refreshedTeam = await db.Team.findById( teamId ).populate({
+        path: 'friendlyRequests.team',
+        select: 'name department level'
+    });
 
     // Return success
-    return { success: true, message: 'Request Status Updated', data: updatedRequests };
+    return { success: true, message: 'Request Status Updated', data: refreshedTeam.friendlyRequests };
 }
 
 exports.updateCompetitionInvitationStatus = async ({ teamId, competitionId }, { status }) => {
@@ -121,19 +152,35 @@ exports.updateCompetitionInvitationStatus = async ({ teamId, competitionId }, { 
     if( !foundTeam ) return { success: false, message: 'Team Not Found' };
 
     // Check if competition invitation exists
-    const competitionExists = foundTeam.competitionInvitations.some( invitation => invitation.competition === competitionId );
+    const competitionExists = foundTeam.competitionInvitations.some( invitation => invitation.competition.equals( competitionId ) );
     if( !competitionExists ) return { success: false, message: 'No Invitation For This Competition' };
 
     // Update Invitation Status
-    const updatedCompetitionInvitations = foundTeam.competitionInvitations.map( invitation => {
-        if( invitation.competition === competitionId ) return { ...invitation, status };
-        return invitation;
+    const updatedCompetitionInvitations = foundTeam.competitionInvitations.map( async ( invitation ) => {
+        if( invitation.competition.equals( competitionId ) ) {
+            const updatedStatus = await db.Team.updateOne(
+                { 
+                    _id: teamId,
+                    "competitionInvitations.competition": requestId
+                },
+                {
+                    $set: { "competitionInvitations.$.status": status }
+                },
+                { new: true }
+            )
+        }
     });
-    foundTeam.competitionInvitations = updatedCompetitionInvitations;
-    await foundTeam.save();
+
+    await Promise.all( updatedCompetitionInvitations );
+
+    // Refresh team competition status
+    const refresedTeam = await db.Team.findOneById( teamId ).populate({
+        path: 'competitionInvitations.competition',
+        select: 'name'
+    });
 
     // Return success
-    return { success: true, message: 'Invitation Status Changed', data: updatedCompetitionInvitations };
+    return { success: true, message: 'Invitation Status Changed', data: refresedTeam };
 }
 
 exports.checkSquadList = async ({ teamId }, { players, coach, assistantCoach }) => {
@@ -151,6 +198,26 @@ exports.checkSquadList = async ({ teamId }, { players, coach, assistantCoach }) 
 
     // Return success
     return { success: true, message: 'Players Valid Proceed To Submit', data: { players, coach, assistantCoach } };
+}
+
+exports.updateTeamAdmin = async ({ teamId }, { adminId }) => {
+    // Check if admin exists and is a team-admin
+    const foundAdmin = await db.User.findById( adminId );
+    if( !foundAdmin || foundAdmin.role !== 'team-admin' ) return { success: false, message: 'Invalid Admin' };
+
+    // Check if team exists and add admin
+    const updatedTeam = await db.Team.findByIdAndUpdate(
+        teamId,
+        { admin: adminId },
+        { new: true }
+    ).populate({
+        path: 'admin',
+        select: 'name'
+    });
+    if( !updatedTeam ) return { success: false, message: 'Invalid Team' }
+
+    // Return success
+    return { success: true, message: 'Admin Updated', data: updatedTeam };
 }
 
 module.exports = exports;

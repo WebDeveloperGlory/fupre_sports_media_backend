@@ -20,6 +20,7 @@ const hasTeamPermissions = async ( req, res, next ) => {
     try {
         const document = await db.Team.findById( teamId );
         if( !document ) return error( res, 'Invalid Team' );
+        if( !document.admin ) return error( res, 'Unassigned Admin' );
         if( !document.admin.equals( userId ) && role !== 'super-admin' ) return error( res, 'Invalid User Permissions', 401 );
 
         next();

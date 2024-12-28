@@ -1,5 +1,6 @@
 const teamService = require('../services/teamService');
 const playerService = require('../services/playerService');
+const authService = require('../services/authService');
 const { success, error, serverError } = require('../utils/responseUtils');
 
 exports.createTeam = async ( req, res ) => {
@@ -126,6 +127,23 @@ exports.getFriendlyRequests = async ( req, res ) => {
 exports.getCompetitionRequests = async ( req, res ) => {
     try {
         const result = await teamService.getCompetitionRequests( req.params );
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.updateTeamAdmin = async ( req, res ) => {
+    try {
+        // Check if user exists and has valid permissions
+        const foundUser = await authService.getUserProfile( req.body );
+        if( !foundUser || foundUser.data.role !== 'team-admin' ) return error( res, 'Invalid User Or User Permissions' );
+
+        // Pass user id and update admin
+        const result = await teamService.updateTeamAdmin( req.params, { adminId: foundUser.data._id } );
         if( result.success ) {
             return success( res, result.message, result.data );
         }
