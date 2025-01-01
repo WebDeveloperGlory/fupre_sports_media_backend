@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const mongoose = require('mongoose');
+const { getRecentPerformance, calculateRecord, shuffleArray } = require('../utils/teamUtils')
 
 exports.createTeam = async ({ name, shorthand, department, level }) => {
     // Run checks and create shorthand
@@ -19,6 +20,76 @@ exports.getAllTeams = async () => {
 
     // Return success
     return { success: true, message: 'All Teams Acquired', data: allTeams };
+}
+
+exports.getTeamOverview = async () => {
+    // Fetch all teams
+    const teams = await db.Team.find().populate("players");
+
+    // Overview
+    const totalTeams = teams.length;
+    const departments = teams.reduce( ( acc, team ) => {
+        const dept = team.department || "Unknown";
+        const existingDept = acc.find( ( d ) => d.name === dept );
+        if ( existingDept ) {
+            existingDept.teamCount++;
+        } else {
+            acc.push({ name: dept, teamCount: 1 });
+        }
+        return acc;
+    }, []);
+
+    // Calculate team stats
+    const teamsData = await Promise.all(
+        teams.map( async ( team ) => {
+            const playerCount = team.players.length;
+
+            // Fetch and calculate performance
+            const recentPerformance = team.fixtures.length
+                ? await getRecentPerformance( team.fixtures, team._id )
+                : ["N/A"];
+
+            // Fetch record
+            const record = team.fixtures.length
+                ? await calculateRecord( team.fixtures, team._id )
+                : { wins: 0, losses: 0, draws: 0 };
+
+            return {
+                id: team._id,
+                name: team.name,
+                department: team.department || "Unknown",
+                level: team.level,
+                playerCount,
+                recentPerformance,
+                record,
+            };
+        })
+    );
+
+    // Featured Teams
+    const sortedTeams = [ ...teamsData ].sort( ( a, b ) => {
+        if ( b.record.wins !== a.record.wins ) return b.record.wins - a.record.wins;
+        if ( b.record.draws !== a.record.draws ) return b.record.draws - a.record.draws;
+        return a.record.losses - b.record.losses; // Lower losses are better
+    });
+    const featuredTeams =
+        sortedTeams.length >= 3
+            ? sortedTeams.slice( 0, 3 )
+            : shuffleArray( teamsData ).slice( 0, 3 ); // Shuffle if not enough records
+
+    return { 
+        success: true, 
+        message: 'Teams Overview Acquired', 
+        data: {
+            overview: {
+                totalTeams,
+                departments,
+            },
+            teams: teamsData,
+            featuredTeams,
+        }
+    }
+    
 }
 
 exports.getSingleTeam = async ({ teamId }) => {

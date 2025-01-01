@@ -7,6 +7,7 @@ const router = Router();
 
 router.get( '/', controller.getAllTeams );
 router.post( '/', authenticateUser, isSuperAdmin, controller.createTeam );
+router.get( '/overview', controller.getTeamOverview );
 router.get( '/:teamId', controller.getSingleTeam );
 router.patch( '/:teamId/admin', authenticateUser, isSuperAdmin, controller.updateTeamAdmin );
 router.get( '/:teamId/players', controller.getTeamPlayers );

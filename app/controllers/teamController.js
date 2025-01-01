@@ -29,6 +29,19 @@ exports.getAllTeams = async ( req, res ) => {
     }
 }
 
+exports.getTeamOverview = async ( req, res ) => {
+    try {
+        const result = await teamService.getTeamOverview();
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 exports.getSingleTeam = async ( req, res ) => {
     try {
         const result = await teamService.getSingleTeam( req.params );
