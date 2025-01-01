@@ -3,6 +3,21 @@ const db = require('../config/db');
 exports.createFixture = async ({ homeTeam, awayTeam, type, date, stadium, competition }) => {
     // Create fixture
     const createdFixture = await db.Fixture.create({ homeTeam, awayTeam, type, date, stadium, competition });
+    // Add fixtures to team
+    const updatedHomeTeam = await db.Team.findByIdAndUpdate( 
+        homeTeam, 
+        { $addToSet: 
+            { fixtures: createdFixture._id } 
+        }, 
+        { new: true } 
+    );
+    const updatedAwayTeam = await db.Team.findByIdAndUpdate( 
+        awayTeam, 
+        { $addToSet: 
+            { fixtures: createdFixture._id } 
+        }, 
+        { new: true } 
+    ); 
 
     // Return success
     return { success: true, message: 'Fixture Created', data: createdFixture };
