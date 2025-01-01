@@ -17,7 +17,7 @@ exports.createFixture = async ( req, res ) => {
 
 exports.getAllFixtures = async ( req, res ) => {
     try {
-        const result = await fixtureService.getAllFixtures();
+        const result = await fixtureService.getAllFixtures( req.query );
 
         if( result.success ) {
             return success( res, result.message, result.data );

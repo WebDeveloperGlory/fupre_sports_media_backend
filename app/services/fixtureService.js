@@ -8,9 +8,48 @@ exports.createFixture = async ({ homeTeam, awayTeam, type, date, stadium, compet
     return { success: true, message: 'Fixture Created', data: createdFixture };
 }
 
-exports.getAllFixtures = async () => {
-    // Get all fixtures
-    const allFixtures = await db.Fixture.find();
+exports.getAllFixtures = async ({ limit, filterBy, completed, startDate }) => {
+    // Check for limit if not set a limit
+    const setLimit = parseInt( limit ) || 10;
+    // Check if filer is passed
+    let filter = {};
+    let sort = {
+        date: completed ? -1 : 1
+    }
+    if( filterBy ) {
+        const parseDate = new Date( filterBy );
+
+        if ( parseDate instanceof Date && !isNaN( parseDate ) ) {
+            filter.date = {
+                $gte: new Date( parseDate.setHours( 0, 0, 0, 0 ) ),
+                $lt: new Date( parseDate.setHours( 23, 59, 59, 999 ) ),
+            }
+        } else {
+            return { success: false, message: 'Invalid Date Format' }
+        }
+    } else if( startDate ) {
+        const parseDate = new Date( startDate );
+
+        if ( parseDate instanceof Date && !isNaN( parseDate ) ) {
+            filter.date = {
+                $gte: new Date( parseDate ),
+            }
+        } else {
+            return { success: false, message: 'Invalid Date Format' }
+        }
+    }
+    if( completed ) {
+        filter.status = "completed"
+    }
+
+    // Get fixtures with limit
+    const allFixtures = await db.Fixture.find( filter )
+        .populate({
+            path: 'homeTeam awayTeam',
+            select: 'name'
+        })
+        .sort( sort )
+        .limit( setLimit );
     
     // Return success
     return { success: true, message: 'Fixtures Acquired', data: allFixtures };
