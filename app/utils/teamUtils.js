@@ -98,4 +98,66 @@ const shuffleArray = (array) => {
     .map(({ item }) => item);
 };
 
-module.exports = { getRecentPerformance, calculateRecord, shuffleArray }
+const getTopStats = async ({ teamId, year }) => {
+    const team = await db.Team.findById(teamId).populate({
+        path: 'players',
+        populate: [
+            {
+                path: 'generalRecord',
+                match: { year: year },
+                select: 'goals assists yellowCards redCards'
+            },
+            {
+                path: 'competitionStats',
+                match: { year: year },
+                select: 'goals assists yellowCards redCards'
+            }
+        ]
+    });
+
+    const stats = team.players.map(player => {
+        const generalYearStats = player.generalRecord.find(record => record.year === year) || {};
+        const competitionYearStats = player.competitionStats.find(stat => stat.year === year) || {};
+
+        return {
+            name: player.name,
+            team: player.team,
+            totalGoals: (generalYearStats.goals || 0) + (competitionYearStats.goals || 0),
+            totalAssists: (generalYearStats.assists || 0) + (competitionYearStats.assists || 0),
+            totalYellowCards: (generalYearStats.yellowCards || 0) + (competitionYearStats.yellowCards || 0),
+            totalRedCards: (generalYearStats.redCards || 0) + (competitionYearStats.redCards || 0)
+        };
+    });
+
+    const sortByStat = (stat) => 
+        stats.sort((a, b) => b[stat] - a[stat]).slice(0, 4);
+
+    return {
+        topScorers: sortByStat('totalGoals'),
+        topAssisters: sortByStat('totalAssists'),
+        topYellowCards: sortByStat('totalYellowCards'),
+        topRedCards: sortByStat('totalRedCards')
+    };
+};
+
+const getNextFixture = async ( teamId, currentDate = new Date() ) => {
+    const nextFixture = await db.Fixture.findOne({
+        $or: [
+            { homeTeam: teamId },
+            { awayTeam: teamId }
+        ],
+        date: { $gt: currentDate },
+        status: 'upcoming'
+    })
+    .sort({ date: 1 })
+    .limit( 1 )
+    .populate({ 
+        path: 'homeTeam awayTeam competition',
+        select: 'name department level shorthand'
+    })
+    .select('homeTeam awayTeam competition type date stadium');
+
+    return nextFixture || null;
+}
+
+module.exports = { getRecentPerformance, calculateRecord, shuffleArray, getTopStats, getNextFixture }

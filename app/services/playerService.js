@@ -11,7 +11,18 @@ exports.addPlayers = async ({ playerArray }, team ) => {
     // Loop through each player and create them
     const playersData = playerArray.map( player => ({
         ...player,
-        team: team._id
+        team: team._id,
+        generalRecord: [
+            {
+                year: new Date().getFullYear(),
+                goals: 0,
+                assists: 0,
+                yellowCards: 0,
+                redCards: 0,
+                appearances: 0,
+                cleanSheets: 0
+            }
+        ]
     }) );
     const createdPlayers = await db.Player.insertMany( playersData );
 

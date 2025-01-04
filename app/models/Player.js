@@ -32,7 +32,7 @@ const playerSchema = new Schema({
     competitionStats: [
         {
             type: Schema.Types.ObjectId,
-            ref: 'PlayerCompetitionStats'
+            ref: 'PlayerCompetitionStat'
         }
     ],
     createdAt: {

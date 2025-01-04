@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const mongoose = require('mongoose');
-const { getRecentPerformance, calculateRecord, shuffleArray } = require('../utils/teamUtils')
+const { getRecentPerformance, calculateRecord, shuffleArray, getTopStats, getNextFixture } = require('../utils/teamUtils')
 
 exports.createTeam = async ({ name, shorthand, department, level }) => {
     // Run checks and create shorthand
@@ -55,7 +55,7 @@ exports.getTeamOverview = async () => {
                 : { wins: 0, losses: 0, draws: 0 };
 
             return {
-                id: team._id,
+                _id: team._id,
                 name: team.name,
                 department: team.department || "Unknown",
                 level: team.level,
@@ -99,6 +99,46 @@ exports.getSingleTeam = async ({ teamId }) => {
 
     // Return success
     return { success: true, message: 'Team Acquired', data: foundTeam };
+}
+
+// Top 4 Goal Scorer
+// Top 4 Assisters
+// Next Match
+
+exports.getSingleTeamOverview = async ({ teamId }) => {
+    // Check if team exists
+    const foundTeam = await db.Team.findById( teamId )
+        .populate({
+            path: 'competitionInvitations.competition',
+            select: 'name'
+        });
+    if( !foundTeam ) return { success: false, message: 'Team Not Found' };
+
+    let teamOverview = {};
+
+    // Get Team Info
+    teamOverview.info = {
+        coach: foundTeam.coach,
+        assistantCoach: foundTeam.assistantCoach,
+        playerCount: foundTeam.players.length,
+        department: foundTeam.department,
+        level: foundTeam.level
+    }
+    // Get Team Competitions
+    teamOverview.competitions = foundTeam.competitionInvitations.length
+        ? foundTeam.competitionInvitations.map( comp => comp.competition.name )
+        : null;
+    // Get Recent Form
+    teamOverview.recentPerformance = foundTeam.fixtures.length
+        ? await getRecentPerformance( foundTeam.fixtures, foundTeam._id )
+        : null;
+    // Get Next Match
+    teamOverview.nextFixture = await getNextFixture( foundTeam._id );
+    // Get Top GoalScorers, Assists, Yellow and Red Cards
+    const year = new Date().getFullYear();
+    teamOverview.topStats = await getTopStats({ teamId: foundTeam._id, year });
+    
+    return { success: true, message: 'Team Overview Acquired', data: teamOverview };
 }
 
 exports.getTeamPlayers = async ({ teamId }) => {

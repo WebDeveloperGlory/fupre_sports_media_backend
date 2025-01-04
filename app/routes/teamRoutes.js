@@ -9,6 +9,7 @@ router.get( '/', controller.getAllTeams );
 router.post( '/', authenticateUser, isSuperAdmin, controller.createTeam );
 router.get( '/overview', controller.getTeamOverview );
 router.get( '/:teamId', controller.getSingleTeam );
+router.get( '/:teamId/overview', controller.getSingleTeamOverview );
 router.patch( '/:teamId/admin', authenticateUser, isSuperAdmin, controller.updateTeamAdmin );
 router.get( '/:teamId/players', controller.getTeamPlayers );
 router.put( '/:teamId/players', authenticateUser, hasTeamPermissions, controller.addPlayerToTeam );
