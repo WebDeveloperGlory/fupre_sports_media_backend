@@ -153,11 +153,46 @@ exports.getSingleTeamFixtures = async ({ teamId }) => {
 
 exports.getTeamPlayers = async ({ teamId }) => {
     // Check if team exists
-    const foundTeam = await db.Team.findById( teamId ).populate({ path: 'players' });
+    const foundTeam = await db.Team.findById( teamId )
+        .populate({ 
+            path: 'players',
+            select: 'name position' 
+        });
     if( !foundTeam ) return { success: false, message: 'Team Not Found' };
 
+    // Get all positions
+    const defensivePositions = [ 'CB', 'LB', 'RB' ];
+    const goalkeeperPositions = [ 'GK' ];
+    const midfieldPositions = [ 'CMF', 'DMF', 'AMF' ];
+    const fowardPositions = [ 'LW', 'RW', 'ST' ];
+    const goalKeepers = foundTeam.players.filter( player => goalkeeperPositions.includes( player.position ) );
+    const defenders = foundTeam.players.filter( player => defensivePositions.includes( player.position ) );
+    const midfielders = foundTeam.players.filter( player => midfieldPositions.includes( player.position ) );
+    const forwards = foundTeam.players.filter( player => fowardPositions.includes( player.position ) );
+
+    // Sort them into an object to return
+    const players = [
+        {
+            name: 'Keepers',
+            players: goalKeepers
+        },
+        {
+            name: 'Defenders',
+            players: defenders
+        },
+        {
+            name: 'Midfielders',
+            players: midfielders
+        },
+        {
+            name: 'Forwards',
+            players: forwards
+        },
+    ]
+    const { coach, assistantCoach } = foundTeam;
+
     // Return success
-    return { success: true, message: 'Players Retrieved', data: foundTeam.players };
+    return { success: true, message: 'Players Retrieved', data: { coach, assistantCoach, players } };
 }
 
 exports.getFriendlyRequests = async ({ teamId }) => {
