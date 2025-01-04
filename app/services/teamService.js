@@ -165,28 +165,24 @@ exports.getTeamPlayers = async ({ teamId }) => {
     const goalkeeperPositions = [ 'GK' ];
     const midfieldPositions = [ 'CMF', 'DMF', 'AMF' ];
     const fowardPositions = [ 'LW', 'RW', 'ST' ];
-    const goalKeepers = foundTeam.players.filter( player => goalkeeperPositions.includes( player.position ) );
-    const defenders = foundTeam.players.filter( player => defensivePositions.includes( player.position ) );
-    const midfielders = foundTeam.players.filter( player => midfieldPositions.includes( player.position ) );
-    const forwards = foundTeam.players.filter( player => fowardPositions.includes( player.position ) );
 
     // Sort them into an object to return
     const players = [
         {
             name: 'Keepers',
-            players: goalKeepers
+            players: foundTeam.players.filter( player => goalkeeperPositions.includes( player.position ) )
         },
         {
             name: 'Defenders',
-            players: defenders
+            players: foundTeam.players.filter( player => defensivePositions.includes( player.position ) )
         },
         {
             name: 'Midfielders',
-            players: midfielders
+            players: foundTeam.players.filter( player => midfieldPositions.includes( player.position ) )
         },
         {
             name: 'Forwards',
-            players: forwards
+            players: foundTeam.players.filter( player => fowardPositions.includes( player.position ) )
         },
     ]
     const { coach, assistantCoach } = foundTeam;
