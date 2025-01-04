@@ -1,5 +1,38 @@
 const db = require('../config/db');
 
+const getFixtures = async (fixtures, id) => {
+    if (!fixtures.length) return [];
+
+    // Fetch the fixtures
+    const fetchedFixtures = await db.Fixture.find({
+        _id: { $in: fixtures },
+    })
+        .sort({ date: -1 }) // Sort by date in descending order
+        .populate({
+            path: 'homeTeam awayTeam competition',
+            select: 'name department level shorthand',
+        })
+        .select('homeTeam awayTeam competition type status result date');
+
+    // Group fixtures by competition or friendly
+    const groupedFixtures = fetchedFixtures.reduce((acc, fixture) => {
+        const title = fixture.type === 'friendly' ? 'Friendlies' : fixture.competition.name;
+
+        // Find or create the group for this title
+        let group = acc.find((g) => g.title === title);
+        if (!group) {
+            group = { title, fixtures: [] };
+            acc.push(group);
+        }
+
+        // Add the fixture to the group
+        group.fixtures.push(fixture);
+        return acc;
+    }, []);
+
+    return groupedFixtures;
+};
+
 const getRecentPerformance = async (fixtures, id) => {
     if ( !fixtures.length ) return [ "N/A" ];
 
@@ -121,7 +154,7 @@ const getTopStats = async ({ teamId, year }) => {
 
         return {
             name: player.name,
-            team: player.team,
+            position: player.position,
             totalGoals: (generalYearStats.goals || 0) + (competitionYearStats.goals || 0),
             totalAssists: (generalYearStats.assists || 0) + (competitionYearStats.assists || 0),
             totalYellowCards: (generalYearStats.yellowCards || 0) + (competitionYearStats.yellowCards || 0),
@@ -160,4 +193,4 @@ const getNextFixture = async ( teamId, currentDate = new Date() ) => {
     return nextFixture || null;
 }
 
-module.exports = { getRecentPerformance, calculateRecord, shuffleArray, getTopStats, getNextFixture }
+module.exports = { getRecentPerformance, calculateRecord, shuffleArray, getTopStats, getNextFixture, getFixtures }

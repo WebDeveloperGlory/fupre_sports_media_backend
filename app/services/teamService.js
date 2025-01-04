@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const mongoose = require('mongoose');
-const { getRecentPerformance, calculateRecord, shuffleArray, getTopStats, getNextFixture } = require('../utils/teamUtils')
+const { getRecentPerformance, calculateRecord, shuffleArray, getTopStats, getNextFixture, getFixtures } = require('../utils/teamUtils')
 
 exports.createTeam = async ({ name, shorthand, department, level }) => {
     // Run checks and create shorthand
@@ -139,6 +139,16 @@ exports.getSingleTeamOverview = async ({ teamId }) => {
     teamOverview.topStats = await getTopStats({ teamId: foundTeam._id, year });
     
     return { success: true, message: 'Team Overview Acquired', data: teamOverview };
+}
+
+exports.getSingleTeamFixtures = async ({ teamId }) => {
+    // Check if team exists
+    const foundTeam = await db.Team.findById( teamId );
+    if( !foundTeam ) return { success: false, message: 'Team Not Found' };
+
+    const fixtures = await getFixtures( foundTeam.fixtures, foundTeam._id );
+
+    return { success: true, message: 'Team Fixtures Acquired', data: fixtures };
 }
 
 exports.getTeamPlayers = async ({ teamId }) => {
