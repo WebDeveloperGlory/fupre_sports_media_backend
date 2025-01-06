@@ -126,7 +126,7 @@ exports.getSingleTeamOverview = async ({ teamId }) => {
     }
     // Get Team Competitions
     teamOverview.competitions = foundTeam.competitionInvitations.length
-        ? foundTeam.competitionInvitations.map( comp => comp.competition.name )
+        ? foundTeam.competitionInvitations.filter( comp => comp.status === 'accepted' )
         : null;
     // Get Recent Form
     teamOverview.recentPerformance = foundTeam.fixtures.length
@@ -154,10 +154,16 @@ exports.getSingleTeamFixtures = async ({ teamId }) => {
 exports.getTeamPlayers = async ({ teamId }) => {
     // Check if team exists
     const foundTeam = await db.Team.findById( teamId )
-        .populate({ 
-            path: 'players',
-            select: 'name position' 
-        });
+        .populate([
+            { 
+                path: 'players',
+                select: 'name position' 
+            },
+            {
+                path: 'captain',
+                select: 'name'
+            }
+        ]);
     if( !foundTeam ) return { success: false, message: 'Team Not Found' };
 
     // Get all positions
@@ -185,10 +191,117 @@ exports.getTeamPlayers = async ({ teamId }) => {
             players: foundTeam.players.filter( player => fowardPositions.includes( player.position ) )
         },
     ]
-    const { coach, assistantCoach } = foundTeam;
+    const { coach, assistantCoach, captain } = foundTeam;
 
     // Return success
-    return { success: true, message: 'Players Retrieved', data: { coach, assistantCoach, players } };
+    return { success: true, message: 'Players Retrieved', data: { coach, assistantCoach, captain, players } };
+}
+
+exports.getSingleTeamStats = async ({ teamId }) => {
+    // Fetch the team and its fixtures
+    const team = await db.Team.findById( teamId ).populate('fixtures');
+    if ( !team ) return { success: false, message: 'Team not found' };
+
+    if ( !team.fixtures.length ) {
+        return {
+            success: true,
+            message: 'Team Stats Acquired',
+            data: [
+                { title: 'Summary', data: { matches: 0, goalsScored: 0, goalsConceded: 0 } },
+                { title: 'Attacking', data: { goalsPerGame: 0, cornersPerGame: 0, offsidesPerGame: 0 } },
+                { title: 'Defending', data: { goalsConcededPerGame: 0, yellowCardsPerGame: 0, redCardsPerGame: 0, cleanSheets: 0, foulsPerGame: 0 } }
+            ]
+        };
+    }
+
+    let totalMatches = 0;
+    let goalsScored = 0;
+    let goalsConceded = 0;
+    let totalCorners = 0;
+    let totalOffsides = 0;
+    let totalYellowCards = 0;
+    let totalRedCards = 0;
+    let totalFouls = 0;
+    let cleanSheets = 0;
+
+    for ( const fixture of team.fixtures ) {
+        if ( fixture.status !== 'completed' ) continue;
+
+        const isHome = fixture.homeTeam._id.equals( teamId );
+
+        totalMatches++;
+
+        goalsScored += isHome ? fixture.result.homeScore || 0 : fixture.result.awayScore || 0;
+        goalsConceded += isHome ? fixture.result.awayScore || 0 : fixture.result.homeScore || 0;
+
+        const stats = await db.MatchStatistic.findOne({ fixture: fixture._id });
+        if ( !stats ) continue;
+
+        const teamStats = isHome ? stats.home : stats.away;
+
+        totalCorners += teamStats.corners;
+        totalOffsides += teamStats.offsides;
+        totalYellowCards += teamStats.yellowCards;
+        totalRedCards += teamStats.redCards;
+        totalFouls += teamStats.fouls;
+
+        if ( ( isHome && fixture.result.awayScore === 0 ) || ( !isHome && fixture.result.homeScore === 0 ) ) {
+            cleanSheets++;
+        }
+    }
+
+    if ( totalMatches === 0 ) {
+        return {
+            success: true,
+            message: 'Team Stats Acquired',
+            data: [
+                { title: 'Summary', data: { matches: 0, goalsScored: 0, goalsConceded: 0 } },
+                { title: 'Attacking', data: { goalsPerGame: 0, cornersPerGame: 0, offsidesPerGame: 0 } },
+                { title: 'Defending', data: { goalsConcededPerGame: 0, yellowCardsPerGame: 0, redCardsPerGame: 0, cleanSheets: 0, foulsPerGame: 0 } }
+            ]
+        }
+    }
+
+    const goalsPerGame = (goalsScored / totalMatches).toFixed(2);
+    const cornersPerGame = (totalCorners / totalMatches).toFixed(2);
+    const offsidesPerGame = (totalOffsides / totalMatches).toFixed(2);
+    const goalsConcededPerGame = (goalsConceded / totalMatches).toFixed(2);
+    const yellowCardsPerGame = (totalYellowCards / totalMatches).toFixed(2);
+    const redCardsPerGame = (totalRedCards / totalMatches).toFixed(2);
+    const foulsPerGame = (totalFouls / totalMatches).toFixed(2);
+
+    return {
+        success: true,
+        message: 'Team Stats Acquired',
+        data: [
+            {
+                title: 'Summary',
+                data: {
+                    matches: totalMatches,
+                    goalsScored,
+                    goalsConceded
+                }
+            },
+            {
+                title: 'Attacking',
+                data: {
+                    goalsPerGame,
+                    cornersPerGame,
+                    offsidesPerGame
+                }
+            },
+            {
+                title: 'Defending',
+                data: {
+                    goalsConcededPerGame,
+                    yellowCardsPerGame,
+                    redCardsPerGame,
+                    cleanSheets,
+                    foulsPerGame
+                }
+            }
+        ]
+    }
 }
 
 exports.getFriendlyRequests = async ({ teamId }) => {

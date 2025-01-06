@@ -81,6 +81,19 @@ exports.getSingleTeamFixtures = async ( req, res ) => {
     }
 }
 
+exports.getSingleTeamStats = async ( req, res ) => {
+    try {
+        const result = await teamService.getSingleTeamStats( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 exports.sendMatchRequest = async ( req, res ) => {
     try {
         const result = await teamService.sendMatchRequest( req.params, req.body );

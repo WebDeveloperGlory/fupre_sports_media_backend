@@ -39,6 +39,15 @@ const fixtureSchema = new Schema({
         homePenalty: { type: Number, default: null },
         awayPenalty: { type: Number, default: null },
     },
+    goalScorers: [
+        {
+            id: {
+                type: Schema.Types.ObjectId,
+                ref: 'Player'
+            },
+            time: { type: Number }
+        }
+    ],
     statistics: {
         type: Schema.Types.ObjectId,
         ref: 'MatchStatistic'

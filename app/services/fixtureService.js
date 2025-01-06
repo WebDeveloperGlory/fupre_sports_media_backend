@@ -1,4 +1,6 @@
 const db = require('../config/db');
+const { getTeamWins } = require('../utils/fixtureUtils');
+const { getRecentPerformance } = require('../utils/teamUtils');
 
 exports.createFixture = async ({ homeTeam, awayTeam, type, date, stadium, competition }) => {
     // Create fixture
@@ -72,14 +74,108 @@ exports.getAllFixtures = async ({ limit, filterBy, completed, startDate }) => {
 
 exports.getOneFixture = async ({ fixtureId }) => {
     // Check if fixture exists
-    const fixture = await db.Fixture.findById( fixtureId );
+    const fixture = await db.Fixture.findById( fixtureId )
+        .populate([
+            {
+                path: 'homeTeam awayTeam',
+                select: 'name department level shorthand'
+            },
+            {
+                path: 'statistics'
+            },
+            {
+                path: 'goalScorers.id',
+                select: 'name team'
+            }
+        ]);
     if( !fixture ) return { success: false, message: 'Invalid Fixture' };
 
     // Return success
     return { success: true, message: 'Fixture Acquired', data: fixture };
 }
 
-exports.updateFixtureResult = async ( { fixtureId }, { result, statistics } ) => {
+exports.getTeamFixtureTeamFormAndMatchData = async ({ fixtureId }) => {
+    const foundFixture = await db.Fixture.findById( fixtureId );
+    if( !foundFixture ) return { success: false, message: 'Invalid Fixture' };
+    
+    const homeTeam = await db.Team.findById( foundFixture.homeTeam );
+    const awayTeam = await db.Team.findById( foundFixture.awayTeam );
+
+    let homeTeamForm = [];
+    let awayTeamForm = [];
+
+    homeTeamForm = await getRecentPerformance( homeTeam.fixtures, homeTeam._id );
+    awayTeamForm = await getRecentPerformance( awayTeam.fixtures, awayTeam._id );
+
+    // Fetch the most recent 5 fixtures (played before or at this moment)
+    const now = new Date();
+    const homeLastFixtures = await db.Fixture.find({ 
+        _id: { $in: homeTeam.fixtures }, 
+        date: { $lte: now } // Fixtures up to and including now
+    })
+    .sort({ date: -1 }) // Sort by date in descending order (most recent first)
+    .limit(5)
+    .populate({
+        path: 'homeTeam awayTeam',
+        select: 'name shorthand'
+    });
+    const awayLastFixtures = await db.Fixture.find({
+        _id: { $in: awayTeam.fixtures },
+        date: { $lte: now }
+    })
+    .sort({ date: -1 })
+    .limit(5)
+    .populate({
+        path: 'homeTeam awayTeam',
+        select: 'name shorthand'
+    });
+    const headToHeadFixtures = await db.Fixture.find({
+        $or: [
+            {
+                $and: [
+                    { homeTeam: homeTeam._id },
+                    { awayTeam: awayTeam._id }
+                ],        
+            },
+            {
+                $and: [
+                    { homeTeam: awayTeam._id },
+                    { awayTeam: homeTeam._id }
+                ],
+            }
+        ],
+        date: { $lte: now }
+    })
+    .sort({ date: -1 })
+    .populate({
+        path: 'homeTeam awayTeam',
+        select: 'name shorthand'
+    });
+
+    const homeH2H = await getTeamWins( headToHeadFixtures, homeTeam._id );
+
+    const homeWins = homeH2H.wins;
+    const draws = homeH2H.draws;
+    const awayWins = homeH2H.losses;
+
+    // Return success
+    return { success: true, message: 'Fixture Teams Form Acquired', data: { 
+        homeTeam: homeTeam.name, 
+        awayTeam: awayTeam.name,
+        homeTeamForm, awayTeamForm, 
+        homeLastFixtures, awayLastFixtures,
+        head2head: {
+            homeTeam: homeTeam.name,
+            homeWins,
+            draws,
+            awayTeam: awayTeam.name,
+            awayWins,
+            fixtures: headToHeadFixtures.splice( 0, 5 )
+        }
+    } };
+}
+
+exports.updateFixtureResult = async ( { fixtureId }, { result, statistics, goalScorers } ) => {
     // Check if fixture exists
     const foundFixture = await db.Fixture.findById( fixtureId );
     if( !foundFixture ) return { success: false, message: 'Invalid Fixture' };
@@ -97,7 +193,8 @@ exports.updateFixtureResult = async ( { fixtureId }, { result, statistics } ) =>
     }
 
     // Update fixture scores and status
-    foundFixture.result = result;
+    if( result ) foundFixture.result = result;
+    if( goalScorers ) foundFixture.goalScorers = goalScorers;
     foundFixture.status = 'completed';
     await foundFixture.save();
 

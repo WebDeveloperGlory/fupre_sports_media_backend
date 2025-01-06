@@ -8,7 +8,7 @@ const matchEventSchema = new Schema({
     },
     eventType: {
         type: String,
-        enum: [ 'goal', 'yellow-card', 'red-card', 'substitution', 'own-goal' ],
+        enum: [ 'goal', 'assist', 'yellow-card', 'red-card', 'substitution', 'own-goal' ],
         required: true
     },
     playerInvolved: {

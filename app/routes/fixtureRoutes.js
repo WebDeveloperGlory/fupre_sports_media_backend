@@ -7,6 +7,7 @@ router.get( '/', controller.getAllFixtures );
 router.post( '/', controller.createFixture );
 router.get( '/:fixtureId', controller.getOneFixture );
 router.patch( '/:fixtureId', controller.updateFixture );
+router.get( '/:fixtureId/form', controller.getTeamFixtureTeamFormAndMatchData );
 router.put( '/:fixtureId/result', controller.updateFixtureResult );
 
 module.exports = router;
