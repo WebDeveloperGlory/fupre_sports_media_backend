@@ -25,7 +25,7 @@ const competitionSchema = new Schema({
         type: String,
         enum: [ 'knockout', 'hybrid', 'league' ],
         required: true
-    }, 
+    },
     status: {
         type: String,
         enum: [ 'ongoing', 'completed', 'pending' ],
@@ -93,39 +93,33 @@ const competitionSchema = new Schema({
                 type: Schema.Types.ObjectId,
                 ref: 'Team'
             },
-            position: {
-                type: Number,
-                required: true
-            },
-            points: {
-                type: Number,
-                default: 0
-            },
-            wins: {
-                type: Number,
-                default: 0
-            },
-            loss: {
-                type: Number,
-                default: 0
-            },
-            draw: {
-                type: Number,
-                default: 0
-            },
-            goalsScored: {
-                type: Number,
-                default: 0
-            },
-            goalsConceeded: {
-                type: Number,
-                default: 0
-            },
+            played: { type: Number, default: 0 },
+            points: { type: Number, default: 0 },
+            wins: { type: Number, default: 0 },
+            losses: { type: Number, default: 0 },
+            draws: { type: Number, default: 0 },
+            goalsFor: { type: Number, default: 0 },
+            goalsAgainst: { type: Number, default: 0 },
+            goalDifference: { type: Number, default: 0 },
+            form: [ 
+                {
+                    type: String,
+                    enum: [ 'W', 'L', 'D' ]
+                }
+            ]
         }
-    ], 
+    ],
+    stats: {
+        totalGoals: { type: Number, default: 0 },
+        homeWinsPercentage: { type: Number, default: 0 },
+        awayWinsPercentage: { type: Number, default: 0 },
+        drawsPercentage: { type: Number, default: 0 },
+        yellowCardsAvg: { type: Number, default: 0 },
+        redCardsAvg: { type: Number, default: 0 },
+    },
     createdAt: {
         type: Date,
-        default: Date.now()
+        default: Date.now
     }
 });
 
