@@ -109,13 +109,85 @@ exports.updateCompetitionAdmin = async ( req, res ) => {
 
 exports.addCompetitionFixture = async ( req, res ) => {
     try {
-        // Check if user exists
-        const createdFixture = await fixtureService.createFixture( req.body )
-        if( !createdFixture.success ) {
-            return error( res, createdFixture.message );
-        }
+        const result = await competitionService.addCompetitionFixture( req.params, req.body );
 
-        const result = await competitionService.addCompetitionFixture( req.params, { fixtureId: createdFixture.data._id } );
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.initializeLeagueTable = async ( req, res ) => {
+    try {
+        const result = await competitionService.initializeLeagueTable( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.getSingleLeagueCompetitionOverview = async ( req, res )  => {
+    try {
+        const result = await competitionService.getSingleLeagueCompetitionOverview( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.getFullTable = async ( req, res )  => {
+    try {
+        const result = await competitionService.getFullTable( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.getCompetitionFixtures = async ( req, res )  => {
+    try {
+        const result = await competitionService.getCompetitionFixtures( req.params, req.query );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.updateCompetitionFixtureResult = async ( req, res )  => {
+    try {
+        const result = await competitionService.updateCompetitionFixtureResult( req.params, req.body );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.getCompetitionPlayerStats = async ( req, res )  => {
+    try {
+        const result = await competitionService.getCompetitionPlayerStats( req.params );
 
         if( result.success ) {
             return success( res, result.message, result.data );

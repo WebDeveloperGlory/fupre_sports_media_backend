@@ -12,7 +12,7 @@ const authenticateUser = ( req, res, next ) => {
         req.user = decoded;
         next();            
     } catch ( err ) {
-        return serverError( res, err )
+        return serverError( res, err );
     }
 };
 
