@@ -10,7 +10,10 @@ router.post( '/', authenticateUser, isSuperAdmin, controller.createCompetition )
 router.get( '/:competitionId', controller.getSingleCompetition );
 router.patch( '/:competitionId', authenticateUser, hasCompetitionPermissions, controller.updateCompetition );
 router.get( '/:competitionId/overview', controller.getSingleLeagueCompetitionOverview );
-router.get( '/:competitionId/player-stats', controller.getCompetitionPlayerStats );
+router.get( '/:competitionId/player-stats', controller.getPlayerStats );
+router.get( '/:competitionId/team-stats', controller.getAllTeamStats );
+router.get( '/:competitionId/top-teams', controller.getTopTeams );
+router.get( '/:competitionId/top-players', controller.getTopPlayers );
 router.put( '/:competitionId/invite-teams', authenticateUser, hasCompetitionPermissions, controller.inviteTeamsToCompetition );
 router.put( '/:competitionId/add-teams', authenticateUser, hasCompetitionPermissions, controller.addTeamsToCompetition );
 router.put( '/:competitionId/admin', authenticateUser, isSuperAdmin, controller.updateCompetitionAdmin );

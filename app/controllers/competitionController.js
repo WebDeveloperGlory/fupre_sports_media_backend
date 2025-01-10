@@ -185,9 +185,48 @@ exports.updateCompetitionFixtureResult = async ( req, res )  => {
     }
 }
 
-exports.getCompetitionPlayerStats = async ( req, res )  => {
+exports.getTopPlayers = async ( req, res )  => {
     try {
-        const result = await competitionService.getCompetitionPlayerStats( req.params );
+        const result = await competitionService.getTopPlayers( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.getTopTeams = async ( req, res ) => {
+    try {
+        const result = await competitionService.getTopTeams( req.params, req.query );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.getAllTeamStats = async ( req, res ) => {
+    try {
+        const result = await competitionService.getAllTeamStats( req.params, req.query );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.getPlayerStats = async ( req, res ) => {
+    try {
+        const result = await competitionService.getPlayerStats( req.params, req.query );
 
         if( result.success ) {
             return success( res, result.message, result.data );

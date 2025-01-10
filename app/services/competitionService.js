@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { addToFront, calculatePercentage } = require('../utils/functionUtils');
+const { getTeamStatsHelper } = require('../utils/teamUtils');
 
 exports.createCompetition = async ({ name, rules, type }) => {
     // Create competition
@@ -315,7 +316,7 @@ exports.getCompetitionFixtures = async ({ competitionId }, { filter, team, limit
     return { success: true, message: 'Competition Fixtures Acquired', data: matches };
 }
 
-exports.getCompetitionPlayerStats = async ({ competitionId }) => {
+exports.getTopPlayers = async ({ competitionId }) => {
     // Check if competition exists
     const competition = await db.Competition.findById( competitionId )
     .populate( 'playerStats.player' );
@@ -370,6 +371,80 @@ exports.getCompetitionPlayerStats = async ({ competitionId }) => {
         message: 'Player Stats Acquired', 
         data: {
             topScorers, topAssists, topYellowCards, topRedCards
+        }
+    }
+}
+
+exports.getTopTeams = async ({ competitionId }, { statType = 'total' }) => {
+    // Fetch the competition with teams and fixtures
+    const competition = await db.Competition.findById(competitionId)
+        .populate('fixtures')
+        .populate('teams.team');
+
+    if ( !competition ) return { success: false, message: 'Competition not found' };
+
+    const teamStats = await getTeamStatsHelper( competition, statType );
+
+    // Sort and get top 5 teams for each stat
+    const sortedStats = {};
+    const statKeys = Object.keys(teamStats[Object.keys(teamStats)[0]]).filter(
+        (key) => key !== 'teamName' && key !== 'matchesPlayed'
+    );
+
+    for (const statKey of statKeys) {
+        sortedStats[statKey] = Object.entries(teamStats)
+            .sort(([, a], [, b]) => b[statKey] - a[statKey])
+            .slice(0, 5)
+            .map(([teamId, stats]) => ({
+                teamId,
+                teamName: stats.teamName,
+                value: stats[statKey]
+            }));
+    }
+
+    return { success: true, message: 'Team Stats Acquired', data: sortedStats };
+}
+
+exports.getAllTeamStats = async ({ competitionId }, { statType = 'total' }) => {
+    const competition = await db.Competition.findById( competitionId )
+        .populate('fixtures')
+        .populate('teams.team');
+    if ( !competition ) return { success: false, message: 'Competition not found' };
+
+    const teamStats = await getTeamStatsHelper( competition, statType );
+
+    return { success: true, message: 'Team Stats Acquired', data: teamStats };
+}
+
+exports.getPlayerStats  = async ({ competitionId }, { page = 1, limit = 20, teamId }) => {
+    const query = { competition: competitionId };
+    if ( teamId ) query[ 'player.team' ] = teamId;
+
+    const playerStats = await db.PlayerCompetitionStats.find( query )
+        .populate('player')
+        .skip( ( page - 1 ) * limit )
+        .limit( Number( limit ) )
+        .sort({ goals: -1, assists: -1 }); // Default sorting by goals, then assists
+
+    return {
+        success: true,
+        message: 'Player Stats Acquired',
+        data: {
+            stats: playerStats.map((stat) => ({
+                player: stat.player.name,
+                team: stat.player.team.name,
+                goals: stat.goals,
+                assists: stat.assists,
+                appearances: stat.appearances,
+                yellowCards: stat.yellowCards,
+                redCards: stat.redCards,
+                cleanSheets: stat.cleanSheets
+            })),
+            pagination: {
+                page: Number(page),
+                limit: Number(limit),
+                total: await PlayerCompetitionStat.countDocuments(query)
+            }
         }
     }
 }

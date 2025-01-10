@@ -194,4 +194,83 @@ const getNextFixture = async ( teamId, currentDate = new Date() ) => {
     return nextFixture || null;
 }
 
-module.exports = { getRecentPerformance, calculateRecord, shuffleArray, getTopStats, getNextFixture, getFixtures }
+/**
+ * Helper function to aggregate team stats for a competition.
+ * @param {Object} competition - The competition document.
+ * @param {String} statType - 'total' or 'average'.
+ * @returns {Object} An object containing aggregated team stats.
+ */
+const getTeamStatsHelper = async ( competition, statType = 'total' ) => {
+    // Initialize team stats
+    const teamStats = competition.teams.reduce((acc, teamEntry) => {
+        acc[ teamEntry.team._id ] = {
+            teamName: teamEntry.team.name,
+            goalsScored: 0,
+            goalsConceded: 0,
+            cleanSheets: 0,
+            shots: 0,
+            shotsOnTarget: 0,
+            shotsOffTarget: 0,
+            corners: 0,
+            offsides: 0,
+            yellowCards: 0,
+            redCards: 0,
+            matchesPlayed: 0
+        };
+        return acc;
+    }, {});
+
+    // Aggregate stats from match statistics
+    for (const fixture of competition.fixtures) {
+        const matchStats = await db.MatchStatistic.findOne({ fixture: fixture._id });
+
+        if (!matchStats || fixture.status !== 'completed') continue;
+
+        const homeTeamId = String(fixture.homeTeam);
+        const awayTeamId = String(fixture.awayTeam);
+
+        if (teamStats[homeTeamId]) {
+            teamStats[homeTeamId].goalsScored += fixture.result.homeScore || 0;
+            teamStats[homeTeamId].goalsConceded += fixture.result.awayScore || 0;
+            teamStats[homeTeamId].cleanSheets += fixture.result.awayScore === 0 ? 1 : 0;
+            teamStats[homeTeamId].shots += matchStats.home.shotsOnTarget + matchStats.home.shotsOffTarget;
+            teamStats[homeTeamId].shotsOnTarget += matchStats.home.shotsOnTarget;
+            teamStats[homeTeamId].shotsOffTarget += matchStats.home.shotsOffTarget;
+            teamStats[homeTeamId].corners += matchStats.home.corners;
+            teamStats[homeTeamId].offsides += matchStats.home.offsides;
+            teamStats[homeTeamId].yellowCards += matchStats.home.yellowCards;
+            teamStats[homeTeamId].redCards += matchStats.home.redCards;
+            teamStats[homeTeamId].matchesPlayed++;
+        }
+
+        if (teamStats[awayTeamId]) {
+            teamStats[awayTeamId].goalsScored += fixture.result.awayScore || 0;
+            teamStats[awayTeamId].goalsConceded += fixture.result.homeScore || 0;
+            teamStats[awayTeamId].cleanSheets += fixture.result.homeScore === 0 ? 1 : 0;
+            teamStats[awayTeamId].shots += matchStats.away.shotsOnTarget + matchStats.away.shotsOffTarget;
+            teamStats[awayTeamId].shotsOnTarget += matchStats.away.shotsOnTarget;
+            teamStats[awayTeamId].shotsOffTarget += matchStats.away.shotsOffTarget;
+            teamStats[awayTeamId].corners += matchStats.away.corners;
+            teamStats[awayTeamId].offsides += matchStats.away.offsides;
+            teamStats[awayTeamId].yellowCards += matchStats.away.yellowCards;
+            teamStats[awayTeamId].redCards += matchStats.away.redCards;
+            teamStats[awayTeamId].matchesPlayed++;
+        }
+    }
+
+    // Compute averages if requested
+    if (statType === 'average') {
+        for (const teamId in teamStats) {
+            const matchesPlayed = teamStats[teamId].matchesPlayed || 1; // Avoid division by 0
+            for (const stat in teamStats[teamId]) {
+                if (stat !== 'teamName' && stat !== 'matchesPlayed') {
+                    teamStats[teamId][stat] = parseFloat((teamStats[teamId][stat] / matchesPlayed).toFixed(2));
+                }
+            }
+        }
+    }
+
+    return teamStats;
+};
+
+module.exports = { getRecentPerformance, calculateRecord, shuffleArray, getTopStats, getNextFixture, getFixtures, getTeamStatsHelper }
