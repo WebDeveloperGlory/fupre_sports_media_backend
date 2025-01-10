@@ -198,7 +198,10 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
         .slice( 0, 3 )
         .map( ( entry, index ) => ({
             position: index + 1,
-            team: entry.team.name,
+            team: {
+                _id: entry.team._id,
+                name: entry.team.name
+            },
             played: entry.played,
             points: entry.points,
             goalDifference: entry.goalDifference,
@@ -220,6 +223,7 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
                 department: fixture.awayTeam.department,
                 shorthand: fixture.awayTeam.shorthand,
             },
+            _id: fixture._id,
             date: fixture.date,
         }));
 
@@ -266,7 +270,10 @@ exports.getFullTable = async ({ competitionId }) => {
         .sort( ( a, b ) => b.points - a.points || b.goalDifference - a.goalDifference )
         .map( ( entry, index ) => ({
             position: index + 1,
-            team: entry.team.name,
+            team: {
+                _id: entry.team._id,
+                name: entry.team.name
+            },
             played: entry.played,
             wins: entry.wins,
             draws: entry.draws,

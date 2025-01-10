@@ -86,6 +86,10 @@ exports.getOneFixture = async ({ fixtureId }) => {
             {
                 path: 'goalScorers.id',
                 select: 'name team'
+            },
+            {
+                path: 'competition',
+                select: 'name'
             }
         ]);
     if( !fixture ) return { success: false, message: 'Invalid Fixture' };
@@ -111,7 +115,8 @@ exports.getTeamFixtureTeamFormAndMatchData = async ({ fixtureId }) => {
     const now = new Date();
     const homeLastFixtures = await db.Fixture.find({ 
         _id: { $in: homeTeam.fixtures }, 
-        date: { $lte: now } // Fixtures up to and including now
+        date: { $lte: now }, // Fixtures up to and including now
+        status: 'completed'
     })
     .sort({ date: -1 }) // Sort by date in descending order (most recent first)
     .limit(5)
@@ -121,7 +126,8 @@ exports.getTeamFixtureTeamFormAndMatchData = async ({ fixtureId }) => {
     });
     const awayLastFixtures = await db.Fixture.find({
         _id: { $in: awayTeam.fixtures },
-        date: { $lte: now }
+        date: { $lte: now },
+        status: 'completed'
     })
     .sort({ date: -1 })
     .limit(5)
@@ -144,7 +150,8 @@ exports.getTeamFixtureTeamFormAndMatchData = async ({ fixtureId }) => {
                 ],
             }
         ],
-        date: { $lte: now }
+        date: { $lte: now },
+        status: 'completed'
     })
     .sort({ date: -1 })
     .populate({

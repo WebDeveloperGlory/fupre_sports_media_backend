@@ -40,7 +40,8 @@ const getRecentPerformance = async (fixtures, id) => {
     const now = new Date();
     const recentFixtures = await db.Fixture.find({ 
         _id: { $in: fixtures }, 
-        date: { $lte: now } // Fixtures up to and including now
+        date: { $lte: now }, // Fixtures up to and including now
+        status: 'completed'
     })
     .sort({ date: -1 }) // Sort by date in descending order (most recent first)
     .limit(5);
