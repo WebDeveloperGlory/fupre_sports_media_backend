@@ -263,7 +263,7 @@ const getTeamStatsHelper = async ( competition, statType = 'total' ) => {
         for (const teamId in teamStats) {
             const matchesPlayed = teamStats[teamId].matchesPlayed || 1; // Avoid division by 0
             for (const stat in teamStats[teamId]) {
-                if (stat !== 'teamName' && stat !== 'matchesPlayed') {
+                if (stat !== 'teamName' && stat !== 'matchesPlayed' && stat !== 'cleanSheets') {
                     teamStats[teamId][stat] = parseFloat((teamStats[teamId][stat] / matchesPlayed).toFixed(2));
                 }
             }

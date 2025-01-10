@@ -241,9 +241,9 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
     // League facts
     const leagueFacts = {
         totalGoals: competition.stats.totalGoals,
-        homeWinsPercentage: competition.stats.homeWinsPercentage,
-        awayWinsPercentage: competition.stats.awayWinsPercentage,
-        drawsPercentage: competition.stats.drawsPercentage,
+        homeWinsPercentage: competition.stats.homeWinsPercentage.toFixed(2),
+        awayWinsPercentage: competition.stats.awayWinsPercentage.toFixed(2),
+        drawsPercentage: competition.stats.drawsPercentage.toFixed(2),
         yellowCardsAvg: competition.stats.yellowCardsAvg.toFixed(2),
         redCardsAvg: competition.stats.redCardsAvg.toFixed(2),
         numberOfTeams: competition.teams.length,
@@ -289,9 +289,8 @@ exports.getFullTable = async ({ competitionId }) => {
     return { success: true, message: 'League Table Acquired', data: table }
 }
 
-exports.getCompetitionFixtures = async ({ competitionId }, { filter, team, limit }) => {
+exports.getCompetitionFixtures = async ({ competitionId }, { filter, team }) => {
     let query = { competition: competitionId };
-    let setLimit = limit || 5;
 
     if ( filter ) {
         const date = new Date(filter);
@@ -304,16 +303,23 @@ exports.getCompetitionFixtures = async ({ competitionId }, { filter, team, limit
         query.$or = [ { homeTeam: team }, { awayTeam: team } ];
     }
 
-    const matches = await db.Fixture.find( query )
+    const completedMatches = await db.Fixture.find({ ...query, status: 'completed' })
+        .populate({ 
+            path: 'homeTeam awayTeam',
+            select: 'name department shorthand level'
+        })
+        .sort({ date: -1 })
+        .select( 'homeTeam awayTeam date status result');
+
+    const upcomingMatches = await db.Fixture.find({ ...query, status: 'upcoming' })
         .populate({ 
             path: 'homeTeam awayTeam',
             select: 'name department shorthand level'
         })
         .sort({ date: 1 })
-        .select( 'homeTeam awayTeam date status')
-        .limit( setLimit );
+        .select( 'homeTeam awayTeam date status stadium');
 
-    return { success: true, message: 'Competition Fixtures Acquired', data: matches };
+    return { success: true, message: 'Competition Fixtures Acquired', data: { completedMatches, upcomingMatches } };
 }
 
 exports.getTopPlayers = async ({ competitionId }) => {
