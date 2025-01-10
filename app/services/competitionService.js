@@ -420,6 +420,7 @@ exports.getPlayerStats  = async ({ competitionId }, { page = 1, limit = 20, team
     const query = { competition: competitionId };
     if ( teamId ) query[ 'player.team' ] = teamId;
 
+    // const playerStats = await db.PlayerCompetitionStats.find( query )
     const playerStats = await db.PlayerCompetitionStats.find( query )
         .populate('player')
         .skip( ( page - 1 ) * limit )
@@ -443,7 +444,7 @@ exports.getPlayerStats  = async ({ competitionId }, { page = 1, limit = 20, team
             pagination: {
                 page: Number(page),
                 limit: Number(limit),
-                total: await PlayerCompetitionStat.countDocuments(query)
+                total: await db.PlayerCompetitionStats.countDocuments(query)
             }
         }
     }
