@@ -6,6 +6,10 @@ const competitionSchema = new Schema({
         required: true
     },
     rules: [ { type: String } ],
+    description: {
+        type: String, 
+        required: true
+    },
     teams: [
         {
             team: {

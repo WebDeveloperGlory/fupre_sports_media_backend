@@ -88,7 +88,7 @@ const calculateRecord = async ( fixtures, id ) => {
     const allFixtures = await db.Fixture.find({ _id: { $in: fixtures }, status: "completed" });
     let wins = 0;
     let draws = 0;
-    let loss = 0;
+    let losses = 0;
 
     allFixtures.map( fixture => {
         const { result } = fixture;
@@ -98,28 +98,28 @@ const calculateRecord = async ( fixtures, id ) => {
             // Determine result for the home team
             if ( result.homePenalty === null || result.awayPenalty === null ) {
                 if ( result.homeScore > result.awayScore ) return wins += 1;
-                if ( result.homeScore < result.awayScore ) return loss += 1;
+                if ( result.homeScore < result.awayScore ) return losses += 1;
                 if ( result.homeScore === result.awayScore ) return draws += 1;
             } else {
                 // Penalty shootout results
                 if ( result.homePenalty > result.awayPenalty ) return wins += 1;
-                if ( result.homePenalty < result.awayPenalty ) return loss += 1;
+                if ( result.homePenalty < result.awayPenalty ) return losses += 1;
             }
         } else {
             // Determine result for the away team
             if ( result.homePenalty === null || result.awayPenalty === null ) {
                 if ( result.awayScore > result.homeScore ) return wins += 1;
-                if ( result.awayScore < result.homeScore ) return loss += 1;
+                if ( result.awayScore < result.homeScore ) return losses += 1;
                 if ( result.awayScore === result.homeScore ) return draws += 1;
             } else {
                 // Penalty shootout results
                 if ( result.awayPenalty > result.homePenalty ) return wins += 1;
-                if ( result.awayPenalty < result.homePenalty ) return loss += 1;
+                if ( result.awayPenalty < result.homePenalty ) return losses += 1;
             }
         }
     })
 
-    const record = { wins, loss, draws }
+    const record = { wins, losses, draws }
 
     return record;
 };

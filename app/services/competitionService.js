@@ -2,9 +2,9 @@ const db = require('../config/db');
 const { addToFront, calculatePercentage } = require('../utils/functionUtils');
 const { getTeamStatsHelper } = require('../utils/teamUtils');
 
-exports.createCompetition = async ({ name, rules, type }) => {
+exports.createCompetition = async ({ name, rules, type, description }) => {
     // Create competition
-    const competition = await db.Competition.create({ name, rules, type });
+    const competition = await db.Competition.create({ name, rules, type, description });
 
     // Return success
     return { success: true, message: 'Competition Created', data: competition };
@@ -273,7 +273,8 @@ exports.getFullTable = async ({ competitionId }) => {
             position: index + 1,
             team: {
                 _id: entry.team._id,
-                name: entry.team.name
+                name: entry.team.name,
+                shorthand: entry.team.shorthand
             },
             played: entry.played,
             wins: entry.wins,
@@ -390,6 +391,7 @@ exports.getTopTeams = async ({ competitionId }, { statType = 'total' }) => {
     if ( !competition ) return { success: false, message: 'Competition not found' };
 
     const teamStats = await getTeamStatsHelper( competition, statType );
+    if( Object.keys( teamStats ).length === 0 ) return { success: true, message: 'Team Stats Acquired', data: teamStats };
 
     // Sort and get top 5 teams for each stat
     const sortedStats = {};

@@ -4,11 +4,11 @@ const { getRecentPerformance, calculateRecord, shuffleArray, getTopStats, getNex
 
 exports.createTeam = async ({ name, shorthand, department, level }) => {
     // Run checks and create shorthand
-    if( shorthand.length > 4 ) return { success: false, message: 'Invalid Shorthand Length' };
-    const newShorthand = `${ shorthand }-${ level === 'General' ? 'G' : level }`;
+    // if( shorthand.length > 4 ) return { success: false, message: 'Invalid Shorthand Length' };
+    // const newShorthand = `${ shorthand }-${ level === 'General' ? 'G' : level }`;
 
     // Create team
-    const createdTeam = await db.Team.create({ name, shorthand: newShorthand, department, level });
+    const createdTeam = await db.Team.create({ name, shorthand, department, level });
 
     // Return success
     return { success: true, message: 'Team Created', data: createdTeam };
