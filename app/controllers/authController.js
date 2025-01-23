@@ -20,6 +20,29 @@ exports.loginUser = async ( req, res ) => {
         const result = await authService.loginUser( req.body );
 
         if( result.success ) {
+            // Send JWT as HTTP-only cookie
+            res.cookie('authToken', result.data, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+            });
+
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.logoutUser = async ( req, res ) => {
+    try {
+        const result = await authService.logoutUser();
+
+        if( result.success ) {
+            // Clear Cookies
+            res.clearCookie('authToken');
+
             return success( res, result.message, result.data );
         }
         return error( res, result.message );

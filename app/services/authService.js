@@ -33,6 +33,11 @@ exports.loginUser = async ({ email, password }) => {
     return { success: true, message: 'User Logged In', data: token };
 }
 
+exports.logoutUser = async () => {
+    // Return success
+    return { success: true, message: 'User Logged Out', data: null };
+}
+
 exports.completePasswordReset = async ( { userId }, { newPassword, confirmNewPassword } ) => {
     // Find user in database
     const foundUser = await db.User.findById( userId );
@@ -80,11 +85,171 @@ exports.getAllUsers = async () => {
 
 exports.getUserProfile = async ({ userId }) => {
     // Find user in database
-    const foundUser = await db.User.findById( userId ).select( '-password' );
+    const foundUser = await db.User.findById( userId )
+        .populate([
+            {
+                path: 'associatedTeam',
+                select: 'name department shorthand level coach players assistantCoach captain'
+            },
+            {
+                path: 'associatedCompetitions',
+                select: 'name description teams status fixtures'
+            }
+        ])
+        .select( '-password' );
     if( !foundUser ) return { success: false, message: 'User Not Found' };
 
+    let nextFixtures = [];
+    // Check if user is competition-admin or team-admin
+    if ( foundUser.role === 'competition-admin' ) {
+        const competitions = foundUser.associatedCompetitions;
+        nextFixtures = await db.Fixture.find({
+            competition: { $in: competitions },
+            status: 'upcoming',
+            date: { $gte: new Date() },
+        })
+            .sort({ date: 1 })
+            .limit(5)
+            .populate( 'homeTeam awayTeam competition' );
+    } else if (foundUser.role === 'team-admin') {
+        const teamId = foundUser.associatedTeam;
+
+        if ( teamId ) {
+            nextFixtures = await db.Fixture.find({
+                $or: [{ homeTeam: teamId }, { awayTeam: teamId }],
+                status: 'upcoming',
+                date: { $gte: new Date() },
+            })
+                .sort({ date: 1 })
+                .limit(5)
+                .populate( 'homeTeam awayTeam competition' );
+        }
+    } else if ( foundUser.role === 'super-admin' ) {
+        nextFixtures = await db.Fixture.find({
+            status: 'upcoming',
+            date: { $gte: new Date() },
+        })
+            .populate( 'homeTeam awayTeam competition' )
+            .sort({ date: 1 })
+            .limit(5)
+            .populate('homeTeam awayTeam competition');
+    }
+
+    // Destructure properties
+    const { name, email, status, associatedTeam, associatedCompetitions } = foundUser;
+
     // Return success
-    return { success: true, message: 'User Aquired', data: foundUser };
+    return { 
+        success: true, 
+        message: 'User Aquired', 
+        data: {
+            name, email, status,
+            competitions: associatedCompetitions.map( comp => {
+                const { _id, name, description, fixtures, status, teams } = comp;
+
+                return {
+                    _id, name, description, status,
+                    fixtures: fixtures.length,
+                    teams: teams.length
+                }
+            } ),
+            team: associatedTeam,
+            nextFixtures
+        }
+    };
+}
+
+exports.getUserFixtures = async ({ userId }) => {
+    // Find user in database
+    const foundUser = await db.User.findById( userId );
+
+    // Check if user is competition-admin or team-admin
+    if ( foundUser.role === 'competition-admin' ) {
+        // Fetch all fixtures for competitions associated with the competition-admin
+        const competitions = foundUser.associatedCompetitions;
+        const allUpcomingFixtures = await db.Fixture.find({
+            competition: { $in: competitions },
+            status: 'upcoming',
+        }).populate( 'homeTeam awayTeam competition' );
+
+        const allCompletedFixtures = await db.Fixture.find({
+            competition: { $in: competitions },
+            status: 'completed',
+        }).populate( 'homeTeam awayTeam competition' );
+
+        // Fetch fixtures with a past date and status still "upcoming"
+        const overdueFixtures = await db.Fixture.find({
+            competition: { $in: competitions },
+            status: 'upcoming',
+            date: { $lt: new Date() },
+        }).populate( 'homeTeam awayTeam competition' );
+
+        return { 
+            success: true, 
+            message: 'User Fixture Aquired', 
+            data: { allUpcomingFixtures, allCompletedFixtures, overdueFixtures } 
+        };
+    } else if ( foundUser.role === 'team-admin' ) {
+        // Fetch the team associated with the team-admin
+        const teamId = foundUser.associatedTeam;
+
+        if ( !teamId ) {
+            return { success: false, message: 'Team Not Assigned Yet' };
+        }
+
+        // Fetch all fixtures for the associated team
+        const allUpcomingFixtures = await db.Fixture.find({
+            $or: [{ homeTeam: teamId }, { awayTeam: teamId }],
+            status: 'upcoming',
+        }).populate( 'homeTeam awayTeam competition' );
+
+        const allCompletedFixtures = await db.Fixture.find({
+            $or: [{ homeTeam: teamId }, { awayTeam: teamId }],
+            status: 'upcoming',
+        }).populate( 'homeTeam awayTeam competition' );
+
+        // Fetch next 5 fixtures for the associated team
+        const nextFixtures = await db.Fixture.find({
+            $or: [{ homeTeam: teamId }, { awayTeam: teamId }],
+            status: 'upcoming',
+            date: { $gte: new Date() },
+        })
+            .sort({ date: 1 })
+            .limit(5)
+            .populate('homeTeam awayTeam competition');
+
+        // Fetch overdue fixtures for the associated team
+        const overdueFixtures = await db.Fixture.find({
+            $or: [{ homeTeam: teamId }, { awayTeam: teamId }],
+            status: 'upcoming',
+            date: { $lt: new Date() },
+        }).populate('homeTeam awayTeam competition');
+
+        return {
+            success: true,
+            message: 'User Fixture Aquired',
+            data: { allUpcomingFixtures, allCompletedFixtures, nextFixtures, overdueFixtures }
+        }
+    } else if ( foundUser.role === 'super-admin' ) {
+        const allUpcomingFixtures = await db.Fixture.find()
+            .populate( 'homeTeam awayTeam competition' );
+
+        const allCompletedFixtures = await db.Fixture.find()
+            .populate( 'homeTeam awayTeam competition' );
+
+        const overdueFixtures = await db.Fixture.find({
+            status: 'upcoming',
+            date: { $lt: new Date() },
+        }).populate('homeTeam awayTeam competition');
+
+        return {
+            success: true,
+            message: 'User Fixture Aquired',
+            data: { allUpcomingFixtures, allCompletedFixtures, overdueFixtures }
+        }
+    } else {
+        return { success: false, message: 'Invalid User Type' };
+    }
 }
 
 exports.deleteUser = async ({ userId }) => {

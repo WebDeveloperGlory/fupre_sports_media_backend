@@ -8,6 +8,7 @@ const router = Router();
 router.get( '/', authenticateUser, isSuperAdmin, controller.getAllUsers );
 router.post( '/register', controller.createUser );
 router.post( '/login', controller.loginUser );
+router.post( '/logout', controller.logoutUser );
 router.get( '/:userId', controller.getUserProfile );
 router.delete( '/:userId', authenticateUser, isSuperAdmin, controller.deleteUser );
 

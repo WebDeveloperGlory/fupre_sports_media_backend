@@ -9,8 +9,23 @@ const competitionRoutes = require('./app/routes/competitionRoutes');
 const app = express();
 const APP_PORT = PORT;
 
+// CORS SETTINGS //
+const allowedOrigins = [ 'http://localhost:3000', 'https://fupre-sports.netlify.app' ];
+const corsOptions = {
+    origin: ( origin, callback ) => {
+        if ( !origin || allowedOrigins.includes( origin ) ) {
+            callback( null, true );
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+};
+// END OF CORS SETTINGS //
+
 // MIDDLEWARES //
-app.use( cors() );
+app.use( cors( corsOptions ) );
+// app.use( cors() );
 app.use( express.json() );
 // app.use( '/api/api-docs', swaggerUi.serve, swaggerUi.setup( swaggerSpec ) );
 // END OF MIDDLEWARES //
