@@ -136,14 +136,14 @@ exports.getUserProfile = async ({ userId }) => {
     }
 
     // Destructure properties
-    const { name, email, status, associatedTeam, associatedCompetitions } = foundUser;
+    const { name, email, status, associatedTeam, associatedCompetitions, _id } = foundUser;
 
     // Return success
     return { 
         success: true, 
         message: 'User Aquired', 
         data: {
-            name, email, status,
+            name, email, status, _id,
             competitions: associatedCompetitions.map( comp => {
                 const { _id, name, description, fixtures, status, teams } = comp;
 

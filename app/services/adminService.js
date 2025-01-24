@@ -4,7 +4,10 @@ exports.getCompetitionAdminFixturePageData = async({ userId }) => {
     // Find user in database
     const foundUser = await db.User.findById( userId );
     const competitions = foundUser.associatedCompetitions;
-    let teams = {}
+    let teams = {
+        'all competitions': [],
+    };
+    let allCompetitions = [];
 
     // Get each team and save by the competition name
     const teamsInCompetitions = competitions.map( async ( comp ) => {
@@ -15,36 +18,65 @@ exports.getCompetitionAdminFixturePageData = async({ userId }) => {
                 select: 'name shorthand'
             });
 
+        competition.teams.forEach( team => teams['all competitions'].push( team.team ) );
         teams[ competition.name ] = competition.teams.map( team => team.team );
+        allCompetitions.push( competition.name );
     })
     await Promise.all( teamsInCompetitions );
 
-    let completedMatches, upcomingMatches;
-    completedMatches = await db.Fixture.find({
+    let completedFixtures, upcomingFixtures, allFixtures;
+    completedFixtures = await db.Fixture.find({
         competition: { $in: competitions },
         status: 'completed'
     })
-        .populate({ 
-            path: 'homeTeam awayTeam',
-            select: 'name department shorthand level'
-        })
+        .populate([
+            { 
+                path: 'homeTeam awayTeam',
+                select: 'name department shorthand level'
+            },
+            {
+                path: 'competition',
+                select: 'name'
+            }
+        ])
         .sort({ date: -1 })
         .select( 'homeTeam awayTeam date status result');
-    upcomingMatches = await db.Fixture.find({
+    upcomingFixtures = await db.Fixture.find({
         competition: { $in: competitions },
         status: 'upcoming'
     })
-        .populate({ 
-            path: 'homeTeam awayTeam',
-            select: 'name department shorthand level'
-        })
+        .populate([
+            { 
+                path: 'homeTeam awayTeam',
+                select: 'name department shorthand level'
+            },
+            {
+                path: 'competition',
+                select: 'name'
+            }
+        ])
+        .sort({ date: 1 })
+        .select( 'homeTeam awayTeam date status stadium');
+    allFixtures = await db.Fixture.find({
+        competition: { $in: competitions }
+    })
+        .populate([
+            { 
+                path: 'homeTeam awayTeam',
+                select: 'name department shorthand level'
+            },
+            {
+                path: 'competition',
+                select: 'name'
+            }
+        ])
         .sort({ date: 1 })
         .select( 'homeTeam awayTeam date status stadium');
 
     return {
         success: true,
         message: 'Fixture Page Data Acquired',
-        data: { teams, upcomingMatches, completedMatches }
+        data: { teams, upcomingFixtures, completedFixtures, allCompetitions, allFixtures }
     }
 }
 
