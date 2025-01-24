@@ -5,6 +5,7 @@ const authRoutes = require('./app/routes/authRoutes');
 const teamRoutes = require('./app/routes/teamRoutes');
 const fixtureRoutes = require('./app/routes/fixtureRoutes');
 const competitionRoutes = require('./app/routes/competitionRoutes');
+const adminRoutes = require('./app/routes/adminRoutes');
 
 const app = express();
 const APP_PORT = PORT;
@@ -41,6 +42,7 @@ app.use( '/api/auth', authRoutes );
 app.use( '/api/teams', teamRoutes );
 app.use( '/api/fixture', fixtureRoutes );
 app.use( '/api/competition', competitionRoutes );
+app.use( '/api/admin', adminRoutes );
 // END OF ROUTES //
 
 app.listen( PORT, () => {

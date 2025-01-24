@@ -23,8 +23,8 @@ exports.loginUser = async ( req, res ) => {
             // Send JWT as HTTP-only cookie
             res.cookie('authToken', result.data, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                secure: true,
+                sameSite: 'None',
             });
 
             return success( res, result.message, result.data );
@@ -40,8 +40,13 @@ exports.logoutUser = async ( req, res ) => {
         const result = await authService.logoutUser();
 
         if( result.success ) {
+            res.cookie('authToken', '', {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'None',
+            });
             // Clear Cookies
-            res.clearCookie('authToken');
+            // res.clearCookie('authToken');
 
             return success( res, result.message, result.data );
         }

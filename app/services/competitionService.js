@@ -727,4 +727,15 @@ exports.initializeLeagueTable = async ({ competitionId }) => {
     return { success: true, message: 'League Table Initialized', data: refreshedCompetition };
 }
 
+exports.getCompetitionTeams = async ({ competitionId }) => {
+    // Check if competition exists
+    const foundCompetition = await db.Competition.findById( competitionId )
+        .populate({
+            path: 'teams.team',
+            select: 'name shorthand'
+        });
+    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
+
+    return { success: true, message: 'Teams Acquired', data: foundCompetition.teams };
+}
 module.exports = exports;

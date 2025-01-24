@@ -13,6 +13,18 @@ const isSuperAdmin = ( req, res, next ) => {
     }
 }
 
+const isCompetitionAdmin = ( req, res, next ) => {
+    const { role } = req.user;
+
+    try {
+        if( role !== 'competition-admin' ) return error( res, 'Invalid User Permissions', 401 );
+
+        next();
+    } catch ( err ) {
+        return serverError( res, err )
+    }
+}
+
 const hasTeamPermissions = async ( req, res, next ) => {
     const { userId, role } = req.user;
     const { teamId } = req.params;
@@ -45,4 +57,4 @@ const hasCompetitionPermissions = async ( req, res, next ) => {
     }
 }
 
-module.exports = { hasTeamPermissions, hasCompetitionPermissions, isSuperAdmin };
+module.exports = { hasTeamPermissions, hasCompetitionPermissions, isSuperAdmin, isCompetitionAdmin };
