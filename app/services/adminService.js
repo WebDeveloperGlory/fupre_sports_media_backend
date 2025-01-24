@@ -20,7 +20,7 @@ exports.getCompetitionAdminFixturePageData = async({ userId }) => {
 
         competition.teams.forEach( team => teams['all competitions'].push( team.team ) );
         teams[ competition.name ] = competition.teams.map( team => team.team );
-        allCompetitions.push( competition.name );
+        allCompetitions.push({ name: competition.name, _id: competition._id });
     })
     await Promise.all( teamsInCompetitions );
 
