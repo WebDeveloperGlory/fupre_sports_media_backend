@@ -16,6 +16,19 @@ exports.getCompetitionAdminFixturePageData = async ( req, res ) => {
     }
 }
 
+exports.getCompetitionAdminFixtureRecords = async ( req, res ) => {
+    try {
+        const result = await adminService.getCompetitionAdminFixtureRecords( req.user );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 exports.getAdminProfile = async ( req, res ) => {
     try {
         const result = await adminService.getAdminProfile( req.user );

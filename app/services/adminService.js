@@ -156,4 +156,78 @@ exports.getAdminProfile = async ({ userId }) => {
     };
 }
 
+exports.getCompetitionAdminFixtureRecords = async ({ userId }) => {
+    // Find user in database
+    const foundUser = await db.User.findById( userId )
+        .populate({
+            path: 'associatedCompetitions',
+            select: 'name'
+        });
+    const competitions = foundUser.associatedCompetitions;
+
+    const completed_overdue = await db.Fixture.find({
+        competition: { $in: competitions },
+        $or: [
+            { status: 'completed' },
+            {
+                $and: [
+                    { status: 'upcoming' },
+                    { date: { $lt: new Date() } }
+                ]
+            }
+        ]
+    })
+        .populate([
+            { 
+                path: 'homeTeam awayTeam',
+                select: 'name department shorthand level'
+            },
+            {
+                path: 'competition',
+                select: 'name'
+            }
+        ])
+        .sort({ date: -1 })
+        .select( 'homeTeam awayTeam date status result');
+
+    const completedFixtures = await db.Fixture.find({
+        competition: { $in: competitions },
+        status: 'completed'
+    })
+        .populate([
+            { 
+                path: 'homeTeam awayTeam',
+                select: 'name department shorthand level'
+            },
+            {
+                path: 'competition',
+                select: 'name'
+            }
+        ])
+        .sort({ date: -1 })
+        .select( 'homeTeam awayTeam date status result');
+    
+    const overdueFixtures = await db.Fixture.find({
+        competition: { $in: competitions },
+        status: 'upcoming',
+        date: { $lt: new Date() }
+    })
+        .populate([
+            { 
+                path: 'homeTeam awayTeam',
+                select: 'name department shorthand level'
+            },
+            {
+                path: 'competition',
+                select: 'name'
+            }
+        ])
+        .sort({ date: -1 })
+        .select( 'homeTeam awayTeam date status result');
+
+    const allCompetitions = foundUser.associatedCompetitions.map( comp => ({ name: comp.name, _id: comp._id }) );
+    
+    return { success: true, message: 'Fixture Records Acquired', data: { completed_overdue, completedFixtures, overdueFixtures, allCompetitions } };
+}
+
 module.exports = exports;
