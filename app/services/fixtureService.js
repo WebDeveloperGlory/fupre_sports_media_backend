@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { getTeamWins } = require('../utils/fixtureUtils');
+const { processStatUpdate, updatePlayerGeneralRecord, updatePlayerCompetitionStats } = require('../utils/playerStatUtils');
 const { getRecentPerformance } = require('../utils/teamUtils');
 
 exports.createFixture = async ({ homeTeam, awayTeam, type, date, stadium, competition }) => {
@@ -182,7 +183,7 @@ exports.getTeamFixtureTeamFormAndMatchData = async ({ fixtureId }) => {
     } };
 }
 
-exports.updateFixtureResult = async ( { fixtureId }, { result, statistics, goalScorers } ) => {
+exports.updateFixtureResult = async ( { fixtureId }, { result, statistics, playerStats } ) => {
     // Check if fixture exists
     const foundFixture = await db.Fixture.findById( fixtureId );
     if( !foundFixture ) return { success: false, message: 'Invalid Fixture' };
@@ -199,9 +200,49 @@ exports.updateFixtureResult = async ( { fixtureId }, { result, statistics, goalS
         }
     }
 
+    // Update player stats if available
+    if( playerStats ) {
+        // Process stats
+        if( playerStats.goals ) {
+            await processStatUpdate( playerStats.goals, "goals" );
+            playerStats.goals.map( scorers => {
+                const { playerId, count, times } = scorers;
+                
+                for( let i = 0; i < count; i++ ) {
+                    if( times.length > 0 ) {
+                        foundFixture.goalScorers.push({ id: playerId, time: times[ i ] })
+                    } else {
+                        foundFixture.goalScorers.push({ id: playerId, time: 90 })
+                    }
+                }
+            });
+        }
+        await processStatUpdate( playerStats.assists, "assists" );
+        await processStatUpdate( playerStats.yellowCards, "yellowCards" );
+        await processStatUpdate( playerStats.redCards, "redCards" );
+    
+        // Handle clean sheets separately
+        if ( playerStats.cleanSheets ) {
+            const homeConceded = result.awayScore > 0;
+            const awayConceded = result.homeScore > 0;
+    
+            await Promise.all( playerStats.cleanSheets.map( async ({ playerId }) => {
+                const player = await db.Player.findById( playerId );
+                if ( !player ) return;
+        
+                const isHome = foundFixture.homeTeam.equals( player.team );
+                const isAway = foundFixture.awayTeam.equals( player.team );
+
+                if (( isHome && !homeConceded ) || ( isAway && !awayConceded )) {
+                    await updatePlayerGeneralRecord( playerId, "cleanSheets", 1 );
+                    await updatePlayerCompetitionStats( playerId, "cleanSheets", 1 );
+                }
+            }));
+        }
+    }
+
     // Update fixture scores and status
     if( result ) foundFixture.result = result;
-    if( goalScorers ) foundFixture.goalScorers = goalScorers;
     foundFixture.status = 'completed';
     await foundFixture.save();
 
