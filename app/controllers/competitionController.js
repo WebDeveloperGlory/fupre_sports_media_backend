@@ -237,4 +237,43 @@ exports.getPlayerStats = async ( req, res ) => {
     }
 }
 
+exports.addKnockoutPhases = async ( req, res ) => {
+    try {
+        const result = await competitionService.addKnockoutPhases( req.params, req.body );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.addTeamsToKncokoutPhase = async ( req, res ) => {
+    try {
+        const result = await competitionService.addTeamsToKncokoutPhase( req.params, req.body );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.addFixturesToKnockoutPhase = async ( req, res ) => {
+    try {
+        const result = await competitionService.addFixturesToKnockoutPhase( req.params, req.body );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 module.exports = exports;

@@ -582,6 +582,36 @@ exports.updateCompetitionFixtureResult = async({ competitionId, fixtureId }, { r
     const awayWin = ( foundFixture.result.homeScore < foundFixture.result.awayScore ) || ( foundFixture.result.homePenalty < foundFixture.result.awayPenalty );
     const draw = !homeWin && !awayWin;
 
+    // Perform competition stat update
+    const { homeWinsPercentage, awayWinsPercentage, totalGoals, drawsPercentage, yellowCardsAvg, redCardsAvg } = foundCompetition.stats;
+    const totalGames = foundCompetition.fixtures.filter( f => f.status === 'completed' );
+    if( homeWin ) {
+        foundCompetition.stats.homeWinsPercentage = calculatePercentage( homeWinsPercentage, totalGames.length, 1 );
+        foundCompetition.stats.awayWinsPercentage = calculatePercentage( awayWinsPercentage, totalGames.length, 0 );
+        foundCompetition.stats.drawsPercentage = calculatePercentage( drawsPercentage, totalGames.length, 0 );
+    }
+    if( awayWin ) {
+        foundCompetition.stats.homeWinsPercentage = calculatePercentage( homeWinsPercentage, totalGames.length, 0 );
+        foundCompetition.stats.awayWinsPercentage = calculatePercentage( awayWinsPercentage, totalGames.length, 1 );
+        foundCompetition.stats.drawsPercentage = calculatePercentage( drawsPercentage, totalGames.length, 0 );
+    }
+    if( draw ) {
+        foundCompetition.stats.homeWinsPercentage = calculatePercentage( homeWinsPercentage, totalGames.length, 0 );
+        foundCompetition.stats.awayWinsPercentage = calculatePercentage( awayWinsPercentage, totalGames.length, 0 );
+        foundCompetition.stats.drawsPercentage = calculatePercentage( drawsPercentage, totalGames.length, 1 );
+    }
+    if( statistics ) {
+        const totalYellows = statistics.home.yellowCards + statistics.away.yellowCards;
+        const totalReds = statistics.home.redCards + statistics.away.redCards;
+
+        foundCompetition.stats.yellowCardsAvg = calculatePercentage( yellowCardsAvg, totalGames.length, totalYellows );
+        foundCompetition.stats.redCardsAvg = calculatePercentage( redCardsAvg, totalGames.length, totalReds );
+    }
+    foundCompetition.stats.totalGoals = totalGoals + ( foundFixture.result.homeScore + foundFixture.result.awayScore );
+
+    // Save changes
+    await foundCompetition.save();
+
     // Check competition type and perform calculation
     if( foundCompetition.type === 'league' ) {
     // Perform league calculations
@@ -636,43 +666,74 @@ exports.updateCompetitionFixtureResult = async({ competitionId, fixtureId }, { r
 
         // Update league table
         foundCompetition.leagueTable = updatedTableStandings;
-        // Perform competition stat update
-        const { homeWinsPercentage, awayWinsPercentage, totalGoals, drawsPercentage, yellowCardsAvg, redCardsAvg } = foundCompetition.stats;
-        const totalGames = foundCompetition.fixtures.filter( f => f.status === 'completed' );
-
-        if( homeWin ) {
-            foundCompetition.stats.homeWinsPercentage = calculatePercentage( homeWinsPercentage, totalGames.length, 1 );
-            foundCompetition.stats.awayWinsPercentage = calculatePercentage( awayWinsPercentage, totalGames.length, 0 );
-            foundCompetition.stats.drawsPercentage = calculatePercentage( drawsPercentage, totalGames.length, 0 );
-        }
-        if( awayWin ) {
-            foundCompetition.stats.homeWinsPercentage = calculatePercentage( homeWinsPercentage, totalGames.length, 0 );
-            foundCompetition.stats.awayWinsPercentage = calculatePercentage( awayWinsPercentage, totalGames.length, 1 );
-            foundCompetition.stats.drawsPercentage = calculatePercentage( drawsPercentage, totalGames.length, 0 );
-        }
-        if( draw ) {
-            foundCompetition.stats.homeWinsPercentage = calculatePercentage( homeWinsPercentage, totalGames.length, 0 );
-            foundCompetition.stats.awayWinsPercentage = calculatePercentage( awayWinsPercentage, totalGames.length, 0 );
-            foundCompetition.stats.drawsPercentage = calculatePercentage( drawsPercentage, totalGames.length, 1 );
-        }
-        if( statistics ) {
-            const totalYellows = statistics.home.yellowCards + statistics.away.yellowCards;
-            const totalReds = statistics.home.redCards + statistics.away.redCards;
-
-            foundCompetition.stats.yellowCardsAvg = calculatePercentage( yellowCardsAvg, totalGames.length, totalYellows );
-            foundCompetition.stats.redCardsAvg = calculatePercentage( redCardsAvg, totalGames.length, totalReds );
-        }
-        foundCompetition.stats.totalGoals = totalGoals + ( foundFixture.result.homeScore + foundFixture.result.awayScore );
 
         // Save changes
         await foundCompetition.save();
+    } else if ( foundCompetition.type === 'knockout' ) {
+        // Get the current round
+        const currentRoundIndex = foundCompetition.knockoutRounds.findIndex( round => round.fixtures.some( fixtureId => fixtureId.equals( foundFixture._id ) ) );
+
+        // Refresh competitiion and fixture
+        const refreshedCompetition = await db.Competition.findById( competitionId )
+            .populate([
+                {
+                    path: 'leagueTable.team',
+                    select: 'name shorthand'
+                },
+                {
+                    path: 'knockoutRounds.teams',
+                    select: 'name shorthand'
+                }
+            ]);
+        const refreshedFixture = await db.Fixture.findOne(
+            { _id: fixtureId, competition: competitionId },
+        );
+
+        // Check If Round Exists
+        if( currentRoundIndex === -1 ) {
+            return { 
+                success: true,
+                message: 'Fixture Updated And Competition Stats Updated But Index Not Found',
+                data: {
+                    refreshedFixture, refreshedCompetition
+                }
+            }
+        }
+        const currentRound = foundCompetition.knockoutRounds[ currentRoundIndex ];
+
+        // Get the nextRound index and check if it exists
+        const nextRoundIndex = currentRoundIndex + 1;
+        if( nextRoundIndex > foundCompetition.knockoutRounds.length - 1 ) {
+            return {
+                success: true,
+                message: 'Fixture & Competition Stats Updated, Latest Round Completed',
+                data: {
+                    refreshedFixture, refreshedCompetition
+                }
+            }
+        }
+        const nextRound = foundCompetition.knockoutRounds[ nextRoundIndex ];
+
+        // Update the teams in next round based on winners
+        if( homeWin ) {
+            nextRound.teams.push( foundFixture.homeTeam )
+        } else if( awayWin ) {
+            nextRound.teams.push( foundFixture.awayTeam )            
+        }
     }
+
+    // Save competition
+    await foundCompetition.save();
 
     // Refresh competitiion and fixture
     const refreshedCompetition = await db.Competition.findById( competitionId )
         .populate([
             {
                 path: 'leagueTable.team',
+                select: 'name shorthand'
+            },
+            {
+                path: 'knockoutRounds.teams',
                 select: 'name shorthand'
             }
         ]);
@@ -738,4 +799,115 @@ exports.getCompetitionTeams = async ({ competitionId }) => {
 
     return { success: true, message: 'Teams Acquired', data: foundCompetition.teams };
 }
+
+exports.addKnockoutPhases = async ({ competitionId }, { knockoutRounds }) => {
+    // Check if competition exists
+    const foundCompetition = await db.Competition.findById( competitionId );
+    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
+    if( foundCompetition.type === 'league' ) return { success: false, message: 'Invalid Competition Type' };
+
+    // Update Knockout Rounds
+    foundCompetition.knockoutRounds.push( ...knockoutRounds );
+    await foundCompetition.save();
+
+    return { success: true, message: 'Knockout Rounds Added', data: foundCompetition.knockoutRounds }
+}
+
+exports.addTeamsToKncokoutPhase = async ({ competitionId }, { roundName, teams }) => {
+    // Check if competition exists
+    const foundCompetition = await db.Competition.findById( competitionId );
+    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
+    if( foundCompetition.type === 'league' ) return { success: false, message: 'Invalid Competition Type' };
+
+    // Check if every team in teams exists in competition.teams
+    const competitionTeams = foundCompetition.teams.map( ( team ) => String( team.team ) ); // Convert to string for comparison
+    const invalidTeams = teams.filter(
+        ( team ) =>
+            !competitionTeams.includes(String( team ))
+    );
+    if ( invalidTeams.length > 0 ) {
+        return {
+            success: false,
+            message: 'Some teams are not part of the competition',
+        };
+    }
+
+    // Check if round names matches any existing rounds
+    const competitionRounds = foundCompetition.knockoutRounds.map( ( round ) => round.name );
+    const invalidRound = !competitionRounds.includes( roundName );
+    if( invalidRound ) return { success: false, message: 'Round Not In Competition' };
+
+    // Add teams to round
+    const updatedRounds = foundCompetition.knockoutRounds.map( ( round ) => {
+        if( round.name === roundName ) {
+            return {
+                ...round,
+                teams: [ ...round.teams, ...teams ]
+            }
+        } else {
+            return { ...round }
+        }
+    })
+
+    // Update competition
+    foundCompetition.knockoutRounds = updatedRounds;
+    await foundCompetition.save();
+
+    // Return success
+    return { success: true, message: 'Team(s) Added Successfully', data: foundCompetition }
+}
+
+exports.addFixturesToKnockoutPhase = async ({ competitionId }, { roundName, fixtures }) => {
+    // Check if competition exists
+    const foundCompetition = await db.Competition.findById(competitionId);
+    if (!foundCompetition) return { success: false, message: 'Invalid Competition' };
+    if (foundCompetition.type === 'league') return { success: false, message: 'Invalid Competition Type' };
+
+    // Check if every fixture in fixtures exists in competition.fixtures
+    const competitionFixtures = foundCompetition.fixtures.map(fixture => String(fixture)); // Convert to string for comparison
+    const invalidFixtures = fixtures.filter(fixture => !competitionFixtures.includes(String(fixture)));
+
+    if (invalidFixtures.length > 0) {
+        return { success: false, message: 'Some fixtures are not part of the competition' };
+    }
+
+    // Check if round name matches an existing round
+    const roundIndex = foundCompetition.knockoutRounds.findIndex(round => round.name === roundName);
+    if (roundIndex === -1) return { success: false, message: 'Round Not In Competition' };
+
+    // Get the round object
+    const round = foundCompetition.knockoutRounds[roundIndex];
+
+    // Validate that all fixture teams exist in the current round
+    const errors = [];
+    for (const fixtureId of fixtures) {
+        const fixture = await db.Fixture.findById(fixtureId);
+        if (!fixture) {
+            errors.push(`Invalid Fixture: ${fixtureId}`);
+            continue;
+        }
+
+        const fixtureTeamsInRound = round.teams.some(teamId =>
+            teamId.equals(fixture.homeTeam) || teamId.equals(fixture.awayTeam)
+        );
+
+        if (!fixtureTeamsInRound) {
+            errors.push(`Fixture Teams Not In Current Round: ${fixtureId}`);
+        }
+    }
+
+    if (errors.length > 0) return { success: false, message: `Error(s) Occurred: ${errors.join(', ')}` };
+
+    // Add fixtures to the correct round
+    foundCompetition.knockoutRounds[roundIndex].fixtures = [
+        ...foundCompetition.knockoutRounds[roundIndex].fixtures,
+        ...fixtures
+    ];
+
+    // Save competition
+    await foundCompetition.save();
+
+    return { success: true, message: 'Fixture(s) Added Successfully', data: foundCompetition };
+};
+
 module.exports = exports;
