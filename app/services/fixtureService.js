@@ -90,7 +90,7 @@ exports.getOneFixture = async ({ fixtureId }) => {
             },
             {
                 path: 'competition',
-                select: 'name'
+                select: 'name type'
             }
         ]);
     if( !fixture ) return { success: false, message: 'Invalid Fixture' };
