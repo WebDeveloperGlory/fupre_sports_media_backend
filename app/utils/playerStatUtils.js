@@ -60,6 +60,11 @@ const updatePlayerGeneralRecord = async ( playerId, statField, count = 1 ) => {
 
     playerStat[ statField ] += count;
     await playerStat.save();
+
+    const updatedCompetition = await db.Competition.findByIdAndUpdate(
+        competitionId,
+        { $addToSet: { playerStats: playerStat._id } }
+    )
 };
 
 // Function to process a stat update for both general & competition records

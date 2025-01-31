@@ -189,7 +189,14 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
                 }
             },
             {
-                path: 'playerStats.player'
+                path: 'playerStats',
+                populate: {
+                    path: 'player',
+                    populate: {
+                        path: 'team',
+                        select: 'name shorthand'
+                    }
+                }
             },
         ]);
     if ( !competition ) return { success: false, message: 'Invalid Competition' };
@@ -239,6 +246,16 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
             goals: stat.goals,
         } ));
 
+    // Top 5 assisters
+    const topAssists = competition.playerStats
+        .sort( ( a, b ) => b.assists - a.assists )
+        .slice( 0, 5 )
+        .map( ( stat ) => ( {
+            player: stat.player.name,
+            team: stat.player.team.name,
+            assists: stat.assists,
+        } ));
+
     // League facts
     const leagueFacts = {
         totalGoals: competition.stats.totalGoals,
@@ -257,6 +274,7 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
             table: topTeams,
             featuredMatches: upcomingFixtures,
             topScorers,
+            topAssists,
             leagueFacts,
         }
     }
@@ -327,7 +345,18 @@ exports.getCompetitionFixtures = async ({ competitionId }, { filter, team }) => 
 exports.getTopPlayers = async ({ competitionId }) => {
     // Check if competition exists
     const competition = await db.Competition.findById( competitionId )
-    .populate( 'playerStats.player' );
+        .populate([
+            {
+                path: 'playerStats',
+                populate: {
+                    path: 'player',
+                    populate: {
+                        path: 'team',
+                        select: 'name shorthand'
+                    }
+                }
+            },
+        ]);
     if ( !competition ) return { success: false, message: 'Competition not found' }
 
     const playerStats = competition.playerStats;
