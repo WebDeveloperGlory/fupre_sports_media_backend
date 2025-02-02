@@ -91,6 +91,18 @@ exports.getOneFixture = async ({ fixtureId }) => {
             {
                 path: 'competition',
                 select: 'name type'
+            },
+            {
+                path: 'matchEvents.player matchEvents.substitutedFor',
+                select: 'name position'
+            },
+            {
+                path: 'matchEvents.team',
+                select: 'name shorthand'
+            },
+            {
+                path: 'homeLineup.startingXI homeLineup.subs awayLineup.startingXI awayLineup.subs',
+                select: 'name shorthand'
             }
         ]);
     if( !fixture ) return { success: false, message: 'Invalid Fixture' };
@@ -248,6 +260,21 @@ exports.updateFixtureResult = async ( { fixtureId }, { result, statistics, playe
 
     // Return success
     return { success: true, messsage: 'Fixture Scores Updated', data: foundFixture };
+}
+
+exports.updateFixtureFormation = async ({ fixtureId }, { homeLineup, awayLineup }) => {
+    // Check if fixture exists
+    const updatedFixture = await db.Fixture.findByIdAndUpdate( 
+        fixtureId,
+        {
+            homeLineup,
+            awayLineup
+        }, 
+        { new: true }
+    );
+    if( !updatedFixture ) return { success: false, message: 'Invalid Fixture' };
+
+    return { success: true, message: 'Fixture Lineup Updated', data: updatedFixture }
 }
 
 module.exports = exports;

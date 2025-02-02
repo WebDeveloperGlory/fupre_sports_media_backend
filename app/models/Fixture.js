@@ -52,6 +52,74 @@ const fixtureSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'MatchStatistic'
     },
+    homeLineup: {
+        formation: {
+            type: String,
+            default: null
+        },
+        startingXI: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Player'
+            }
+        ],
+        subs: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Player'
+            }
+        ],
+    },
+    awayLineup: {
+        formation: {
+            type: String,
+            default: null
+        },
+        startingXI: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Player'
+            }
+        ],
+        subs: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Player'
+            }
+        ],
+    },
+    matchEvents: [
+        {
+            time: {
+                type: Number,
+                required: true
+            },
+            eventType: {
+                type: String,
+                enum: [ 'goal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget' ],
+                required: true
+            },
+            player: {
+                type: Schema.Types.ObjectId,
+                ref: 'Player',
+                default: null
+            },
+            team: {
+                type: Schema.Types.ObjectId,
+                ref: 'Team',
+                required: true
+            },
+            substitutedFor: {
+                type: Schema.Types.ObjectId,
+                ref: 'Player',
+                default: null
+            },
+            commentary: {
+                type: String,
+                default: null
+            }
+        }
+    ],
     createdAt: {
         type: Date,
         default: Date.now()
