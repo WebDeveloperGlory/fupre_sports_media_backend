@@ -13,7 +13,7 @@ const app = express();
 const APP_PORT = PORT;
 
 // CORS SETTINGS //
-const allowedOrigins = [ 'http://localhost:3000', 'http://localhost:5000', 'https://fupre-sports.netlify.app' ];
+const allowedOrigins = [ 'http://localhost:3000', 'http://localhost:5000', 'https://fupre-sports.netlify.app', "https://fupre-sports-media-backend.onrender.com" ];
 const corsOptions = {
     origin: ( origin, callback ) => {
         if ( !origin || allowedOrigins.includes( origin ) ) {
