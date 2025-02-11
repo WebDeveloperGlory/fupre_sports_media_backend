@@ -62,10 +62,16 @@ exports.getAllFixtures = async ({ limit, filterBy, completed, startDate }) => {
 
     // Get fixtures with limit
     const allFixtures = await db.Fixture.find( filter )
-        .populate({
-            path: 'homeTeam awayTeam',
-            select: 'name'
-        })
+        .populate([
+            {
+                path: 'homeTeam awayTeam',
+                select: 'name'
+            },
+            {
+                path: 'competition',
+                select: 'name'
+            }
+        ])
         .sort( sort )
         .limit( setLimit );
     
