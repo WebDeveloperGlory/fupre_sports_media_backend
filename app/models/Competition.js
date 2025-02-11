@@ -126,6 +126,12 @@ const competitionSchema = new Schema({
             type: String
         }
     ],
+    startDate: {
+        type: Date,
+    },
+    endDate: {
+        type: Date,
+    },
     createdAt: {
         type: Date,
         default: Date.now

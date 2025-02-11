@@ -3,9 +3,9 @@ const { addToFront, calculatePercentage } = require('../utils/functionUtils');
 const { processStatUpdate, updatePlayerCompetitionStats, updatePlayerGeneralRecord } = require('../utils/playerStatUtils');
 const { getTeamStatsHelper } = require('../utils/teamUtils');
 
-exports.createCompetition = async ({ name, rules, type, description }) => {
+exports.createCompetition = async ({ name, rules, type, description, startDate, endDate }) => {
     // Create competition
-    const competition = await db.Competition.create({ name, rules, type, description });
+    const competition = await db.Competition.create({ name, rules, type, description, startDate, endDate });
 
     // Return success
     return { success: true, message: 'Competition Created', data: competition };
