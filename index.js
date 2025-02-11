@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./app/config/swagger');
-const { PORT } = require('./app/config/env');
+const { PORT, ALLOWED_ORIGINS } = require('./app/config/env');
 const authRoutes = require('./app/routes/authRoutes');
 const teamRoutes = require('./app/routes/teamRoutes');
 const fixtureRoutes = require('./app/routes/fixtureRoutes');
@@ -13,7 +13,7 @@ const app = express();
 const APP_PORT = PORT;
 
 // CORS SETTINGS //
-const allowedOrigins = [ 'http://localhost:3000', 'http://localhost:5000', 'https://fupre-sports.netlify.app', "https://fupre-sports-media-backend.onrender.com" ];
+const allowedOrigins = ALLOWED_ORIGINS;
 const corsOptions = {
     origin: ( origin, callback ) => {
         if ( !origin || allowedOrigins.includes( origin ) ) {
