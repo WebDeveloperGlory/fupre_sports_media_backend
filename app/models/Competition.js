@@ -121,6 +121,11 @@ const competitionSchema = new Schema({
         yellowCardsAvg: { type: Number, default: 0 },
         redCardsAvg: { type: Number, default: 0 },
     },
+    rounds: [
+        {
+            type: String
+        }
+    ],
     createdAt: {
         type: Date,
         default: Date.now

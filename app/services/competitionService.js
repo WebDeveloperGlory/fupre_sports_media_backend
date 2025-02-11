@@ -514,13 +514,14 @@ exports.addCompetitionFixture = async ({ competitionId }, { fixtures }) => {
 
     // Loop through fixtures and create
     const createFixtures = fixtures.map( async ( fixture ) => {
-        const{ homeTeam, awayTeam, date, stadium } = fixture;
+        const{ homeTeam, awayTeam, date, stadium, referee, round } = fixture;
 
         const createdFixture = await db.Fixture.create({
             homeTeam, awayTeam,
             date, stadium,
             type: 'competition',
-            competition: foundCompetition._id
+            competition: foundCompetition._id,
+            referee, round
         });
         const updatedHomeTeamFixtures = await db.Team.findOneAndUpdate(
             { _id: homeTeam },

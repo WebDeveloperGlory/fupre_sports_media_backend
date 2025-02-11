@@ -23,6 +23,12 @@ const fixtureSchema = new Schema({
             return this.type === 'competition'
         }
     },
+    round: {
+        type: String,
+    },
+    referee: {
+        type: String,
+    },
     date: {
         type: Date,
         required: true
