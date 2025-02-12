@@ -198,6 +198,10 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
                     }
                 }
             },
+            {
+                path: 'teams.team',
+                select: 'name shorthand'
+            }
         ]);
     if ( !competition ) return { success: false, message: 'Invalid Competition' };
 
@@ -265,6 +269,11 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
         yellowCardsAvg: competition.stats.yellowCardsAvg.toFixed(2),
         redCardsAvg: competition.stats.redCardsAvg.toFixed(2),
         numberOfTeams: competition.teams.length,
+        teamList: competition.teams.map( ( team ) => ({
+            name: team.team.name,
+            shorthand: team.team.shorthand,
+            _id: team.team._id
+        })),
     };
 
     return {
