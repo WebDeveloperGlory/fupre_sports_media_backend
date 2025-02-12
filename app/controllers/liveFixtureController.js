@@ -3,7 +3,7 @@ const { success, serverError, error } = require('../utils/responseUtils');
 
 exports.initializeLiveFixture = async ( req, res ) => {
     try {
-        const result = await liveFixtureService.initializeLiveFixture( req.params );
+        const result = await liveFixtureService.initializeLiveFixture( req.body );
 
         if( result.success ) {
             return success( res, result.message, result.data );
