@@ -13,7 +13,7 @@ exports.createCompetition = async ({ name, rules, type, description, startDate, 
 
 exports.getAllCompetitions = async () => {
     // Get all competitions
-    const allCompetitions = await db.Competition.find();
+    const allCompetitions = await db.Competition.find().select('-admin');
 
     // Return success 
     return { success: true, message: 'All Competitions Acquired', data: allCompetitions };

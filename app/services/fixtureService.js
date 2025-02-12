@@ -26,7 +26,7 @@ exports.createFixture = async ({ homeTeam, awayTeam, type, date, stadium, compet
     return { success: true, message: 'Fixture Created', data: createdFixture };
 }
 
-exports.getAllFixtures = async ({ limit, filterBy, completed, startDate }) => {
+exports.getAllFixtures = async ({ limit, filterBy, completed, live, upcoming, startDate }) => {
     // Check for limit if not set a limit
     const setLimit = parseInt( limit ) || 10;
     // Check if filer is passed
@@ -58,6 +58,10 @@ exports.getAllFixtures = async ({ limit, filterBy, completed, startDate }) => {
     }
     if( completed ) {
         filter.status = "completed"
+    } else if ( live ) {
+        filter.status = "live"
+    } else if ( upcoming ) {
+        filter.status = "upcoming"
     }
 
     // Get fixtures with limit

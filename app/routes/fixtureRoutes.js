@@ -33,6 +33,16 @@ const router = Router();
  *         description: Show completed fixtures only
  *         schema:
  *           type: boolean
+ *       - in: query
+ *         name: live
+ *         description: Show completed fixtures only
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: upcoming
+ *         description: Show completed fixtures only
+ *         schema:
+ *           type: boolean
  *     responses:
  *       200:
  *         description: A list of fixtures
