@@ -18,3 +18,4 @@ module.exports.MatchStatistic = require('../models/MatchStatistic');
 module.exports.MatchEvent = require('../models/MatchEvent');
 module.exports.Notification = require('../models/Notification');
 module.exports.AuditLog = require('../models/AuditLog');
+module.exports.LiveFixture = require('../models/LiveFixture');

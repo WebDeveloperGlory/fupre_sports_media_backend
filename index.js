@@ -8,6 +8,7 @@ const teamRoutes = require('./app/routes/teamRoutes');
 const fixtureRoutes = require('./app/routes/fixtureRoutes');
 const competitionRoutes = require('./app/routes/competitionRoutes');
 const adminRoutes = require('./app/routes/adminRoutes');
+const liveFixtureRoutes = require('./app/routes/liveFixtureRoutes');
 
 const app = express();
 const APP_PORT = PORT;
@@ -45,6 +46,7 @@ app.use( '/api/teams', teamRoutes );
 app.use( '/api/fixture', fixtureRoutes );
 app.use( '/api/competition', competitionRoutes );
 app.use( '/api/admin', adminRoutes );
+app.use( '/api/live-fixtures', liveFixtureRoutes );
 // END OF ROUTES //
 
 app.listen( PORT, () => {

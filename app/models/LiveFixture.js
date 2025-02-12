@@ -1,0 +1,97 @@
+const { Schema, default: mongoose } = require('mongoose');
+
+const liveFixtureSchema = new Schema({
+    time: {
+        type: Number,
+        required: true
+    },
+    fixtureId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Fixture',
+        required: true
+    },
+    homeTeam: {
+        type: Schema.Types.ObjectId,
+        ref: 'Team',
+        required: true
+    },
+    awayTeam: {
+        type: Schema.Types.ObjectId,
+        ref: 'Team',
+        required: true
+    },
+    type: {
+        type: String,
+        required: true,
+        enum: ['friendly', 'competition']
+    },
+    competition: {
+        type: Schema.Types.ObjectId,
+        ref: 'Competition',
+        required: function () {
+            return this.type === 'competition';
+        }
+    },
+    round: { type: String },
+    referee: { type: String },
+    date: { type: Date, required: true },
+    stadium: { type: String },
+    status: {
+        type: String,
+        enum: ['live'],
+        default: 'live'
+    },
+    result: {
+        homeScore: { type: Number, default: 0 },
+        awayScore: { type: Number, default: 0 },
+        homePenalty: { type: Number, default: null },
+        awayPenalty: { type: Number, default: null }
+    },
+    statistics: {
+        home: {
+            shotsOnTarget: { type: Number, default: 0 },
+            shotsOffTarget: { type: Number, default: 0 },
+            fouls: { type: Number, default: 0 },
+            yellowCards: { type: Number, default: 0 },
+            redCards: { type: Number, default: 0 },
+            offsides: { type: Number, default: 0 },
+            corners: { type: Number, default: 0 }
+        },
+        away: {
+            shotsOnTarget: { type: Number, default: 0 },
+            shotsOffTarget: { type: Number, default: 0 },
+            fouls: { type: Number, default: 0 },
+            yellowCards: { type: Number, default: 0 },
+            redCards: { type: Number, default: 0 },
+            offsides: { type: Number, default: 0 },
+            corners: { type: Number, default: 0 }
+        }
+    },
+    homeLineup: {
+        formation: { type: String, default: null },
+        startingXI: [{ type: Schema.Types.ObjectId, ref: 'Player' }],
+        subs: [{ type: Schema.Types.ObjectId, ref: 'Player' }]
+    },
+    awayLineup: {
+        formation: { type: String, default: null },
+        startingXI: [{ type: Schema.Types.ObjectId, ref: 'Player' }],
+        subs: [{ type: Schema.Types.ObjectId, ref: 'Player' }]
+    },
+    matchEvents: [
+        {
+            time: { type: Number, required: true },
+            eventType: {
+                type: String,
+                enum: ['goal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget'],
+                required: true
+            },
+            player: { type: Schema.Types.ObjectId, ref: 'Player', default: null },
+            team: { type: Schema.Types.ObjectId, ref: 'Team', required: true },
+            substitutedFor: { type: Schema.Types.ObjectId, ref: 'Player', default: null },
+            commentary: { type: String, default: null }
+        }
+    ],
+    createdAt: { type: Date, default: Date.now() }
+});
+
+module.exports = mongoose.model('LiveFixture', liveFixtureSchema);
