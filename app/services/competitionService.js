@@ -248,6 +248,7 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
             player: stat.player.name,
             team: stat.player.team.name,
             goals: stat.goals,
+            appearances: stat.appearances,
         } ));
 
     // Top 5 assisters
@@ -258,6 +259,7 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
             player: stat.player.name,
             team: stat.player.team.name,
             assists: stat.assists,
+            appearances: stat.appearances,
         } ));
 
     // League facts
