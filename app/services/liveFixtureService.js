@@ -11,7 +11,7 @@ exports.initializeLiveFixture = async ({ fixtureId }) => {
     if ( existingLiveFixture ) return { success: false, message: 'Live fixture already exists' };
 
     // Create new live fixture
-    const liveFixture = new LiveFixture({
+    const liveFixture = new db.LiveFixture({
         fixtureId,
         homeTeam: fixture.homeTeam._id,
         awayTeam: fixture.awayTeam._id,
@@ -42,7 +42,8 @@ exports.initializeLiveFixture = async ({ fixtureId }) => {
             startingXI: [],
             subs: []
         },
-        matchEvents: []
+        time: 0,
+        matchEvents: [],
     });
 
     // Update fixture status
