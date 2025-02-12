@@ -46,7 +46,12 @@ exports.initializeLiveFixture = async ({ fixtureId }) => {
         matchEvents: [],
     });
 
+    // Update fixture status
+    fixture.status = 'live';
+
+    // Save fixture and liveFixture
     await liveFixture.save();
+    await fixture.save();
 
     // Return success message
     return { success: true, message: 'Live fixture initialized', data: liveFixture };
