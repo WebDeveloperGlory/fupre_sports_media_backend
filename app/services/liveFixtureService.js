@@ -42,7 +42,8 @@ exports.initializeLiveFixture = async ({ fixtureId }) => {
             startingXI: [],
             subs: []
         },
-        matchEvents: []
+        time: 0,
+        matchEvents: [],
     });
 
     await liveFixture.save();
