@@ -97,6 +97,10 @@ exports.getAdminProfile = async ({ userId }) => {
     if( !foundUser ) return { success: false, message: 'User Not Found' };
 
     let nextFixtures = [];
+    let today = new Date();
+    today.setHours( 0, 0, 0, 0 );
+    let tomorrow = new Date( today );
+    tomorrow.setDate( today.getDate() + 1 );
     // Check if user is competition-admin or team-admin
     if ( foundUser.role === 'competition-admin' ) {
         const competitions = foundUser.associatedCompetitions;
@@ -143,6 +147,26 @@ exports.getAdminProfile = async ({ userId }) => {
         nextFixtures = await db.Fixture.find({
             status: 'upcoming',
             date: { $gte: new Date() },
+        })
+            .sort({ date: 1 })
+            .limit(5)
+            .populate([
+                { 
+                    path: 'homeTeam awayTeam',
+                    select: 'name shorthand'
+                },
+                {
+                    path: 'competition',
+                    select: 'name'
+                }
+            ]);
+    } else if ( foundUser.role === 'live-match-admin' ) {
+        nextFixtures = await db.Fixture.find({
+            $or: [
+                { status: 'live' },
+                { status: 'upcoming' }
+            ],
+            date: { $gte: today, $lt: tomorrow },
         })
             .sort({ date: 1 })
             .limit(5)
