@@ -245,7 +245,11 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
         .sort( ( a, b ) => b.goals - a.goals )
         .slice( 0, 5 )
         .map( ( stat ) => ( {
-            player: stat.player.name,
+            player: {
+                name: stat.player.name,
+                position: stat.player.position,
+                _id: stat.player._id,
+            },
             team: stat.player.team.name,
             goals: stat.goals,
             appearances: stat.appearances,
@@ -256,7 +260,11 @@ exports.getSingleLeagueCompetitionOverview = async ({ competitionId }) => {
         .sort( ( a, b ) => b.assists - a.assists )
         .slice( 0, 5 )
         .map( ( stat ) => ( {
-            player: stat.player.name,
+            player: {
+                name: stat.player.name,
+                position: stat.player.position,
+                _id: stat.player._id,
+            },
             team: stat.player.team.name,
             assists: stat.assists,
             appearances: stat.appearances,
