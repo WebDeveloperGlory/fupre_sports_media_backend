@@ -6,6 +6,7 @@
  */
 const { Router } = require('express');
 const controller = require('../controllers/fixtureController');
+const { authorize } = require('../middlewares/adminMiddleware');
 
 const router = Router();
 
@@ -110,7 +111,7 @@ router.get( '/', controller.getAllFixtures );
  *       401:
  *         description: Unauthorized (missing or invalid token)
  */
-router.post( '/', controller.createFixture );
+router.post( '/', authorize([ 'super-admin' ]), controller.createFixture );
 
 /**
  * @swagger
@@ -193,7 +194,7 @@ router.get( '/:fixtureId', controller.getOneFixture );
  *       401:
  *         description: Unauthorized (missing or invalid token)
  */
-router.patch( '/:fixtureId', controller.updateFixture );
+router.patch( '/:fixtureId', authorize([ 'super-admin' ]), controller.updateFixture );
 
 /**
  * @swagger
@@ -296,7 +297,7 @@ router.get( '/:fixtureId/form', controller.getTeamFixtureTeamFormAndMatchData );
  *       401:
  *         description: Unauthorized (missing or invalid token)
  */
-router.put( '/:fixtureId/result', controller.updateFixtureResult );
+router.put( '/:fixtureId/result', authorize([ 'super-admin' ]), controller.updateFixtureResult );
 
 /**
  * @swagger
@@ -360,6 +361,6 @@ router.put( '/:fixtureId/result', controller.updateFixtureResult );
  *       401:
  *         description: Unauthorized (missing or invalid token)
  */
-router.put( '/:fixtureId/formation', controller.updateFixtureFormation );
+router.put( '/:fixtureId/formation', authorize([ 'super-admin', 'live-match-admin' ]), controller.updateFixtureFormation );
 
 module.exports = router;

@@ -7,7 +7,7 @@
 const { Router } = require('express');
 const controller = require('../controllers/authController');
 const { authenticateUser } = require('../middlewares/authMiddleware');
-const { isSuperAdmin } = require('../middlewares/adminMiddleware');
+const { isSuperAdmin, authorize } = require('../middlewares/adminMiddleware');
 
 const router = Router();
 
@@ -31,7 +31,7 @@ const router = Router();
  *       403:
  *         description: Forbidden (no access to this route)
  */
-router.get( '/', authenticateUser, isSuperAdmin, controller.getAllUsers );
+router.get( '/', authenticateUser, authorize([ 'super-admin' ]), controller.getAllUsers );
 
 /**
  * @swagger
@@ -62,7 +62,7 @@ router.get( '/', authenticateUser, isSuperAdmin, controller.getAllUsers );
  *                 example: "password123"
  *               role:
  *                 type: string
- *                 enum: [ 'team-admin', 'super-admin', 'competition-admin' ]
+ *                 enum: [ 'team-admin', 'super-admin', 'competition-admin', 'live-match-admin' ]
  *                 example: 'team-admin'
  *     responses:
  *       201:
@@ -188,6 +188,6 @@ router.get( '/:userId', controller.getUserProfile );
  *       401:
  *         description: Unauthorized (invalid token)
  */
-router.delete( '/:userId', authenticateUser, isSuperAdmin, controller.deleteUser );
+router.delete( '/:userId', authenticateUser, authorize([ 'super-admin' ]), controller.deleteUser );
 
 module.exports = router;

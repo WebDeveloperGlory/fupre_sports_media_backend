@@ -6,6 +6,7 @@
  */
 const { Router } = require('express');
 const controller = require('../controllers/liveFixtureController');
+const { authorize } = require('../middlewares/adminMiddleware');
 
 const router = Router();
 
@@ -15,6 +16,8 @@ const router = Router();
  *   post:
  *     summary: Initialize a live fixture
  *     tags: [Live Fixtures]
+ *     security:
+ *      - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -39,7 +42,7 @@ const router = Router();
  *       404:
  *         description: Fixture not found
  */
-router.post('/initialize', controller.initializeLiveFixture);
+router.post('/initialize', authorize([ 'super-admin', 'live-match-admin' ]), controller.initializeLiveFixture);
 
 /**
  * @swagger
@@ -47,6 +50,8 @@ router.post('/initialize', controller.initializeLiveFixture);
  *   put:
  *     summary: Update a live fixture
  *     tags: [Live Fixtures]
+ *     security:
+ *      - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: fixtureId
@@ -150,7 +155,7 @@ router.post('/initialize', controller.initializeLiveFixture);
  *       404:
  *         description: Live fixture not found
  */
-router.put('/update/:fixtureId', controller.updateLiveFixture);
+router.put('/update/:fixtureId', authorize([ 'super-admin', 'live-match-admin' ]), controller.updateLiveFixture);
 
 /**
  * @swagger

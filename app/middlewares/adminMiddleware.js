@@ -1,6 +1,19 @@
 const db = require('../config/db');
 const { error, serverError } = require('../utils/responseUtils');
 
+const authorize = ( roles ) => {
+    return ( req, res, next ) => {
+        try {
+            if ( !roles.includes( req.user.role ) ) {
+                return error( res, 'Access Denied', 403 );
+            }
+            next();
+        } catch ( err ) {
+            return serverError( res, err )
+        }
+    };
+};
+
 const isSuperAdmin = ( req, res, next ) => {
     const { role } = req.user;
 
@@ -57,4 +70,4 @@ const hasCompetitionPermissions = async ( req, res, next ) => {
     }
 }
 
-module.exports = { hasTeamPermissions, hasCompetitionPermissions, isSuperAdmin, isCompetitionAdmin };
+module.exports = { hasTeamPermissions, hasCompetitionPermissions, isSuperAdmin, isCompetitionAdmin, authorize };
