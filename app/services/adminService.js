@@ -107,7 +107,16 @@ exports.getAdminProfile = async ({ userId }) => {
         })
             .sort({ date: 1 })
             .limit(5)
-            .populate( 'homeTeam awayTeam competition' );
+            .populate([
+                { 
+                    path: 'homeTeam awayTeam',
+                    select: 'name shorthand'
+                },
+                {
+                    path: 'competition',
+                    select: 'name'
+                }
+            ]);
     } else if (foundUser.role === 'team-admin') {
         const teamId = foundUser.associatedTeam;
 
@@ -119,17 +128,34 @@ exports.getAdminProfile = async ({ userId }) => {
             })
                 .sort({ date: 1 })
                 .limit(5)
-                .populate( 'homeTeam awayTeam competition' );
+                .populate([
+                    { 
+                        path: 'homeTeam awayTeam',
+                        select: 'name shorthand'
+                    },
+                    {
+                        path: 'competition',
+                        select: 'name'
+                    }
+                ]);
         }
     } else if ( foundUser.role === 'super-admin' ) {
         nextFixtures = await db.Fixture.find({
             status: 'upcoming',
             date: { $gte: new Date() },
         })
-            .populate( 'homeTeam awayTeam competition' )
             .sort({ date: 1 })
             .limit(5)
-            .populate('homeTeam awayTeam competition');
+            .populate([
+                { 
+                    path: 'homeTeam awayTeam',
+                    select: 'name shorthand'
+                },
+                {
+                    path: 'competition',
+                    select: 'name'
+                }
+            ]);
     }
 
     // Destructure properties
