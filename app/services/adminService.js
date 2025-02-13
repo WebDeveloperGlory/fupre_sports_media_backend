@@ -160,37 +160,17 @@ exports.getAdminProfile = async ({ userId }) => {
                     select: 'name'
                 }
             ]);
-    } else if ( foundUser.role === 'live-match-admin' ) {
-        nextFixtures = await db.Fixture.find({
-            $or: [
-                { status: 'live' },
-                { status: 'upcoming' }
-            ],
-            date: { $gte: today, $lt: tomorrow },
-        })
-            .sort({ date: 1 })
-            .limit(5)
-            .populate([
-                { 
-                    path: 'homeTeam awayTeam',
-                    select: 'name shorthand'
-                },
-                {
-                    path: 'competition',
-                    select: 'name'
-                }
-            ]);
     }
 
     // Destructure properties
-    const { name, email, status, associatedTeam, associatedCompetitions } = foundUser;
+    const { name, email, status, role, associatedTeam, associatedCompetitions } = foundUser;
 
     // Return success
     return { 
         success: true, 
         message: 'User Aquired', 
         data: {
-            name, email, status,
+            name, email, status, role,
             competitions: associatedCompetitions.map( comp => {
                 const { _id, name, description, fixtures, status, teams } = comp;
 
