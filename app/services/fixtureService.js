@@ -178,7 +178,7 @@ exports.getTeamFixtureTeamFormAndMatchData = async ({ fixtureId }) => {
     })
     .sort({ date: -1 })
     .populate({
-        path: 'homeTeam awayTeam',
+        path: 'homeTeam awayTeam competition',
         select: 'name shorthand'
     });
 
