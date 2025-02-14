@@ -287,4 +287,22 @@ exports.updateFixtureFormation = async ({ fixtureId }, { homeLineup, awayLineup 
     return { success: true, message: 'Fixture Lineup Updated', data: updatedFixture }
 }
 
+exports.getTeamPlayerData = async ({ fixtureId }) => {
+    // Check if fixture exists
+    const foundFixture = await db.Fixture.findById( fixtureId )
+        .populate({
+            path: 'homeTeam awayTeam',
+            select: 'name players',
+            populate: {
+                path: 'players',
+                select: 'name position'
+            }
+        });
+    if( !foundFixture ) return { success: false, message: 'Invalid Fixture' };
+
+    const { homeTeam, awayTeam } = foundFixture;
+
+    return { success: true, message: 'Fixture Teams Player Data Acquired', data: { homeTeam, awayTeam } }
+}
+
 module.exports = exports;

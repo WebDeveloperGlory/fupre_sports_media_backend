@@ -85,6 +85,19 @@ exports.updateFixtureFormation = async ( req, res ) => {
     }
 }
 
+exports.getTeamPlayerData = async ( req, res ) => {
+    try {
+        const result = await fixtureService.getTeamPlayerData( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 exports.getTeamFixtureTeamFormAndMatchData = async ( req, res ) => {
     try {
         const result = await fixtureService.getTeamFixtureTeamFormAndMatchData( req.params );

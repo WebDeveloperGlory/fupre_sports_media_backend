@@ -366,6 +366,8 @@ router.put( '/:fixtureId/result', authenticateUser, authorize([ 'super-admin' ])
  *       401:
  *         description: Unauthorized (missing or invalid token)
  */
-router.put( '/:fixtureId/formation', authenticateUser, authorize([ 'super-admin', 'live-match-admin' ]), controller.updateFixtureFormation );
+router.put( '/:fixtureId/formation', authenticateUser, authorize([ 'super-admin', 'live-match-admin', 'competition-admin' ]), controller.updateFixtureFormation );
+
+router.get( '/:fixtureId/player_list', controller.getTeamPlayerData );
 
 module.exports = router;
