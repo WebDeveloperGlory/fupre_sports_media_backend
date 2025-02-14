@@ -29,6 +29,10 @@ exports.loginUser = async ({ email, password }) => {
     // Generate jwt
     const token = generateToken( foundUser );
 
+    // Update last login
+    foundUser.lastLogin = new Date();
+    await foundUser.save();
+
     // Return success
     return { success: true, message: 'User Logged In', data: token };
 }
@@ -110,7 +114,12 @@ exports.getUserProfile = async ({ userId }) => {
         })
             .sort({ date: 1 })
             .limit(5)
-            .populate( 'homeTeam awayTeam competition' );
+            .populate([
+                {
+                    path: 'homeTeam awayTeam competition',
+                    select: 'name'
+                },
+            ]);
     } else if (foundUser.role === 'team-admin') {
         const teamId = foundUser.associatedTeam;
 
@@ -122,7 +131,12 @@ exports.getUserProfile = async ({ userId }) => {
             })
                 .sort({ date: 1 })
                 .limit(5)
-                .populate( 'homeTeam awayTeam competition' );
+                .populate([
+                    {
+                        path: 'homeTeam awayTeam competition',
+                        select: 'name'
+                    },
+                ]);
         }
     } else if ( foundUser.role === 'super-admin' ) {
         nextFixtures = await db.Fixture.find({
@@ -132,7 +146,12 @@ exports.getUserProfile = async ({ userId }) => {
             .populate( 'homeTeam awayTeam competition' )
             .sort({ date: 1 })
             .limit(5)
-            .populate('homeTeam awayTeam competition');
+            .populate([
+                {
+                    path: 'homeTeam awayTeam competition',
+                    select: 'name'
+                },
+            ]);
     }
 
     // Destructure properties

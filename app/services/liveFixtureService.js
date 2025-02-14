@@ -111,4 +111,59 @@ exports.getLiveFixture = async ({ fixtureId }) => {
     return { success: true, message: 'Live Fixture Acquired', data: liveFixture };
 }
 
+exports.getAllAdminTodayFixtures = async ({ userId }) => {
+    // Find user in database
+    const foundUser = await db.User.findById( userId );
+    const competitions = foundUser.associatedCompetitions;
+    const teamId = foundUser.associatedTeam;
+    let fixtures = [];
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    if( foundUser.role === 'super-admin' ) {
+        fixtures = await db.Fixture.find({
+            date: { $gte: startOfDay, $lte: endOfDay }
+        })
+            .sort({ date: 1 })
+            .populate([
+                {
+                    path: 'homeTeam awayTeam competition',
+                    select: 'name'
+                },
+            ]);
+    } else if( foundUser.role === 'competition-admin' ) {
+        fixtures = await db.Fixture.find({
+            competition: { $in: competitions },
+            date: { $gte: startOfDay, $lte: endOfDay }
+        })
+            .sort({ date: 1 })
+            .populate([
+                {
+                    path: 'homeTeam awayTeam competition',
+                    select: 'name'
+                },
+            ]);
+    } else if( foundUser.role === 'team-admin' ) {
+        if( teamId ) {
+            fixtures = await db.Fixture.find({
+                $or: [{ homeTeam: teamId }, { awayTeam: teamId }],
+                date: { $gte: startOfDay, $lte: endOfDay }
+            })
+                .sort({ date: 1 })
+                .populate([
+                    {
+                        path: 'homeTeam awayTeam competition',
+                        select: 'name'
+                    },
+                ]);
+        }
+    }
+
+    // Return Success
+    return { success: true, message: 'Today Fixtures Acquired', data: fixtures }
+}
+
 module.exports = exports;

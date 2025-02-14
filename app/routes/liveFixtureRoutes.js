@@ -7,6 +7,7 @@
 const { Router } = require('express');
 const controller = require('../controllers/liveFixtureController');
 const { authorize } = require('../middlewares/adminMiddleware');
+const { authenticateUser } = require('../middlewares/authMiddleware');
 
 const router = Router();
 
@@ -42,7 +43,7 @@ const router = Router();
  *       404:
  *         description: Fixture not found
  */
-router.post('/initialize', authorize([ 'super-admin', 'live-match-admin' ]), controller.initializeLiveFixture);
+router.post('/initialize', authenticateUser, authorize([ 'super-admin', 'live-match-admin' ]), controller.initializeLiveFixture);
 
 /**
  * @swagger
@@ -155,7 +156,10 @@ router.post('/initialize', authorize([ 'super-admin', 'live-match-admin' ]), con
  *       404:
  *         description: Live fixture not found
  */
-router.put('/update/:fixtureId', authorize([ 'super-admin', 'live-match-admin' ]), controller.updateLiveFixture);
+router.put('/update/:fixtureId', authenticateUser, authorize([ 'super-admin', 'live-match-admin' ]), controller.updateLiveFixture);
+
+
+router.get('/fixtures', authenticateUser, authorize([ 'super-admin', 'live-match-admin', 'competition-admin', 'team-admin' ]), controller.getAllAdminTodayFixtures);
 
 /**
  * @swagger
@@ -181,6 +185,6 @@ router.put('/update/:fixtureId', authorize([ 'super-admin', 'live-match-admin' ]
  *       404:
  *         description: Live fixture not found
  */
-router.get('/:fixtureId', controller.getLiveFixture);
+router.get('/fixtures/:fixtureId', controller.getLiveFixture);
 
 module.exports = router;
