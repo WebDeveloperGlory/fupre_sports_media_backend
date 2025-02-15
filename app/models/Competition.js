@@ -113,6 +113,10 @@ const competitionSchema = new Schema({
             ]
         }
     ],
+    isFeatured: {
+        type: Boolean,
+        default: false
+    },
     stats: {
         totalGoals: { type: Number, default: 0 },
         homeWinsPercentage: { type: Number, default: 0 },

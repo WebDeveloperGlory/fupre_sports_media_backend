@@ -12,7 +12,7 @@ const getFixtures = async (fixtures, id) => {
             path: 'homeTeam awayTeam competition',
             select: 'name department level shorthand',
         })
-        .select('homeTeam awayTeam competition type status result date');
+        .select('homeTeam awayTeam competition type status result date stadium');
 
     // Group fixtures by competition or friendly
     const groupedFixtures = fetchedFixtures.reduce((acc, fixture) => {
