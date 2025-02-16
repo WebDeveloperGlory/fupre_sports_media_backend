@@ -1004,4 +1004,24 @@ exports.addFixturesToKnockoutPhase = async ({ competitionId }, { roundName, fixt
     return { success: true, message: 'Fixture(s) Added Successfully', data: foundCompetition };
 };
 
+exports.makeFeatured = async ({ competitionId }) => {
+    // Set existing featured to false
+    const alreadyFeatured = await db.Competition.findOneAndUpdate(
+        { isFeatured: true },
+        { isFeatured: false },
+        { new: true }
+    );
+
+    // Set competition to featured
+    const newFeatured = await db.Competition.findByIdAndUpdate(
+        competitionId,
+        { isFeatured: true },
+        { new: true }
+    );
+    if( !newFeatured ) return { success: false, message: 'Invalid Competition' };
+
+    // Return success
+    return { success: true, message: 'Competition Featured', data: newFeatured };
+}
+
 module.exports = exports;

@@ -9,6 +9,7 @@ router.get( '/', controller.getAllCompetitions );
 router.post( '/', authenticateUser, authorize([ 'super-admin' ]), controller.createCompetition );
 router.get( '/:competitionId', controller.getSingleCompetition );
 router.patch( '/:competitionId', authenticateUser, hasCompetitionPermissions, controller.updateCompetition );
+router.patch( '/:competitionId/featured', authenticateUser, hasCompetitionPermissions, controller.makeFeatured );
 router.get( '/:competitionId/overview', controller.getSingleLeagueCompetitionOverview );
 router.get( '/:competitionId/player-stats', controller.getPlayerStats );
 router.get( '/:competitionId/team-stats', controller.getAllTeamStats );

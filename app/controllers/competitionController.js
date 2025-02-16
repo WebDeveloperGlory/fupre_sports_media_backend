@@ -276,4 +276,17 @@ exports.addFixturesToKnockoutPhase = async ( req, res ) => {
     }
 }
 
+exports.makeFeatured = async ( req, res ) => {
+    try {
+        const result = await competitionService.makeFeatured( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 module.exports = exports;
