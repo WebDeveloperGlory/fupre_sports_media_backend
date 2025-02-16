@@ -22,4 +22,10 @@ const calculatePercentage = ( percentage, totalGames, currentResult ) => {
     return newPercentage;
 }
 
-module.exports = { addToFront, addToBack, calculatePercentage };
+const weeksBetween = ({ startDate, endDate }) => {
+    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+
+    return Math.floor( Math.abs( endDate - startDate ) / oneWeek )
+} 
+
+module.exports = { addToFront, addToBack, calculatePercentage, weeksBetween };
