@@ -53,6 +53,19 @@ exports.getAllLiveAdmins = async ( req, res ) => {
     }
 }
 
+exports.getAllPossibleAdminLiveFixtures = async ( req, res ) => {
+    try {
+        const result = await liveFixtureService.getAllPossibleAdminLiveFixtures( req.user );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 exports.updateLiveFixtureFormation = async ( req, res ) => {
     try {
         const result = await liveFixtureService.updateLiveFixtureFormation( req.params, req.body );

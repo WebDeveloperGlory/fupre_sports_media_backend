@@ -196,4 +196,37 @@ exports.updateLiveFixtureFormation = async ({ fixtureId }, { homeLineup, awayLin
     return { success: true, message: 'Fixture Lineup Updated', data: updatedLiveFixture }
 }
 
+exports.getAllPossibleAdminLiveFixtures = async ({ userId, role }) => {
+    let fixtures = [];
+
+    if( role === 'super-admin' ) {
+        fixtures = await db.LiveFixture.find()
+        .populate({
+            path: 'homeTeam awayTeam competition',
+            select: 'name'
+        });
+    } else if ( role === 'competition-admin' ) {
+        const user = await db.User.findById( userId );
+        const competitions = user.associatedCompetitions;
+
+        fixtures = await db.LiveFixture.find({
+            competition: { $in: competitions },
+        })
+        .populate({
+            path: 'homeTeam awayTeam competition',
+            select: 'name'
+        });
+    } else if( role === 'live-match-admin' ) {
+        fixtures = await db.LiveFixture.find({
+            admin: userId
+        })
+        .populate({
+            path: 'homeTeam awayTeam competition',
+            select: 'name'
+        });
+    }
+
+    return { success: true, message: 'Live Fixtures Acquired', data: fixtures }
+}
+
 module.exports = exports;

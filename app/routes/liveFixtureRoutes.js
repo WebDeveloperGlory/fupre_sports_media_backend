@@ -191,4 +191,6 @@ router.put('/fixtures/:fixtureId/formation', controller.updateLiveFixtureFormati
 
 router.get('/admins', authenticateUser, authorize([ 'super-admin', 'competition-admin' ]), controller.getAllLiveAdmins);
 
+router.get('/admins/live', authenticateUser, authorize([ 'super-admin', 'competition-admin', 'live-match-admin' ]), controller.getAllPossibleAdminLiveFixtures);
+
 module.exports = router;
