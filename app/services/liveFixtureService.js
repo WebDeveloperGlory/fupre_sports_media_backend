@@ -1,10 +1,19 @@
 const db = require('../config/db');
 
-exports.initializeLiveFixture = async ({ fixtureId }) => {
+exports.initializeLiveFixture = async ({ fixtureId, adminId }) => {
     // Ensure fixture exists
     const fixture = await db.Fixture.findById( fixtureId )
         .populate('homeTeam awayTeam');
     if ( !fixture ) return { success: false, message: 'Fixture not found' };
+
+    // Ensure adminId is valid
+    const foundAdmin = await db.User.findOne(
+        {
+            _id: adminId,
+            role: 'live-match-admin'
+        }
+    );
+    if( !foundAdmin ) return { success: false, message: 'Invalid Live Admin' }
 
     // Check if live fixture already exists
     const existingLiveFixture = await db.LiveFixture.findOne({ fixtureId });
@@ -32,18 +41,11 @@ exports.initializeLiveFixture = async ({ fixtureId }) => {
             home: {},
             away: {}
         },
-        homeLineup: {
-            formation: null,
-            startingXI: [],
-            subs: []
-        },
-        awayLineup: {
-            formation: null,
-            startingXI: [],
-            subs: []
-        },
+        homeLineup: fixture.homeLineup,
+        awayLineup: fixture.awayLineup,
         time: 0,
         matchEvents: [],
+        admin: foundAdmin._id
     });
 
     // Update fixture status
@@ -111,7 +113,7 @@ exports.getLiveFixture = async ({ fixtureId }) => {
     return { success: true, message: 'Live Fixture Acquired', data: liveFixture };
 }
 
-exports.getAllAdminTodayFixtures = async ({ userId }) => {
+exports.getAllAdminUpcomingFixtures = async ({ userId }) => {
     // Find user in database
     const foundUser = await db.User.findById( userId );
     const competitions = foundUser.associatedCompetitions;
@@ -119,13 +121,16 @@ exports.getAllAdminTodayFixtures = async ({ userId }) => {
     let fixtures = [];
 
     const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    startOfDay.setHours(23, 59, 59, 999);
+    // startOfDay.setHours(0, 0, 0, 0);
+    // const endOfDay = new Date();
+    // endOfDay.setHours(23, 59, 59, 999);
     
     if( foundUser.role === 'super-admin' ) {
         fixtures = await db.Fixture.find({
-            date: { $gte: startOfDay, $lte: endOfDay }
+            // date: { $gte: startOfDay, $lte: endOfDay }
+            date: { $lte: startOfDay },
+            $or: [{ status: 'upcoming' }, { status: 'live' }],
         })
             .sort({ date: 1 })
             .populate([
@@ -137,7 +142,9 @@ exports.getAllAdminTodayFixtures = async ({ userId }) => {
     } else if( foundUser.role === 'competition-admin' ) {
         fixtures = await db.Fixture.find({
             competition: { $in: competitions },
-            date: { $gte: startOfDay, $lte: endOfDay }
+            // date: { $gte: startOfDay, $lte: endOfDay }
+            date: { $lte: startOfDay },
+            $or: [{ status: 'upcoming' }, { status: 'live' }],
         })
             .sort({ date: 1 })
             .populate([
@@ -150,7 +157,9 @@ exports.getAllAdminTodayFixtures = async ({ userId }) => {
         if( teamId ) {
             fixtures = await db.Fixture.find({
                 $or: [{ homeTeam: teamId }, { awayTeam: teamId }],
-                date: { $gte: startOfDay, $lte: endOfDay }
+                // date: { $gte: startOfDay, $lte: endOfDay }
+                date: { $lte: startOfDay },
+                $or: [{ status: 'upcoming' }, { status: 'live' }],
             })
                 .sort({ date: 1 })
                 .populate([
@@ -164,6 +173,27 @@ exports.getAllAdminTodayFixtures = async ({ userId }) => {
 
     // Return Success
     return { success: true, message: 'Today Fixtures Acquired', data: fixtures }
+}
+
+exports.getAllLiveAdmins = async () => {
+    const foundAdmins = await db.User.find({ role: 'live-match-admin' })
+        .select( 'name email' );
+    return { success: true, message: 'All Live Admins Acquired', data: foundAdmins };
+}
+
+exports.updateLiveFixtureFormation = async ({ fixtureId }, { homeLineup, awayLineup }) => {
+    // Update Live Fixture
+    const updatedLiveFixture = await db.LiveFixture.findOneAndUpdate(
+        { fixtureId },
+        {
+            homeLineup,
+            awayLineup
+        }, 
+        { new: true }
+    )
+    if( !updatedLiveFixture ) return { success: false, message: 'Invalid Fixture' };
+
+    return { success: true, message: 'Fixture Lineup Updated', data: updatedLiveFixture }
 }
 
 module.exports = exports;

@@ -40,9 +40,35 @@ exports.getLiveFixture = async ( req, res ) => {
     }
 }
 
-exports.getAllAdminTodayFixtures = async ( req, res ) => {
+exports.getAllLiveAdmins = async ( req, res ) => {
     try {
-        const result = await liveFixtureService.getAllAdminTodayFixtures( req.user );
+        const result = await liveFixtureService.getAllLiveAdmins();
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.updateLiveFixtureFormation = async ( req, res ) => {
+    try {
+        const result = await liveFixtureService.updateLiveFixtureFormation( req.params, req.body );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.getAllAdminUpcomingFixtures = async ( req, res ) => {
+    try {
+        const result = await liveFixtureService.getAllAdminUpcomingFixtures( req.user );
 
         if( result.success ) {
             return success( res, result.message, result.data );

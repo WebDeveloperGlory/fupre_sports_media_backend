@@ -43,7 +43,7 @@ const router = Router();
  *       404:
  *         description: Fixture not found
  */
-router.post('/initialize', authenticateUser, authorize([ 'super-admin', 'live-match-admin' ]), controller.initializeLiveFixture);
+router.post('/initialize', authenticateUser, authorize([ 'super-admin', 'competition-admin' ]), controller.initializeLiveFixture);
 
 /**
  * @swagger
@@ -159,7 +159,7 @@ router.post('/initialize', authenticateUser, authorize([ 'super-admin', 'live-ma
 router.put('/update/:fixtureId', authenticateUser, authorize([ 'super-admin', 'live-match-admin' ]), controller.updateLiveFixture);
 
 
-router.get('/fixtures', authenticateUser, authorize([ 'super-admin', 'live-match-admin', 'competition-admin', 'team-admin' ]), controller.getAllAdminTodayFixtures);
+router.get('/fixtures', authenticateUser, authorize([ 'super-admin', 'live-match-admin', 'competition-admin', 'team-admin' ]), controller.getAllAdminUpcomingFixtures);
 
 /**
  * @swagger
@@ -186,5 +186,9 @@ router.get('/fixtures', authenticateUser, authorize([ 'super-admin', 'live-match
  *         description: Live fixture not found
  */
 router.get('/fixtures/:fixtureId', controller.getLiveFixture);
+
+router.put('/fixtures/:fixtureId/formation', controller.updateLiveFixtureFormation);
+
+router.get('/admins', authenticateUser, authorize([ 'super-admin', 'competition-admin' ]), controller.getAllLiveAdmins);
 
 module.exports = router;
