@@ -68,4 +68,17 @@ exports.getAdminCompetitionDetails = async ( req, res ) => {
     }
 }
 
+exports.getAdminCompetitionFixtures = async ( req, res ) => {
+    try {
+        const result = await adminService.getAdminCompetitionFixtures( req.user, req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 module.exports = exports;

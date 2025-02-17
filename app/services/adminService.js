@@ -289,6 +289,9 @@ exports.getAdminCompetitions = async ({ userId }) => {
         competitions = await db.Competition.find()
             .select( 'name type startDate endDate teams fixtures status' );
     }
+
+    // Return success
+    return { success: true, message: 'Competition Details Acquired', data: competitions }
 }
 
 exports.getAdminCompetitionDetails = async ({ role }, { competitionId }) => {
@@ -306,7 +309,7 @@ exports.getAdminCompetitionDetails = async ({ role }, { competitionId }) => {
                     select: 'homeTeam awayTeam status stadium referee result round'
                 }
             ])
-            .select('name type startDate endDate teams fixtures status');
+            .select('name type startDate endDate teams fixtures status description');
     } else if( role === 'super-admin' ) {
         competition = await db.Competition.findById( competitionId )
             .populate([
@@ -316,7 +319,7 @@ exports.getAdminCompetitionDetails = async ({ role }, { competitionId }) => {
                 },
                 {
                     path: 'fixtures',
-                    select: 'homeTeam awayTeam status stadium referee result round'
+                    select: 'homeTeam awayTeam status stadium referee result round description'
                 }
             ])
             .select('name type startDate endDate teams fixtures status');
@@ -324,6 +327,56 @@ exports.getAdminCompetitionDetails = async ({ role }, { competitionId }) => {
 
     // Return success
     return { success: true, message: 'Competition Details Acquired', data: competition }
+}
+
+exports.getAdminCompetitionFixtures = async ({ role }, { competitionId }) => {
+    let teams;
+    let fixtures;
+    let rounds;
+    let currentCompetition;
+
+    if( role === 'competition-admin' ) {
+        const competition = await db.Competition.findById( competitionId )
+            .populate({
+                path: 'teams.team',
+                select: 'name shorthand'
+            })
+        fixtures = await db.Fixture.find({
+            competition: competitionId,
+        })
+            .populate({
+                path: 'homeTeam awayTeam competition',
+                select: 'name'
+            });
+
+        teams = competition.teams.map( reg => reg.team );
+        rounds = competition.rounds;
+        currentCompetition = {
+            name: competition.name,
+            _id: competition._id
+        };
+    } else if( role === 'super-admin' ) {
+        const competition = await db.Competition.findById( competitionId )
+            .populate({
+                path: 'teams.team',
+                select: 'name shorthand'
+            })
+        fixtures = await db.Fixture.find()
+            .populate({
+                path: 'homeTeam awayTeam competition',
+                select: 'name'
+            });
+
+        teams = competition.teams.map( reg => reg.team );
+        rounds = competition.rounds;
+        currentCompetition = {
+            name: competition.name,
+            _id: competition._id
+        };
+    }
+
+    // Return success
+    return { success: true, message: 'Fixtures Acquired', data: { teams, rounds, fixtures, currentCompetition } };
 }
 
 module.exports = exports;
