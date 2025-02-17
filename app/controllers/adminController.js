@@ -42,4 +42,30 @@ exports.getAdminProfile = async ( req, res ) => {
     }
 }
 
+exports.getAdminCompetitions = async ( req, res ) => {
+    try {
+        const result = await adminService.getAdminCompetitions( req.user );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
+exports.getAdminCompetitionDetails = async ( req, res ) => {
+    try {
+        const result = await adminService.getAdminCompetitionDetails( req.user, req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 module.exports = exports;

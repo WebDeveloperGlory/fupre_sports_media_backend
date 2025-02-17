@@ -77,4 +77,7 @@ router.get('/fixtures', authenticateUser, authorize(['super-admin', 'competition
  */
 router.get('/records', authenticateUser, authorize(['super-admin', 'competition-admin']), controller.getCompetitionAdminFixtureRecords);
 
+router.get('/competitions', authenticateUser, authorize(['super-admin', 'competition-admin', 'team-admin']), controller.getAdminCompetitions);
+router.get('/competitions/:competitionId', authenticateUser, authorize(['super-admin', 'competition-admin']), controller.getAdminCompetitionDetails);
+
 module.exports = router;

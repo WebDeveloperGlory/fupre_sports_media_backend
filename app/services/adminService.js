@@ -260,4 +260,70 @@ exports.getCompetitionAdminFixtureRecords = async ({ userId }) => {
     return { success: true, message: 'Fixture Records Acquired', data: { completed_overdue, completedFixtures, overdueFixtures, allCompetitions } };
 }
 
+exports.getAdminCompetitions = async ({ userId }) => {
+    let competitions = [];
+
+    const foundUser = await db.User.findById( userId )
+        .populate([
+            {
+                path: 'associatedCompetitions',
+                select: 'name type startDate endDate teams fixtures status'
+            }
+        ])
+        .select('associatedCompetitions associatedTeam role');
+
+    if( foundUser.role === 'team-admin' ) {
+        const foundTeam = await db.Team.findById( foundUser.associatedTeam )
+            .populate([
+                {
+                    path: 'competitionInvitations.competition',
+                    select: 'name type startDate endDate teams fixtures status'
+                }
+            ])
+            .select( 'competitionInvitations' );
+
+        competitions = foundTeam.competitionInvitations.filter( invite => invite.status === 'accepted' )
+    } else if( foundUser.role === 'competition-admin' ) {
+        competitions = foundUser.associatedCompetitions;
+    } else if( foundUser.role === 'super-admin' ) {
+        competitions = await db.Competition.find()
+            .select( 'name type startDate endDate teams fixtures status' );
+    }
+}
+
+exports.getAdminCompetitionDetails = async ({ role }, { competitionId }) => {
+    let competition = null;
+
+    if( role === 'competition-admin' ) {
+        competition = await db.Competition.findById( competitionId )
+            .populate([
+                {
+                    path: 'teams.team',
+                    select: 'name shorthand'
+                },
+                {
+                    path: 'fixtures',
+                    select: 'homeTeam awayTeam status stadium referee result round'
+                }
+            ])
+            .select('name type startDate endDate teams fixtures status');
+    } else if( role === 'super-admin' ) {
+        competition = await db.Competition.findById( competitionId )
+            .populate([
+                {
+                    path: 'teams.team',
+                    select: 'name shorthand'
+                },
+                {
+                    path: 'fixtures',
+                    select: 'homeTeam awayTeam status stadium referee result round'
+                }
+            ])
+            .select('name type startDate endDate teams fixtures status');
+    }
+
+    // Return success
+    return { success: true, message: 'Competition Details Acquired', data: competition }
+}
+
 module.exports = exports;
