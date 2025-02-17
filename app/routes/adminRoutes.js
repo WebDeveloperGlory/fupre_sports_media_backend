@@ -31,7 +31,7 @@ const router = Router();
  *       500:
  *         description: Internal server error
  */
-router.get('/profile', authenticateUser, authorize(['super-admin', 'competition-admin']), controller.getAdminProfile);
+router.get('/profile', authenticateUser, authorize(['super-admin', 'competition-admin', 'team-admin', 'live-match-admin']), controller.getAdminProfile);
 
 /**
  * @swagger
