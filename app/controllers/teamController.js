@@ -190,12 +190,8 @@ exports.getCompetitionRequests = async ( req, res ) => {
 
 exports.updateTeamAdmin = async ( req, res ) => {
     try {
-        // Check if user exists and has valid permissions
-        const foundUser = await authService.getUserProfile( req.body );
-        if( !foundUser || foundUser.data.role !== 'team-admin' ) return error( res, 'Invalid User Or User Permissions' );
-
         // Pass user id and update admin
-        const result = await teamService.updateTeamAdmin( req.params, { adminId: foundUser.data._id } );
+        const result = await teamService.updateTeamAdmin( req.params, { adminId: req.body.userId } );
         if( result.success ) {
             return success( res, result.message, result.data );
         }
