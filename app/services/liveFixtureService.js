@@ -65,11 +65,11 @@ exports.updateLiveFixture = async ({ fixtureId }, { result, statistics, matchEve
     if ( !existingLiveFixture ) return { success: false, message: 'Live fixture not found' };
 
     // Update only fields that are provided
-    if ( result ) liveFixture.result = result;
-    if ( statistics ) liveFixture.statistics = statistics;
-    if ( matchEvents ) liveFixture.matchEvents = matchEvents;
-    if ( homeLineup ) liveFixture.homeLineup = homeLineup;
-    if ( awayLineup ) liveFixture.awayLineup = awayLineup;
+    if ( result ) existingLiveFixture.result = result;
+    if ( statistics ) existingLiveFixture.statistics = statistics;
+    if ( matchEvents ) existingLiveFixture.matchEvents = matchEvents;
+    if ( homeLineup ) existingLiveFixture.homeLineup = homeLineup;
+    if ( awayLineup ) existingLiveFixture.awayLineup = awayLineup;
 
     await existingLiveFixture.save();
 
@@ -83,11 +83,11 @@ exports.getLiveFixture = async ({ fixtureId }) => {
         .populate([
             {
                 path: 'homeTeam awayTeam',
-                select: 'name department shorthand level coach assistantCoach captain players',
-                populate: {
-                    path: 'players captain',
-                    select: 'name position'
-                }
+                select: 'name',
+                // populate: {
+                //     path: 'players captain',
+                //     select: 'name position'
+                // }
             },
             {
                 path: 'competition',

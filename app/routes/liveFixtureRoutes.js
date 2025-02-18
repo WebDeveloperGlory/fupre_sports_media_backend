@@ -156,7 +156,7 @@ router.post('/initialize', authenticateUser, authorize([ 'super-admin', 'competi
  *       404:
  *         description: Live fixture not found
  */
-router.put('/update/:fixtureId', authenticateUser, authorize([ 'super-admin', 'live-match-admin' ]), controller.updateLiveFixture);
+router.put('/update/:fixtureId', authenticateUser, authorize([ 'super-admin', 'live-match-admin', 'competition-admin' ]), controller.updateLiveFixture);
 
 
 router.get('/fixtures', authenticateUser, authorize([ 'super-admin', 'live-match-admin', 'competition-admin', 'team-admin' ]), controller.getAllAdminUpcomingFixtures);

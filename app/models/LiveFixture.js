@@ -1,5 +1,7 @@
 const { Schema, default: mongoose } = require('mongoose');
 
+const REQUIRED_EVENT_TYPES = ['goal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget'];
+
 const liveFixtureSchema = new Schema({
     time: {
         type: Number,
@@ -84,11 +86,23 @@ const liveFixtureSchema = new Schema({
             time: { type: Number, required: true },
             eventType: {
                 type: String,
-                enum: ['goal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget'],
+                enum: ['goal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget', 'kickoff', 'halftime', 'fulltime'],
                 required: true
             },
             player: { type: Schema.Types.ObjectId, ref: 'Player', default: null },
-            team: { type: Schema.Types.ObjectId, ref: 'Team', required: true },
+            team: { 
+                type: Schema.Types.ObjectId, 
+                ref: 'Team', 
+                validate: {
+                    validator: function( value ) {
+                        if( REQUIRED_EVENT_TYPES.includes( this.eventType ) && !value ) {
+                            return false;
+                        }
+                        return true;
+                    },
+                    message: props => `Team Required If eventType Is ${ REQUIRED_EVENT_TYPES.join(', ')}`
+                }
+            },
             substitutedFor: { type: Schema.Types.ObjectId, ref: 'Player', default: null },
             commentary: { type: String, default: null }
         }
