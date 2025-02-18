@@ -14,6 +14,19 @@ exports.initializeLiveFixture = async ( req, res ) => {
     }
 }
 
+exports.endLiveFixture = async ( req, res ) => {
+    try {
+        const result = await liveFixtureService.endLiveFixture( req.body );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 exports.updateLiveFixture = async ( req, res ) => {
     try {
         const result = await liveFixtureService.updateLiveFixture( req.params, req.body );

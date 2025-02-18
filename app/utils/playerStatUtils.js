@@ -31,9 +31,39 @@ const updatePlayerGeneralRecord = async ( playerId, statField, count = 1 ) => {
         { $inc: { [`generalRecord.$.${statField}`]: count } }
     );
 };
+const updatePlayerGeneralAppearances = async ( playerId, count = 1 ) => {
+    const year = new Date().getFullYear();
 
-  // Function to update competition-specific stats
-  const updatePlayerCompetitionStats = async ( playerId, statField, count = 1, competitionId ) => {
+    const player = await db.Player.findById( playerId );
+    if ( !player ) return { error: `Player ${ playerId } not found` };
+
+    const yearIndex = player.generalRecord.findIndex(r => r.year === year);
+
+    if (yearIndex === -1) {
+        // Add new year record if not found
+        player.generalRecord.push({
+            year,
+            goals: 0,
+            assists: 0,
+            yellowCards: 0,
+            redCards: 0,
+            appearances: 0,
+            cleanSheets: 0
+        });
+    }
+
+    // Save player
+    await player.save();
+
+    // Update appearances field
+    await db.Player.updateOne(
+        { _id: playerId, "generalRecord.year": year },
+        { $inc: { "generalRecord.$.appearances": count } }
+    );
+};
+
+// Function to update competition-specific stats
+const updatePlayerCompetitionStats = async ( playerId, statField, count = 1, competitionId ) => {
     const year = new Date().getFullYear();
 
     if ( !competitionId ) return;
@@ -66,6 +96,40 @@ const updatePlayerGeneralRecord = async ( playerId, statField, count = 1 ) => {
         { $addToSet: { playerStats: playerStat._id } }
     )
 };
+const updatePlayerCompetitionAppearances = async ( playerId, count = 1, competitionId ) => {
+    const year = new Date().getFullYear();
+
+    if ( !competitionId ) return;
+
+    let playerStat = await db.PlayerCompetitionStats.findOne({
+        competition: competitionId,
+        player: playerId,
+        year
+    });
+
+    if ( !playerStat ) {
+        playerStat = new db.PlayerCompetitionStats({
+            competition: competitionId,
+            player: playerId,
+            year,
+            goals: 0,
+            assists: 0,
+            yellowCards: 0,
+            redCards: 0,
+            appearances: 0,
+            cleanSheets: 0
+        });
+    }
+
+    playerStat.appearances += count;
+    await playerStat.save();
+
+    // Ensure the playerStat is linked to the competition
+    await db.Competition.findByIdAndUpdate(
+        competitionId,
+        { $addToSet: { playerStats: playerStat._id } }
+    );
+};
 
 // Function to process a stat update for both general & competition records
 const processStatUpdate = async ( statArray, statField, competitionId ) => {
@@ -78,5 +142,17 @@ const processStatUpdate = async ( statArray, statField, competitionId ) => {
         })
     );
 };
+const processAppearanceUpdate = async ( players, competitionId ) => {
+    if ( !players || players.length === 0 ) return;
 
-module.exports = { updatePlayerGeneralRecord, updatePlayerCompetitionStats, processStatUpdate }
+    await Promise.all(players.map(async ( playerId ) => {
+        await updatePlayerGeneralAppearances( playerId, 1 );
+        await updatePlayerCompetitionAppearances( playerId, 1, competitionId );
+    }));
+};
+
+module.exports = { 
+    updatePlayerGeneralRecord, updatePlayerGeneralAppearances,
+    updatePlayerCompetitionStats, updatePlayerCompetitionAppearances,
+    processStatUpdate, processAppearanceUpdate,
+}

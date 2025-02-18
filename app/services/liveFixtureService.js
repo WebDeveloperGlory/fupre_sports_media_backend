@@ -1,4 +1,6 @@
 const db = require('../config/db');
+const { updateCompetitionFixtureResult } = require('./competitionService');
+const { updateFixtureResult } = require('./fixtureService');
 
 exports.initializeLiveFixture = async ({ fixtureId, adminId }) => {
     // Ensure fixture exists
@@ -57,6 +59,41 @@ exports.initializeLiveFixture = async ({ fixtureId, adminId }) => {
 
     // Return success message
     return { success: true, message: 'Live fixture initialized', data: liveFixture };
+}
+
+exports.endLiveFixture = async ({ fixtureId }) => {
+    const liveFixture = await db.LiveFixture.findOne({ fixtureId });
+    if( ! liveFixture ) return { success: false, message: 'Invalid Live Fixture' }
+
+    // Update Result
+    if( liveFixture.competition ) {
+        await updateCompetitionFixtureResult(
+            {
+                competitionId: liveFixture.competition,
+                fixtureId
+            },
+            {
+                result: liveFixture.result,
+                statistics: liveFixture.statistics,
+                matchEvents: liveFixture.matchEvents
+            }
+        )
+    } else if ( !liveFixture.competition ) {
+        await updateFixtureResult(
+            { fixtureId },
+            {
+                result: liveFixture.result,
+                statistics: liveFixture.statistics,
+                matchEvents: liveFixture.matchEvents
+            }
+        )
+    }
+
+    // End live
+    await db.LiveFixture.findOneAndDelete( fixtureId );
+
+    // Return success
+    return { success: true, message: 'Ending Live', data: null }
 }
 
 exports.updateLiveFixture = async ({ fixtureId }, { result, statistics, matchEvents, homeLineup, awayLineup, time }) => {

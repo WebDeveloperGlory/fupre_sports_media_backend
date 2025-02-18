@@ -45,6 +45,8 @@ const router = Router();
  */
 router.post('/initialize', authenticateUser, authorize([ 'super-admin', 'competition-admin' ]), controller.initializeLiveFixture);
 
+router.post('/finalize', authenticateUser, authorize([ 'super-admin', 'competition-admin', 'live-admin' ]), controller.endLiveFixture);
+
 /**
  * @swagger
  * /live-fixtures/update/{fixtureId}:
