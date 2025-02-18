@@ -133,7 +133,10 @@ const fixtureSchema = new Schema({
             commentary: {
                 type: String,
                 default: null
-            }
+            },
+            id: { 
+                type: Number 
+            },
         }
     ],
     createdAt: {

@@ -59,7 +59,7 @@ exports.initializeLiveFixture = async ({ fixtureId, adminId }) => {
     return { success: true, message: 'Live fixture initialized', data: liveFixture };
 }
 
-exports.updateLiveFixture = async ({ fixtureId }, { result, statistics, matchEvents, homeLineup, awayLineup }) => {
+exports.updateLiveFixture = async ({ fixtureId }, { result, statistics, matchEvents, homeLineup, awayLineup, time }) => {
     // Check if live fixture already exists
     let existingLiveFixture = await db.LiveFixture.findOne({ fixtureId });
     if ( !existingLiveFixture ) return { success: false, message: 'Live fixture not found' };
@@ -70,6 +70,7 @@ exports.updateLiveFixture = async ({ fixtureId }, { result, statistics, matchEve
     if ( matchEvents ) existingLiveFixture.matchEvents = matchEvents;
     if ( homeLineup ) existingLiveFixture.homeLineup = homeLineup;
     if ( awayLineup ) existingLiveFixture.awayLineup = awayLineup;
+    if ( time ) existingLiveFixture.time = time;
 
     await existingLiveFixture.save();
 

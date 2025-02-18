@@ -104,7 +104,8 @@ const liveFixtureSchema = new Schema({
                 }
             },
             substitutedFor: { type: Schema.Types.ObjectId, ref: 'Player', default: null },
-            commentary: { type: String, default: null }
+            commentary: { type: String, default: null },
+            id: { type: Number }
         }
     ],
     admin: {
