@@ -231,13 +231,17 @@ exports.updateFixtureResult = async ( { fixtureId }, { result, statistics, match
     if( alsoFixture.homeLineup.startingXI && alsoFixture.homeLineup.startingXI.length > 0 ) {
         const playersArr = [ ...alsoFixture.homeLineup.startingXI, ...alsoFixture.homeLineup.subs ]
         await processAppearanceUpdate( playersArr )
-    } else if( alsoFixture.awayLineup.startingXI && alsoFixture.awayLineup.startingXI.length > 0 ) {
+    }
+    if( alsoFixture.awayLineup.startingXI && alsoFixture.awayLineup.startingXI.length > 0 ) {
         const playersArr = [ ...alsoFixture.awayLineup.startingXI, ...alsoFixture.awayLineup.subs ]
         await processAppearanceUpdate( playersArr )
     }
 
     // Update player stats if available
     if( matchEvents && matchEvents.length > 0 ) {
+        // Save matchEvents
+        foundFixture.matchEvents = matchEvents;
+
         // Extract events
         const goals = matchEvents.filter( event => event.eventType === "goal" );
         const assists = matchEvents.filter( event => event.eventType === "assist" );
@@ -293,7 +297,8 @@ exports.updateFixtureResult = async ( { fixtureId }, { result, statistics, match
                     }
                 })
             );
-        } else if( foundFixture.awayLineup.startingXI && foundFixture.awayLineup.startingXI.length > 0 ) {
+        }
+        if( foundFixture.awayLineup.startingXI && foundFixture.awayLineup.startingXI.length > 0 ) {
             // ✅ 4️⃣ Handle Clean Sheets
             const awayConceded = result.homeScore > 0;
             // Get all goalkeepers from lineup
