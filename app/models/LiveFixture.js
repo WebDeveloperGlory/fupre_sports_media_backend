@@ -55,7 +55,8 @@ const liveFixtureSchema = new Schema({
             yellowCards: { type: Number, default: 0 },
             redCards: { type: Number, default: 0 },
             offsides: { type: Number, default: 0 },
-            corners: { type: Number, default: 0 }
+            corners: { type: Number, default: 0 },
+            possessionTime: { type: Number, default: 0 },
         },
         away: {
             shotsOnTarget: { type: Number, default: 0 },
@@ -64,7 +65,8 @@ const liveFixtureSchema = new Schema({
             yellowCards: { type: Number, default: 0 },
             redCards: { type: Number, default: 0 },
             offsides: { type: Number, default: 0 },
-            corners: { type: Number, default: 0 }
+            corners: { type: Number, default: 0 },
+            possessionTime: { type: Number, default: 0 },
         }
     },
     homeLineup: {
