@@ -67,6 +67,7 @@ const updatePlayerCompetitionStats = async ( playerId, statField, count = 1, com
     const year = new Date().getFullYear();
 
     if ( !competitionId ) return;
+    if( !playerId ) return;
 
     let playerStat = await db.PlayerCompetitionStats.findOne({
         competition: competitionId,
