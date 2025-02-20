@@ -9,7 +9,7 @@ const playerSchema = new Schema({
         type: String,
         required: true,
         enum: [ 
-            'CB', 'LB', 'RB', 'GK',
+            'CB', 'LB', 'RB', 'WB', 'GK',
             'CMF', 'DMF', 'AMF',
             'LW', 'RW', 'ST'
         ]
