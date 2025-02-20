@@ -167,7 +167,7 @@ exports.getTeamPlayers = async ({ teamId }) => {
     if( !foundTeam ) return { success: false, message: 'Team Not Found' };
 
     // Get all positions
-    const defensivePositions = [ 'CB', 'LB', 'RB' ];
+    const defensivePositions = [ 'CB', 'LB', 'RB', 'WB' ];
     const goalkeeperPositions = [ 'GK' ];
     const midfieldPositions = [ 'CMF', 'DMF', 'AMF' ];
     const fowardPositions = [ 'LW', 'RW', 'ST' ];
