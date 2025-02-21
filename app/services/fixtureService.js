@@ -144,7 +144,7 @@ exports.getTeamFixtureTeamFormAndMatchData = async ({ fixtureId }) => {
     .sort({ date: -1 }) // Sort by date in descending order (most recent first)
     .limit(5)
     .populate({
-        path: 'homeTeam awayTeam',
+        path: 'homeTeam awayTeam competition',
         select: 'name shorthand'
     });
     const awayLastFixtures = await db.Fixture.find({
@@ -155,7 +155,7 @@ exports.getTeamFixtureTeamFormAndMatchData = async ({ fixtureId }) => {
     .sort({ date: -1 })
     .limit(5)
     .populate({
-        path: 'homeTeam awayTeam',
+        path: 'homeTeam awayTeam competition',
         select: 'name shorthand'
     });
     const headToHeadFixtures = await db.Fixture.find({
