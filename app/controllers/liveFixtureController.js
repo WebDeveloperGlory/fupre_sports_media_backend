@@ -53,6 +53,19 @@ exports.getLiveFixture = async ( req, res ) => {
     }
 }
 
+exports.getLiveFixtureTeamPlayers = async ( req, res ) => {
+    try {
+        const result = await liveFixtureService.getLiveFixtureTeamPlayers( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 exports.getAllLiveAdmins = async ( req, res ) => {
     try {
         const result = await liveFixtureService.getAllLiveAdmins();

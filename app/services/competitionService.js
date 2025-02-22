@@ -588,7 +588,7 @@ exports.getSingleCompetitionFixture = async ({ competitionId, fixtureId }) => {
 };
 
 // Update Competition Fixture And Calculate Competition Standings/Rounds/Data
-exports.updateCompetitionFixtureResult = async({ competitionId, fixtureId }, { result, statistics,  matchEvents }) => {
+exports.updateCompetitionFixtureResult = async({ competitionId, fixtureId }, { result, statistics,  matchEvents, homeSubs, awaySubs }) => {
     // Check if fixture exists
     const foundFixture = await db.Fixture.findOne(
         { _id: fixtureId, competition: competitionId },
@@ -628,6 +628,21 @@ exports.updateCompetitionFixtureResult = async({ competitionId, fixtureId }, { r
             const foundStatistics = await db.MatchStatistic.findByIdAndUpdate( foundFixture.statistics, { home, away });
         }
     }
+
+    // Check if homeSubs
+    if( homeSubs ) {
+        foundFixture.homeLineup = {
+            ...foundFixture.homeLineup,
+            subs: homeSubs
+        }
+    }
+    if( awaySubs ) {
+        foundFixture.homeLineup = {
+            ...foundFixture.homeLineup,
+            subs: awaySubs
+        }
+    }
+    await foundFixture.save();
 
     // Update player appearances
     const alsoFixture = await db.Fixture.findOne({ _id: fixtureId, competition: competitionId });

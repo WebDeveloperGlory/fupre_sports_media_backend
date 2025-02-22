@@ -189,6 +189,7 @@ router.get('/fixtures', authenticateUser, authorize([ 'super-admin', 'live-match
  */
 router.get('/fixtures/:fixtureId', controller.getLiveFixture);
 
+router.get('/fixtures/:fixtureId/players', controller.getLiveFixtureTeamPlayers);
 router.put('/fixtures/:fixtureId/formation', controller.updateLiveFixtureFormation);
 
 router.get('/admins', authenticateUser, authorize([ 'super-admin', 'competition-admin' ]), controller.getAllLiveAdmins);

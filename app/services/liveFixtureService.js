@@ -75,7 +75,9 @@ exports.endLiveFixture = async ({ fixtureId }) => {
             {
                 result: liveFixture.result,
                 statistics: liveFixture.statistics,
-                matchEvents: liveFixture.matchEvents
+                matchEvents: liveFixture.matchEvents,
+                homeSubs: liveFixture.homeLineup.subs, 
+                awaySubs: liveFixture.awayLineup.subs
             }
         )
     } else if ( !liveFixture.competition ) {
@@ -84,7 +86,9 @@ exports.endLiveFixture = async ({ fixtureId }) => {
             {
                 result: liveFixture.result,
                 statistics: liveFixture.statistics,
-                matchEvents: liveFixture.matchEvents
+                matchEvents: liveFixture.matchEvents,
+                homeSubs: liveFixture.homeLineup.subs, 
+                awaySubs: liveFixture.awayLineup.subs
             }
         )
     }
@@ -132,7 +136,7 @@ exports.getLiveFixture = async ({ fixtureId }) => {
                 select: 'name'
             },
             {
-                path: 'matchEvents.player',
+                path: 'matchEvents.player matchEvents.substitutedFor',
                 select: 'name position'
             },
             {
@@ -149,6 +153,19 @@ exports.getLiveFixture = async ({ fixtureId }) => {
 
     // Return live fixture
     return { success: true, message: 'Live Fixture Acquired', data: liveFixture };
+}
+
+exports.getLiveFixtureTeamPlayers = async ({ fixtureId }) => {
+    // Check if fixture exists
+    const foundFixture = await db.Fixture.findById( fixtureId ).select('homeTeam awayTeam');
+    if( !foundFixture ) return { success: false, message: 'Invalid Fixture' };
+
+    // Get home and away players
+    const homePlayers = await db.Player.find({ team: foundFixture.homeTeam }).select('name position');
+    const awayPlayers = await db.Player.find({ team: foundFixture.awayTeam }).select('name position');
+
+    // Return success
+    return { success: true, message: 'Team players acquired', data: { homePlayers, awayPlayers } }
 }
 
 exports.getAllAdminUpcomingFixtures = async ({ userId }) => {

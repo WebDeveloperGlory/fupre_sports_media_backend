@@ -205,7 +205,7 @@ exports.getTeamFixtureTeamFormAndMatchData = async ({ fixtureId }) => {
     } };
 }
 
-exports.updateFixtureResult = async ( { fixtureId }, { result, statistics, matchEvents } ) => {
+exports.updateFixtureResult = async ( { fixtureId }, { result, statistics, matchEvents, homeSubs, awaySubs } ) => {
     // Check if fixture exists
     const foundFixture = await db.Fixture.findById( fixtureId )
     .populate({
@@ -225,6 +225,21 @@ exports.updateFixtureResult = async ( { fixtureId }, { result, statistics, match
             const foundStatistics = await db.MatchStatistic.findByIdAndUpdate( foundFixture.statistics, { home, away });
         }
     }
+
+    // Check if homeSubs
+    if( homeSubs ) {
+        foundFixture.homeLineup = {
+            ...foundFixture.homeLineup,
+            subs: homeSubs
+        }
+    }
+    if( awaySubs ) {
+        foundFixture.homeLineup = {
+            ...foundFixture.homeLineup,
+            subs: awaySubs
+        }
+    }
+    await foundFixture.save();
 
     // Update player appearances
     const alsoFixture = await db.Fixture.findById( fixtureId );
