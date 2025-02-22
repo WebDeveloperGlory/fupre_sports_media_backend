@@ -159,6 +159,19 @@ exports.getFullTable = async ( req, res )  => {
     }
 }
 
+exports.getKnockoutPhases = async ( req, res )  => {
+    try {
+        const result = await competitionService.getKnockoutPhases( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 exports.getCompetitionFixtures = async ( req, res )  => {
     try {
         const result = await competitionService.getCompetitionFixtures( req.params, req.query );

@@ -328,6 +328,30 @@ exports.getFullTable = async ({ competitionId }) => {
     return { success: true, message: 'League Table Acquired', data: table }
 }
 
+exports.getKnockoutPhases = async ({ competitionId }) => {
+    // Check if competition exists
+    const competition = await db.Competition.findById( competitionId )
+    .populate([
+        {
+            path: 'knockoutRounds.teams',
+            select: 'name'
+        },
+        {
+            path: 'knockoutRounds.fixtures',
+            select: 'homeTeam awayTeam date result status round',
+            populate: {
+                path: 'homeTeam awayTeam',
+                select: 'name'
+            }
+        }
+    ]);
+    if (!competition) return { success: false, message: 'Competition not found' }
+
+    const knockoutRounds = competition.knockoutRounds
+
+    return { success: true, message: 'Knockout Rounds Acquired', data: knockoutRounds }
+}
+
 exports.getCompetitionFixtures = async ({ competitionId }, { filter, team }) => {
     let query = { competition: competitionId };
 

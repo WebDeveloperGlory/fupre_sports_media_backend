@@ -23,6 +23,7 @@ router.post( '/:competitionId/fixtures', authenticateUser, hasCompetitionPermiss
 router.patch( '/:competitionId/fixtures/:fixtureId', authenticateUser, hasCompetitionPermissions, controller.updateCompetitionFixtureResult );
 router.get( '/:competitionId/league-table', controller.getFullTable );
 router.post( '/:competitionId/league-table', authenticateUser, hasCompetitionPermissions, controller.initializeLeagueTable );
+router.get( '/:competitionId/knockout/phases', controller.getKnockoutPhases );
 router.post( '/:competitionId/knockout/phases', authenticateUser, hasCompetitionPermissions, controller.addKnockoutPhases );
 router.post( '/:competitionId/knockout/teams', authenticateUser, hasCompetitionPermissions, controller.addTeamsToKncokoutPhase );
 router.post( '/:competitionId/knockout/fixtures', authenticateUser, hasCompetitionPermissions, controller.addFixturesToKnockoutPhase );
