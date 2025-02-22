@@ -70,4 +70,21 @@ const hasCompetitionPermissions = async ( req, res, next ) => {
     }
 }
 
-module.exports = { hasTeamPermissions, hasCompetitionPermissions, isSuperAdmin, isCompetitionAdmin, authorize };
+const hasPlayerPermissions = async ( req, res, next ) => {
+    const { userId, role } = req.user;
+    const { playerId } = req.params;
+
+    try {
+        const playerDocument = await db.Player.findById( playerId );
+        if( !playerDocument ) return error( res, 'Invalid Player' );
+        const teamDocument = await db.Team.findById( playerDocument.team );
+        if( !teamDocument.admin ) return error( res, 'Unassigned Admin' );
+        if( !teamDocument.admin.equals( userId ) && role !== 'super-admin' ) return error( res, 'Invalid User Permissions', 401 );
+
+        next();
+    } catch ( err ) {
+        return serverError( res, err )
+    }
+}
+
+module.exports = { hasTeamPermissions, hasCompetitionPermissions, hasPlayerPermissions, isSuperAdmin, isCompetitionAdmin, authorize };

@@ -81,4 +81,17 @@ exports.getAdminCompetitionFixtures = async ( req, res ) => {
     }
 }
 
+exports.getTeamPlayers = async ( req, res ) => {
+    try {
+        const result = await adminService.getTeamPlayers( req.user );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 module.exports = exports;

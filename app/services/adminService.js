@@ -379,4 +379,17 @@ exports.getAdminCompetitionFixtures = async ({ role }, { competitionId }) => {
     return { success: true, message: 'Fixtures Acquired', data: { teams, rounds, fixtures, currentCompetition } };
 }
 
+exports.getTeamPlayers = async ({ userId }) => {
+    const foundTeam = await db.Team.findOne({ admin: userId });
+    const players = await db.Player.find({ team: foundTeam._id }).select('name position number');
+
+    const team = {
+        name: foundTeam.name,
+        _id: foundTeam._id
+    }
+
+    // Return success
+    return { success: true, message: 'Players Acquired', data: { team, players } };
+}
+
 module.exports = exports;

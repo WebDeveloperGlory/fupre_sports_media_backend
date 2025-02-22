@@ -14,6 +14,9 @@ const playerSchema = new Schema({
             'LW', 'RW', 'ST'
         ]
     },
+    number: {
+        type: Number,
+    },
     team: {
         type: Schema.Types.ObjectId,
         ref: 'Team'
