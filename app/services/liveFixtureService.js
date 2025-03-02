@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { emitLiveMatchUpdate } = require('../config/socket');
 const { updateCompetitionFixtureResult } = require('./competitionService');
 const { updateFixtureResult } = require('./fixtureService');
 
@@ -114,6 +115,33 @@ exports.updateLiveFixture = async ({ fixtureId }, { result, statistics, matchEve
     if ( time ) existingLiveFixture.time = time;
 
     await existingLiveFixture.save();
+
+    const refreshedLiveFixture = await db.LiveFixture.findOne({ fixtureId })
+        .populate([
+            {
+                path: 'homeTeam awayTeam',
+                select: 'name',
+            },
+            {
+                path: 'competition',
+                select: 'name'
+            },
+            {
+                path: 'matchEvents.player matchEvents.substitutedFor',
+                select: 'name position'
+            },
+            {
+                path: 'matchEvents.team',
+                select: 'name shorthand'
+            },
+            {
+                path: 'homeLineup.startingXI awayLineup.startingXI homeLineup.subs awayLineup.subs',
+                select: 'name position'
+            }
+        ]);
+
+    // Emit live update to clients watching this match
+    emitLiveMatchUpdate( fixtureId, refreshedLiveFixture );
 
     // Return success message
     return { success: true, message: 'Live fixture updated', data: existingLiveFixture };

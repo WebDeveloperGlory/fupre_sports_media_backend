@@ -1,8 +1,10 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./app/config/swagger');
 const { PORT, ALLOWED_ORIGINS } = require('./app/config/env');
+const { initializeWebSocket } = require('./app/config/socket');
 const authRoutes = require('./app/routes/authRoutes');
 const teamRoutes = require('./app/routes/teamRoutes');
 const fixtureRoutes = require('./app/routes/fixtureRoutes');
@@ -14,6 +16,7 @@ const playerRoutes = require('./app/routes/playerRoutes');
 
 const app = express();
 const APP_PORT = PORT;
+const server = http.createServer( app );
 
 // CORS SETTINGS //
 const allowedOrigins = ALLOWED_ORIGINS;
@@ -34,6 +37,7 @@ app.use( cors( corsOptions ) );
 // app.use( cors() );
 app.use( express.json() );
 app.use( '/api/api-docs', swaggerUi.serve, swaggerUi.setup( swaggerSpec ) );
+initializeWebSocket( server, corsOptions );
 // END OF MIDDLEWARES //
 
 // TEST ROUTE //
@@ -53,7 +57,12 @@ app.use( '/api/general', generalRoutes );
 app.use( '/api/player', playerRoutes );
 // END OF ROUTES //
 
-app.listen( PORT, () => {
+// app.listen( PORT, () => {
+//     console.log(`Fupre Sports Media Server Running On Port: ${ APP_PORT }`);
+//     console.log(`Swagger Docs Available At: ${ APP_PORT }/api/api-docs`);
+// });
+server.listen( PORT, () => {
     console.log(`Fupre Sports Media Server Running On Port: ${ APP_PORT }`);
     console.log(`Swagger Docs Available At: ${ APP_PORT }/api/api-docs`);
+    console.log(`Websockets server running on port ${ APP_PORT }`);
 });
