@@ -21,6 +21,11 @@ const footballPlayerSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'FootballTeam'
     },
+    status: {
+        type: String,
+        enum: [ 'active', 'loaned', 'transferred' ],
+        default: 'active'
+    },
     generalRecord: [
         {
             year: { type: Number, required: true },
