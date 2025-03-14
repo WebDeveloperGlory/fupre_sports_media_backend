@@ -17,12 +17,17 @@ module.exports.Fixture = require('../models/Fixture');
 module.exports.MatchStatistic = require('../models/MatchStatistic');
 module.exports.MatchEvent = require('../models/MatchEvent');
 module.exports.Notification = require('../models/Notification');
-module.exports.AuditLog = require('../models/AuditLog');
 module.exports.LiveFixture = require('../models/LiveFixture');
 
+// GENERAL SCHEMAS //
+module.exports.AuditLog = require('../models/general/AuditLog');
+//END OF GENERAL SCHEMAS //
+
+// FOOTBALL SCHEMAS //
 module.exports.FootballTeam = require('../models/football/FootballTeam');
 module.exports.FootballPlayer = require('../models/football/FootballPlayer');
 module.exports.FootballPlayerCompetitionStat = require('../models/football/FootballPlayerCompetitionStat');
 module.exports.FootballCompetition = require('../models/football/FootballCompetition');
 module.exports.FootballFixture = require('../models/football/FootballFixture');
 module.exports.FootballLiveFixture = require('../models/football/FootballLiveFixture');
+// END OF FOOTBALL SCHEMAS //
