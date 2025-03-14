@@ -1,6 +1,19 @@
 const playerService = require('../../services/football/footballPlayerService');
 const { success, serverError, error } = require('../../utils/responseUtils');
 
+exports.addPlayers = async ( req, res ) => {
+    try {
+        const result = await playerService.addPlayers( req.body, req.body.team );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 exports.getPlayer = async ( req, res ) => {
     try {
         const result = await playerService.getPlayer( req.params );
