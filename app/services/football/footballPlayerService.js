@@ -2,9 +2,9 @@ const db = require('../../config/db');
 
 exports.addPlayers = async ({ playerArray }, team ) => {
     // Check if team exists
-    const foundTeam = await db.Team.findById( team );
+    const foundTeam = await db.FootballTeam.findById( team );
     if( !foundTeam ) return { success: false, message: 'Invalid Team' }
-    
+
     // Check if player already exists
     const existingPlayers = await db.FootballPlayer.find({ name: { $in: playerArray.map( player => player.name ) }, team: team._id }, "name" );
     if( existingPlayers.length > 0 ) {
