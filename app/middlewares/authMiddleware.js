@@ -12,6 +12,10 @@ const authenticateUser = ( req, res, next ) => {
         if ( !decoded ) return error( res, 'Invalid or Expired Token', 401 );
     
         req.user = decoded;
+        global.currentUser = {
+            ...decoded,
+            _id: decoded.userId
+        };
         next();            
     } catch ( err ) {
         return serverError( res, err );
