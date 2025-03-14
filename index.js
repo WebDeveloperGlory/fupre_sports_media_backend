@@ -14,6 +14,8 @@ const liveFixtureRoutes = require('./app/routes/liveFixtureRoutes');
 const generalRoutes = require('./app/routes/generalRoutes');
 const playerRoutes = require('./app/routes/playerRoutes');
 
+const footballPlayerRoutes = require('./app/routes/football/footballPlayerRoutes');
+
 const app = express();
 const APP_PORT = PORT;
 const server = http.createServer( app );
@@ -47,6 +49,8 @@ app.get( '/', ( req, res ) => {
 //END OF TEST ROUTES //
 
 // ROUTES //
+app.use( '/api/football/player', footballPlayerRoutes );
+
 app.use( '/api/auth', authRoutes );
 app.use( '/api/teams', teamRoutes );
 app.use( '/api/fixture', fixtureRoutes );
