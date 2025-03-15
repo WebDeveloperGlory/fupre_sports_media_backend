@@ -42,22 +42,6 @@ exports.logoutUser = async () => {
     return { success: true, message: 'User Logged Out', data: null };
 }
 
-exports.completePasswordReset = async ( { userId }, { newPassword, confirmNewPassword } ) => {
-    // Find user in database
-    const foundUser = await db.User.findById( userId );
-    if( !foundUser ) return { success: false, message: 'User Not Found' };
-
-    // Check if passwords match
-    const matchingPasswords = newPassword === confirmNewPassword;
-    if( !matchingPasswords ) return { success: false, message: 'Passwords Do Not Match' };
-
-    // Update password
-    foundUser.password = newPassword;
-    await foundUser.save();
-
-    return { success: true, message: 'Password Reset Successfully', data: null };
-}
-
 exports.changePassword = async ( { userId }, { oldPassword, newPassword, confirmNewPassword } ) => {
     // Find user in database
     const foundUser = await db.User.findById( userId );
