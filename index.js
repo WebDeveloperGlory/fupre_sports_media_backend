@@ -41,6 +41,16 @@ app.use( cors( corsOptions ) );
 app.use( express.json() );
 app.use( '/api/api-docs', swaggerUi.serve, swaggerUi.setup( swaggerSpec ) );
 initializeWebSocket( server, corsOptions );
+app.use((req, res, next) => {
+    req.auditInfo = {
+        ipAddress: req.ip,
+        timestamp: new Date().toISOString(),
+        route: req.originalUrl,
+        method: req.method,
+        userAgent: req.get('User-Agent'),
+    };
+    next();
+});
 // END OF MIDDLEWARES //
 
 // TEST ROUTE //
