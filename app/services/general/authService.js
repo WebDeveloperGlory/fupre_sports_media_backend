@@ -1,9 +1,12 @@
 const db = require('../../config/db');
-const bcrypt = require('bcrypt');
 const { generateToken } = require('../../utils/jwtUtils');
 const { logActionManually } = require('../../middlewares/auditMiddleware');
 
 exports.registerRegularUser = async ({ name, email, password }, { auditInfo }) => {
+    // Check if user already exists
+    const foundUser = await db.RefactoredUser.findOne({ email });
+    if( foundUser ) return { success: false, message: 'Email Already Registered In DB' }
+    
     // Create User
     const createdUser = await db.RefactoredUser.create({ name, email });
     createdUser.password = password;
@@ -32,6 +35,10 @@ exports.registerRegularUser = async ({ name, email, password }, { auditInfo }) =
 }
 
 exports.registerAdmin = async ({ name, email, role, password }, { userId, auditInfo }) => {
+    // Check if user already exists
+    const foundUser = await db.RefactoredUser.findOne({ email });
+    if( foundUser ) return { success: false, message: 'Email Already Registered In DB' }
+    
     // Create User
     const createdUser = await db.RefactoredUser.create({ name, email, role });
     createdUser.password = password;
