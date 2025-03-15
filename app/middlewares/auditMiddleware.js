@@ -26,30 +26,28 @@ const logRequest = ( req, res, next ) => {
     next();
 }
 
-const logActionManually = async (
-    req, res, 
-    {
-        action, entity, 
-        entityId, details = {}, 
-        previousValues = {}, newValues = {}
-    }
-) => {
+const logActionManually = async ({
+    userId, auditInfo,
+    action, entity,
+    entityId, details = {}, 
+    previousValues = {}, newValues = {}
+}) => {
     // Check for user in request
-    if ( !req.user ) {
+    if ( !userId ) {
         console.warn('No user found in request for audit logging');
         return;
     }
 
     try {
         await auditService.createAuditLog({
-            userId: req.user._id,
+            userId,
             action,
             entity,
             entityId,
             details,
             previousValues,
             newValues,
-            requestInfo: req.auditInfo
+            requestInfo: auditInfo
         });
     } catch ( error ) {
         console.error('Error in audit logging:', error);
