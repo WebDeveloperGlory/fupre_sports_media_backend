@@ -96,7 +96,7 @@ const refactoredHasPlayerPermisions = async ( req, res, next ) => {
         if( !playerDocument ) return error( res, 'Invalid Player' );
         const teamDocument = await db.FootballTeam.findById( playerDocument.team );
         if( !teamDocument.admin ) return error( res, 'Unassigned Admin' );
-        if( !teamDocument.admin.equals( userId ) && role !== 'super-admin' ) return error( res, 'Invalid User Permissions', 401 );
+        if( !teamDocument.admin.equals( userId ) && role !== 'superAdmin' ) return error( res, 'Invalid User Permissions', 401 );
 
         next();
     } catch ( err ) {

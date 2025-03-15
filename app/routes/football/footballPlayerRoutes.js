@@ -5,7 +5,7 @@ const { refactoredHasPlayerPermisions, authorize } = require('../../middlewares/
 
 const router = Router();
 
-router.post('/', authenticateUser, authorize([ 'super-admin', 'team-admin' ]), controller.addPlayers);
+router.post('/', authenticateUser, authorize([ 'superAdmin' ]), controller.addPlayers);
 router.get('/:playerId', controller.getPlayer);
 router.put('/:playerId', authenticateUser, refactoredHasPlayerPermisions, controller.updateTeamPlayer);
 router.delete('/:playerId', authenticateUser, refactoredHasPlayerPermisions, controller.deleteTeamPlayer);
