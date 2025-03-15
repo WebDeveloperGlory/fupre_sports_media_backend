@@ -22,6 +22,7 @@ module.exports.LiveFixture = require('../models/LiveFixture');
 // GENERAL SCHEMAS //
 module.exports.AuditLog = require('../models/general/AuditLog');
 module.exports.RefactoredUser = require('../models/general/User');
+module.exports.RefactoredCompetition = require('../models/general/Competition');
 //END OF GENERAL SCHEMAS //
 
 // FOOTBALL SCHEMAS //
