@@ -3,7 +3,14 @@ const { success, serverError, error } = require('../../utils/responseUtils');
 
 exports.addPlayers = async ( req, res ) => {
     try {
-        const result = await playerService.addPlayers( req.body, req.body.team );
+        const result = await playerService.addPlayers( 
+            req.body, 
+            req.body.team,
+            { 
+                userId: req.user.userId, 
+                auditInfo: req.auditInfo 
+            }
+        );
 
         if( result.success ) {
             return success( res, result.message, result.data );
@@ -29,7 +36,14 @@ exports.getPlayer = async ( req, res ) => {
 
 exports.updateTeamPlayer = async ( req, res ) => {
     try {
-        const result = await playerService.updateTeamPlayer( req.params, req.body );
+        const result = await playerService.updateTeamPlayer( 
+            req.params, 
+            req.body,
+            { 
+                userId: req.user.userId, 
+                auditInfo: req.auditInfo 
+            }
+        );
 
         if( result.success ) {
             return success( res, result.message, result.data );
@@ -42,7 +56,13 @@ exports.updateTeamPlayer = async ( req, res ) => {
 
 exports.deleteTeamPlayer = async ( req, res ) => {
     try {
-        const result = await playerService.deleteTeamPlayer( req.params );
+        const result = await playerService.deleteTeamPlayer( 
+            req.params,
+            { 
+                userId: req.user.userId, 
+                auditInfo: req.auditInfo 
+            }
+        );
 
         if( result.success ) {
             return success( res, result.message, result.data );
@@ -55,7 +75,14 @@ exports.deleteTeamPlayer = async ( req, res ) => {
 
 exports.updatePlayerRecords = async ( req, res ) => {
     try {
-        const result = await playerService.updatePlayerRecords( req.params, req.body );
+        const result = await playerService.updatePlayerRecords( 
+            req.params, 
+            req.body,
+            { 
+                userId: req.user.userId,
+                auditInfo: req.auditInfo 
+            }
+    );
 
         if( result.success ) {
             return success( res, result.message, result.data );

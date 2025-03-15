@@ -9,7 +9,8 @@ const auditLogSchema = new Schema({
     action: {
         type: String,
         required: true,
-        enum: ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT']
+        enum: ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT'],
+        uppercase: true
     },
     entity: {
         type: String,
