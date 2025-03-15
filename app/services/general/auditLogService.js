@@ -21,7 +21,7 @@ exports.createAuditLog = async ({
     return { success: true, message: 'Audit log created successfully', data: auditLog };
 }
 
-exports.getAuditLogsByEntity = async ({ entity, entityId, page = 1, limit = 10 }) => {
+exports.getAuditLogsByEntity = async ({ entity, entityId }, { page = 1, limit = 10 }) => {
     // Calculate the number of documents to skip
     const skip = ( page - 1 ) * limit;
 
@@ -49,7 +49,7 @@ exports.getAuditLogsByEntity = async ({ entity, entityId, page = 1, limit = 10 }
     };
 }
 
-exports.getAuditLogsByUser = async ({ userId, page = 1, limit = 10 }) => {
+exports.getAuditLogsByUser = async ({ userId }, { page = 1, limit = 10 }) => {
     // Calculate the number of documents to skip
     const skip = ( page - 1 ) * limit;
       
