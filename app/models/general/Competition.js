@@ -22,7 +22,6 @@ const competitionSchema = new Schema({
     endDate: { type: Date, required: true },
     admin: { type: Schema.Types.ObjectId, ref: 'RefactoredUser' },
     createdBy: { type: Schema.Types.ObjectId, ref: 'RefactoredUser' },
-    createdAt: { type: Date, default: Date.now }
 },{
     discriminatorKey: 'sportType',
     timestamps: true

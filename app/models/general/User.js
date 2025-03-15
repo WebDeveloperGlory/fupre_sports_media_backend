@@ -7,7 +7,8 @@ const userSchema = new Schema({
     role: {
         type: String,
         enum: [ 'user', 'superAdmin', 'mediaAdmin', 'headMediaAdmin', 'sportAdmin' ],
-        required: true
+        required: true,
+        default: 'user'
     },
     sports: [{
         sport: { type: String }, // e.g., "football", "chess", "basketball"
@@ -18,10 +19,10 @@ const userSchema = new Schema({
         }
     }],
     mediaAccess: [{
-        // competition: { 
-        //     type: Schema.Types.ObjectId, 
-        //     ref: 'Competition' 
-        // },
+        competition: { 
+            type: Schema.Types.ObjectId, 
+            ref: 'RefactoredCompetition' 
+        },
         role: { 
             type: String, 
             enum: [ 'mediaAdmin', 'headMediaAdmin' ] 
