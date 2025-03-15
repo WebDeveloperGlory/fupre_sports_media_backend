@@ -1,5 +1,4 @@
 const swaggerJsdoc = require('swagger-jsdoc');
-const footballPlayerDocs = require("../docs/football/footballPlayerDocs");
 const { PORT } = require('./env');
 
 const APP_PORT = PORT;
@@ -28,6 +27,48 @@ const swaggerDefinition = {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT', // Indicates the token format
+        },
+      },
+      responses: {
+        UnauthorizedError: {
+          description: 'Unauthorized access',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/ErrorResponse',
+              },
+            },
+          },
+        },
+        NotFoundError: {
+          description: 'Resource not found',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/ErrorResponse',
+              },
+            },
+          },
+        },
+        BadRequestError: {
+          description: 'Bad request',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/ErrorResponse',
+              },
+            },
+          },
+        },
+        ServerError: {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/ErrorResponse',
+              },
+            },
+          },
         },
       },
       // Reusable schemas for response models
@@ -69,14 +110,11 @@ const swaggerDefinition = {
         },
       },
   },
-  paths: {
-    ...footballPlayerDocs.paths,
-  },
 };
 
 const options = {
   swaggerDefinition,
-  apis: ['./app/routes/*.js'], // Path to your API route files
+  apis: ['./app/routes/*.js', './app/docs/*/*.js',], // Path to your API route files
 };
 
 const swaggerSpec = swaggerJsdoc( options );

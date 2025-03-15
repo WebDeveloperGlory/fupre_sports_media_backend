@@ -14,6 +14,7 @@ const liveFixtureRoutes = require('./app/routes/liveFixtureRoutes');
 const generalRoutes = require('./app/routes/generalRoutes');
 const playerRoutes = require('./app/routes/playerRoutes');
 
+const auditRoutes = require('./app/routes/general/auditLogRoutes');
 const footballPlayerRoutes = require('./app/routes/football/footballPlayerRoutes');
 
 const app = express();
@@ -49,6 +50,7 @@ app.get( '/', ( req, res ) => {
 //END OF TEST ROUTES //
 
 // ROUTES //
+app.use( '/api/audit', auditRoutes );
 app.use( '/api/football/player', footballPlayerRoutes );
 
 app.use( '/api/auth', authRoutes );
