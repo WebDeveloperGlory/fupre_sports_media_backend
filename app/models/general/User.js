@@ -35,8 +35,7 @@ const userSchema = new Schema({
         default: 'active'
     },
     lastLogin: { type: Date },
-    createdAt: { type: Date, default: Date.now }
-});
+}, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
     if ( !this.isModified('password') ) return next();

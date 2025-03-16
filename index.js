@@ -15,6 +15,7 @@ const generalRoutes = require('./app/routes/generalRoutes');
 const playerRoutes = require('./app/routes/playerRoutes');
 
 const authenticationRoutes = require('./app/routes/general/authRoutes');
+const userRoutes = require('./app/routes/general/userRoutes');
 const auditRoutes = require('./app/routes/general/auditLogRoutes');
 const footballPlayerRoutes = require('./app/routes/football/footballPlayerRoutes');
 
@@ -62,6 +63,7 @@ app.get( '/', ( req, res ) => {
 
 // ROUTES //
 app.use( '/api/authentication', authenticationRoutes );
+app.use( '/api/user', userRoutes );
 app.use( '/api/audit', auditRoutes );
 app.use( '/api/football/player', footballPlayerRoutes );
 

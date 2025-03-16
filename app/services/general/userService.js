@@ -1,6 +1,22 @@
 const db = require('../../config/db');
 const { logActionManually } = require('../../middlewares/auditMiddleware');
 
+exports.getAllUsers = async () => {
+    // Find all users
+    const foundUsers = await db.RefactoredUser.find().select( '-password' );
+
+    // Return success
+    return { success: true, message: 'All Users Aquired', data: foundUsers };
+}
+
+exports.getOneUser = async ({ userId }) => {
+    // Find user in database
+    const foundUser = await db.RefactoredUser.findById( userId ).select('-password');
+    if( !foundUser ) return { success: false, message: 'User Not Found' };
+
+    return { success: true, message: 'User Aquired', data: foundUser };
+}
+
 exports.completePasswordReset = async ( { userId }, { newPassword, confirmNewPassword }, { auditInfo } ) => {
     // Find user in database
     const foundUser = await db.RefactoredUser.findById( userId );
@@ -25,35 +41,7 @@ exports.completePasswordReset = async ( { userId }, { newPassword, confirmNewPas
         }
     });
 
-    return { success: true, message: 'Password Reset Successfully', data: null };
-}
-
-// exports.completePasswordReset = async ( req, res ) => {
-//     try {
-//         const result = await authService.completePasswordReset(
-//             req.params,
-//             req.body,
-//             { 
-//                 userId: req.user.userId,
-//                 auditInfo: req.auditInfo
-//             }
-//         );
-
-//         if( result.success ) {
-//             return success( res, result.message, result.data );
-//         }
-//         return error( res, result.message );
-//     } catch ( err ) {
-//         return serverError( res, err );
-//     }
-// }
-
-exports.getAllUsers = async () => {
-    // Find all users
-    const foundUsers = await db.RefactoredUser.find().select( '-password' );
-
-    // Return success
-    return { success: true, message: 'All Users Aquired', data: foundUsers };
+    return { success: true, message: 'Password Reset', data: null };
 }
 
 exports.deleteUser = async ({ userId }, { auditInfo }) => {
