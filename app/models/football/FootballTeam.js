@@ -1,15 +1,9 @@
 const { Schema, default: mongoose } = require('mongoose');
 
 const footballTeamSchema = new Schema({
-    name: {
-        type: String,
-        required: true
-    },
-    shorthand: {
-        type: String,
-        required: true
-    },
-    department: { type: 'String' },
+    name: { type: String, required: true },
+    shorthand: { type: String, required: true },
+    department: { type: String },
     level: {
         type: String,
         enum: [ '100', '200', '300', '400', '500', 'General' ]
@@ -20,60 +14,44 @@ const footballTeamSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'FootballPlayer'
     },
-    players: [
-        {
+    players: [{
+        type: Schema.Types.ObjectId,
+        ref: 'FootballPlayer'
+    }],
+    competitionInvitations: [{
+        competition: {
             type: Schema.Types.ObjectId,
-            ref: 'FootballPlayer'
+            ref: 'FootballCompetition'
         },
-    ],
-    competitionInvitations: [
-        {
-            competition: {
-                type: Schema.Types.ObjectId,
-                ref: 'FootballCompetition'
-            },
-            status: {
-                type: String,
-                enum: [ 'accepted', 'rejected', 'pending' ],
-                default: 'pending'
-            }
-        },
-    ],
-    friendlyRequests: [
-        {
-            requestId: { type: Schema.Types.ObjectId },
-            team: {
-                type: Schema.Types.ObjectId,
-                ref: 'FootballTeam'
-            },
-            status: {
-                type: String,
-                enum: [ 'accepted', 'pending', 'rejected' ],
-                default: 'pending'
-            },
-            type: {
-                type: String,
-                enum: [ 'sent', 'recieved' ]
-            },
-            date: { type: Date },
-            location: { type: String }
+        status: {
+            type: String,
+            enum: [ 'accepted', 'rejected', 'pending' ],
+            default: 'pending'
         }
-    ],
-    fixtures: [
-        {
+    }],
+    friendlyRequests: [{
+        requestId: { type: Schema.Types.ObjectId },
+        team: {
             type: Schema.Types.ObjectId,
-            ref: 'FootballFixture'
+            ref: 'FootballTeam'
         },
-    ],
+        status: {
+            type: String,
+            enum: [ 'accepted', 'pending', 'rejected' ],
+            default: 'pending'
+        },
+        type: {
+            type: String,
+            enum: [ 'sent', 'received' ]
+        },
+        date: { type: Date },
+        location: { type: String }
+    }],
     admin: {
         type: Schema.Types.ObjectId,
         ref: 'User',
         default: null
     },
-    createdAt: {
-        type: Date,
-        default: Date.now()
-    }
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model( 'FootballTeam', footballTeamSchema );
