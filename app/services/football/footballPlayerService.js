@@ -89,8 +89,8 @@ exports.updateTeamPlayer = async ({ playerId }, { name, position, number }, { us
                 number !== undefined ? "number" : null,
             ].filter(Boolean), // Remove null values
         },
-        previousValues: oldPlayer,
-        newValues: foundPlayer
+        previousValues: oldPlayer.toObject(),
+        newValues: foundPlayer.toObject()
     });
 
     // Return success
@@ -118,7 +118,7 @@ exports.deleteTeamPlayer = async ({ playerId }, { userId, auditInfo }) => {
         details: {
             message: 'Player Deleted, Team Player List Updated',
         },
-        previousValues: foundPlayer,
+        previousValues: foundPlayer.toObject(),
         newValues: null
     });
     logActionManually({
@@ -129,7 +129,7 @@ exports.deleteTeamPlayer = async ({ playerId }, { userId, auditInfo }) => {
         details: {
             message: 'Player Competition Stat Deleted',
         },
-        previousValues: deletedCompetitionStat,
+        previousValues: deletedCompetitionStat.toObject(),
         newValues: null
     });
 
@@ -175,8 +175,8 @@ exports.updatePlayerRecords = async ({ playerId }, { goals, assists, yellowCards
                 cleanSheets !== undefined ? "cleanSheets" : null,
             ].filter(Boolean), // Remove null values
         },
-        previousValues: oldRecord,
-        newValues: currentRecord
+        previousValues: oldRecord.toObject(),
+        newValues: currentRecord.toObject()
     });
 
     // Return success

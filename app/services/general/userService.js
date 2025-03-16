@@ -57,7 +57,9 @@ exports.deleteUser = async ({ userId }, { auditInfo }) => {
         entityId: userId,
         details: {
             message: `User Login`
-        }
+        },
+        previousValues: deletedUser.toObject(),
+        newValues: null
     });
 
     // Return success
