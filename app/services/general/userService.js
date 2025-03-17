@@ -56,7 +56,7 @@ exports.deleteUser = async ({ userId }, { auditInfo }) => {
         entity: 'RefactoredUser',
         entityId: userId,
         details: {
-            message: `User Login`
+            message: `User Deleted`
         },
         previousValues: deletedUser.toObject(),
         newValues: null

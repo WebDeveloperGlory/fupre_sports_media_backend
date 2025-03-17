@@ -38,7 +38,7 @@ const footballFixtureSchema = new Schema({
     stadium: { type: String },
     status: {
         type: String,
-        enum: [ 'live', 'upcoming', 'completed' ],
+        enum: [ 'live', 'upcoming', 'completed', 'postponed' ],
         default: 'upcoming'
     },
     result: {

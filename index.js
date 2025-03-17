@@ -18,6 +18,7 @@ const authenticationRoutes = require('./app/routes/general/authRoutes');
 const userRoutes = require('./app/routes/general/userRoutes');
 const auditRoutes = require('./app/routes/general/auditLogRoutes');
 const footballPlayerRoutes = require('./app/routes/football/footballPlayerRoutes');
+const footballFixtureRoutes = require('./app/routes/football/footballFixtureRoutes');
 
 const app = express();
 const APP_PORT = PORT;
@@ -66,6 +67,7 @@ app.use( '/api/authentication', authenticationRoutes );
 app.use( '/api/user', userRoutes );
 app.use( '/api/audit', auditRoutes );
 app.use( '/api/football/player', footballPlayerRoutes );
+app.use( '/api/football/fixture', footballFixtureRoutes );
 
 app.use( '/api/auth', authRoutes );
 app.use( '/api/teams', teamRoutes );
