@@ -30,6 +30,7 @@ const footballPlayerSchema = new Schema({
         {
             year: { type: Number, required: true },
             goals: { type: Number, default: 0 },
+            ownGoals: { type: Number, default: 0 },
             assists: { type: Number, default: 0 },
             yellowCards: { type: Number, default: 0 },
             redCards: { type: Number, default: 0 },

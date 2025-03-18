@@ -21,6 +21,7 @@ exports.addPlayers = async ({ playerArray }, team, { userId, auditInfo } ) => {
             {
                 year: new Date().getFullYear(),
                 goals: 0,
+                ownGoals: 0,
                 assists: 0,
                 yellowCards: 0,
                 redCards: 0,
@@ -137,7 +138,7 @@ exports.deleteTeamPlayer = async ({ playerId }, { userId, auditInfo }) => {
     return { success: true, message: 'Player Deleted', data: deletedPlayer }    
 }
 
-exports.updatePlayerRecords = async ({ playerId }, { goals, assists, yellowCards, redCards, appearances, cleanSheets }) => {
+exports.updatePlayerRecords = async ({ playerId }, { goals, ownGoals, assists, yellowCards, redCards, appearances, cleanSheets }) => {
     const foundPlayer = await db.FootballPlayer.findById( playerId );
     if( !foundPlayer ) return { success: false, message: 'Invalid Player' };
 
@@ -149,6 +150,7 @@ exports.updatePlayerRecords = async ({ playerId }, { goals, assists, yellowCards
     const oldRecord = JSON.parse(JSON.stringify(currentRecord));
 
     if( goals ) currentRecord.goals = goals;
+    if( ownGoals ) currentRecord.ownGoals = ownGoals;
     if( assists ) currentRecord.assists = assists;
     if( yellowCards ) currentRecord.yellowCards = yellowCards;
     if( redCards ) currentRecord.redCards = redCards;
@@ -168,6 +170,7 @@ exports.updatePlayerRecords = async ({ playerId }, { goals, assists, yellowCards
             message: 'Player Updated',
             affectedFields: [
                 goals !== undefined ? "goals" : null,
+                ownGoals !== undefined ? "ownGoals" : null,
                 assists !== undefined ? "assists" : null,
                 yellowCards !== undefined ? "yellowCards" : null,
                 redCards !== undefined ? "redCards" : null,

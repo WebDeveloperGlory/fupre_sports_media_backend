@@ -128,6 +128,9 @@ const processPlayerStatsFromFixture = ( fixture, teamId, playerStats ) => {
                 case 'goal':
                     playerStats[ playerId ].goals++;
                     break;
+                case 'ownGoal':
+                    playerStats[ playerId ].ownGoals++;
+                    break;
                 case 'assist':
                     playerStats[ playerId ].assists++;
                     break;

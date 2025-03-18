@@ -93,7 +93,7 @@ const footballFixtureSchema = new Schema({
         },
         eventType: {
             type: String,
-            enum: ['goal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget', 'kickoff', 'halftime', 'fulltime'],
+            enum: ['goal', 'ownGoal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget', 'kickoff', 'halftime', 'fulltime'],
             required: true
         },
         player: {

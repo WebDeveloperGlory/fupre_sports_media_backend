@@ -406,6 +406,7 @@ exports.updateFixtureResult = async ({ fixtureId }, { result, statistics, matchE
 
         // Extract events
         const goals = matchEvents.filter( event => event.eventType === "goal" );
+        const ownGoals = matchEvents.filter( event => event.eventType === "ownGoal" );
         const assists = matchEvents.filter( event => event.eventType === "assist" );
         const yellowCards = matchEvents.filter( event => event.eventType === "yellowCard" );
         const redCards = matchEvents.filter( event => event.eventType === "redCard" );
@@ -426,6 +427,12 @@ exports.updateFixtureResult = async ({ fixtureId }, { result, statistics, matchE
             });
         }
 
+        // ✅ 2️⃣ Update ownGoal Stats
+        await processStatUpdate(
+            ownGoals.map( ownGoal => ({ playerId: ownGoal.player, count: 1 })), 
+            "ownGoals", 
+        );
+        
         // ✅ 2️⃣ Update Assist Stats
         await processStatUpdate(
             assists.map( assist => ({ playerId: assist.player, count: 1 })), 

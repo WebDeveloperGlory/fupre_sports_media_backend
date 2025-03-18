@@ -14,6 +14,7 @@ const updatePlayerGeneralRecord = async ( playerId, statField, count = 1 ) => {
         player.generalRecord.push({
             year,
             goals: 0,
+            ownGoals: 0,
             assists: 0,
             yellowCards: 0,
             redCards: 0,
@@ -44,6 +45,7 @@ const updatePlayerGeneralAppearances = async ( playerId, count = 1 ) => {
         player.generalRecord.push({
             year,
             goals: 0,
+            ownGoals: 0,
             assists: 0,
             yellowCards: 0,
             redCards: 0,
@@ -81,6 +83,7 @@ const updatePlayerCompetitionStats = async ( playerId, statField, count = 1, com
             player: playerId,
             year,
             goals: 0,
+            ownGoals: 0,
             assists: 0,
             yellowCards: 0,
             redCards: 0,
@@ -109,6 +112,7 @@ const updatePlayerCompetitionAppearances = async ( playerId, count = 1, competit
             player: playerId,
             year,
             goals: 0,
+            ownGoals: 0,
             assists: 0,
             yellowCards: 0,
             redCards: 0,
