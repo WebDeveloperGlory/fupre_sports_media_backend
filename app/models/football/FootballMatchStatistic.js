@@ -8,6 +8,7 @@ const footballMatchStatisticSchema = new Schema({
     },
     home: {
         shotsOnTarget: { type: Number, default: 0 },
+        shotsBlocked: { type: Number, default: 0 },
         shotsOffTarget: { type: Number, default: 0 },
         fouls: { type: Number, default: 0 },
         yellowCards: { type: Number, default: 0 },
@@ -18,6 +19,7 @@ const footballMatchStatisticSchema = new Schema({
     },
     away: {
         shotsOnTarget: { type: Number, default: 0 },
+        shotsBlocked: { type: Number, default: 0 },
         shotsOffTarget: { type: Number, default: 0 },
         fouls: { type: Number, default: 0 },
         yellowCards: { type: Number, default: 0 },
