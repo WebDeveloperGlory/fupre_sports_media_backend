@@ -49,7 +49,7 @@ const footballTeamSchema = new Schema({
     }],
     admin: {
         type: Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'RefactoredUser',
         default: null
     },
 }, { timestamps: true });

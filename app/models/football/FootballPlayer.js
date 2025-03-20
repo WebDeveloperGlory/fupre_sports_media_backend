@@ -26,6 +26,26 @@ const footballPlayerSchema = new Schema({
         enum: [ 'active', 'loaned', 'transferred' ],
         default: 'active'
     },
+    transferDetails: {
+        status: {
+            type: String,
+            enum: ['loaned', 'transferred'],
+        },
+        fromTeam: {
+            type: Schema.Types.ObjectId,
+            ref: 'FootballTeam',
+        },
+        toTeam: {
+            type: Schema.Types.ObjectId,
+            ref: 'FootballTeam',
+        },
+        transferDate: {
+            type: Date,
+        },
+        returnDate: {
+            type: Date,
+        }
+    },
     generalRecord: [
         {
             year: { type: Number, required: true },
