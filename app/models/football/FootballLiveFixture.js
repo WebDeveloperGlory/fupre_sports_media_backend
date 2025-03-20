@@ -7,6 +7,11 @@ const footballLiveFixtureSchema = new Schema({
         type: Number,
         required: true
     },
+    half: {
+        type: String,
+        enum: [ 'first', 'second' ],
+        default: 'first'
+    },
     fixtureId: {
         type: Schema.Types.ObjectId,
         ref: 'FootballFixture',
@@ -46,6 +51,8 @@ const footballLiveFixtureSchema = new Schema({
     result: {
         homeScore: { type: Number, default: 0 },
         awayScore: { type: Number, default: 0 },
+        halftimeHomeScore: { type: Number, default: null },
+        halftimeAwayScore: { type: Number, default: null },
         homePenalty: { type: Number, default: null },
         awayPenalty: { type: Number, default: null }
     },
@@ -86,7 +93,7 @@ const footballLiveFixtureSchema = new Schema({
             time: { type: Number, required: true },
             eventType: {
                 type: String,
-                enum: ['goal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget', 'kickoff', 'halftime', 'fulltime'],
+                enum: ['goal', 'ownGoal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget', 'kickoff', 'halftime', 'fulltime'],
                 required: true
             },
             player: { type: Schema.Types.ObjectId, ref: 'FootballPlayer', default: null },
