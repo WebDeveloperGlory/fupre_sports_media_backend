@@ -20,7 +20,7 @@ exports.getAllTeams = async ({ department, level, limit = 10, page = 1 }) => {
         .skip( skip )
         .limit( limit );
 
-    const total = await db.FootballTeam.countDocuments();
+    const total = await db.FootballTeam.countDocuments(filter);
 
     // Return success
     return { 
@@ -547,7 +547,7 @@ exports.updateFriendlyRequestStatus = async ({ teamId, requestId }, { status }, 
 exports.updateTeamAdmin = async ({ teamId }, { adminId }, { userId, auditInfo }) => {
     // Check if admin exists and is a team-admin
     const foundAdmin = await db.RefactoredUser.findById( adminId );
-    if( !foundAdmin || foundAdmin.sports.role !== 'sportAdmin' || !foundAdmin.sports.some( sport => sport.role === 'teamAdmin' ) ) return { success: false, message: 'Invalid Admin' };
+    if( !foundAdmin || foundAdmin.role !== 'sportAdmin' || !foundAdmin.sports.some( sport => sport.role === 'teamAdmin' ) ) return { success: false, message: 'Invalid Admin' };
 
     // Check if team exists and add admin
     const updatedTeam = await db.FootballTeam.findByIdAndUpdate(
@@ -599,6 +599,7 @@ exports.deleteTeam = async ({ teamId }, { userId, auditInfo }) => {
         newValues: null
     });
 
+    // Return success
     return { success: true, message: 'Team Deleted', data: foundTeam };
 }
 

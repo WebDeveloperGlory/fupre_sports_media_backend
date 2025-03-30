@@ -104,9 +104,25 @@ const refactoredHasPlayerPermisions = async ( req, res, next ) => {
     }
 }
 
+const refactoredHasCompetitionPermissions = async ( req, res, next ) => {
+    const { userId, role } = req.user;
+    const { competitionId } = req.params;
+
+    try {
+        const competitionDocument = await db.FootballCompetition.findById( competitionId );
+        if( !competitionDocument ) return error( res, 'Invalid Competition' );
+        if( !competitionDocument.admin ) return error( res, 'Unassigned Admin' );
+        if( !competitionDocument.admin.equals( userId ) && role !== 'superAdmin' ) return error( res, 'Invalid User Permissions', 401 );
+
+        next();
+    } catch ( err ) {
+        return serverError( res, err )
+    }
+}
+
 module.exports = { 
     hasTeamPermissions, hasCompetitionPermissions, hasPlayerPermissions, 
     isSuperAdmin, isCompetitionAdmin, 
     authorize,
-    refactoredHasPlayerPermisions
+    refactoredHasPlayerPermisions, refactoredHasCompetitionPermissions
 };

@@ -62,12 +62,10 @@ const footballCompetitionSchema = db.RefactoredCompetition.discriminator('footba
             ref: 'FootballTeam',
             required: true
         },
-        squadList: [
-            {
-                type: Schema.Types.ObjectId,
-                ref: 'FootballPlayer'
-            }
-        ],
+        squadList: [{
+            type: Schema.Types.ObjectId,
+            ref: 'FootballPlayer'
+        }],
     }],
     rules: {
         substitutions: {
