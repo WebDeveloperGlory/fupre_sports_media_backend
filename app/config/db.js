@@ -33,4 +33,7 @@ module.exports.FootballCompetition = require('../models/football/FootballCompeti
 module.exports.FootballFixture = require('../models/football/FootballFixture');
 module.exports.FootballMatchStatistic = require('../models/football/FootballMatchStatistic');
 module.exports.FootballLiveFixture = require('../models/football/FootballLiveFixture');
+module.exports.FootballTOTSSession = require('../models/football/TOTSSession');
+module.exports.FootballTOTSResult = require('../models/football/TOTSResult');
+module.exports.FootballVotes = require('../models/football/Votes');
 // END OF FOOTBALL SCHEMAS //
