@@ -4,10 +4,7 @@ const footballTeamSchema = new Schema({
     name: { type: String, required: true },
     shorthand: { type: String, required: true },
     department: { type: String },
-    level: {
-        type: String,
-        enum: [ '100', '200', '300', '400', '500', 'General' ]
-    },
+    year: { type: String },
     coach: { type: String },
     assistantCoach: { type: String },
     captain: {

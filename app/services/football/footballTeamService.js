@@ -6,14 +6,14 @@ const { calculateTeamStats, getTeamForm,
     getMatchResult, getScoreString 
 } = require('../../utils/football/footballTeamUtils');
 
-exports.getAllTeams = async ({ department, level, limit = 10, page = 1 }) => {
+exports.getAllTeams = async ({ department, year, limit = 10, page = 1 }) => {
     // Calculate the number of documents to skip
     const skip = ( page - 1 ) * limit;
     let filter = {};
 
-    // Check if filtering by department or level
+    // Check if filtering by department or year
     if( department ) { filter.department = department }
-    if( level ) { filter.level = level }
+    if( year ) { filter.year = year }
 
     // Get all teams
     const allTeams = await db.FootballTeam.find( filter )
@@ -251,9 +251,9 @@ exports.getTeamPlayersStatistics = async ({ teamId }, { startDate, endDate, comp
     };
 }
 
-exports.createTeam = async ({ name, shorthand, department, level }, { userId, auditInfo }) => {
+exports.createTeam = async ({ name, shorthand, department, year }, { userId, auditInfo }) => {
     // Create team
-    const createdTeam = await db.FootballTeam.create({ name, shorthand, department, level });
+    const createdTeam = await db.FootballTeam.create({ name, shorthand, department, year });
 
     // Log action
     logActionManually({
@@ -440,7 +440,7 @@ exports.getFriendlyRequests = async ({ teamId }) => {
     // Check if team exists
     const foundTeam = await db.FootballTeam.findById( teamId ).populate({ 
         path: 'friendlyRequests.team', 
-        select: 'name department shorthand level' 
+        select: 'name department shorthand year' 
     });
     if( !foundTeam ) return { success: false, message: 'Team Not Found' };
 
@@ -525,7 +525,7 @@ exports.updateFriendlyRequestStatus = async ({ teamId, requestId }, { status }, 
     // Refresh Team
     const refreshedTeam = await db.FootballTeam.findById( teamId ).populate({
         path: 'friendlyRequests.team',
-        select: 'name department level'
+        select: 'name department year'
     });
 
     // Log actions

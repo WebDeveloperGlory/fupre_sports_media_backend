@@ -15,11 +15,10 @@
  *           type: string
  *         description: Filter teams by department
  *       - in: query
- *         name: level
+ *         name: year
  *         schema:
  *           type: string
- *           enum: ["100", "200", "300", "400", "500", "General"]
- *         description: Filter teams by academic level
+ *         description: Filter teams by academic year
  *       - in: query
  *         name: limit
  *         schema:
@@ -46,7 +45,7 @@
  *                     name: "Eagles FC"
  *                     shorthand: "EFC"
  *                     department: "Engineering"
- *                     level: "300"
+ *                     year: "2024/2024"
  *                 pagination:
  *                   total: 15
  *                   page: 1
@@ -78,10 +77,9 @@
  *               department:
  *                 type: string
  *                 example: "Engineering"
- *               level:
+ *               year:
  *                 type: string
- *                 enum: ["100", "200", "300", "400", "500", "General"]
- *                 example: "300"
+ *                 example: "2024/2025"
  *     responses:
  *       200:
  *         description: Team created successfully
@@ -97,7 +95,7 @@
  *                 name: "Eagles FC"
  *                 shorthand: "EFC"
  *                 department: "Engineering"
- *                 level: "300"
+ *                 year: "2024/2025"
  *       400:
  *         $ref: "#/components/responses/NotFoundError"
  *       401:
@@ -131,7 +129,7 @@
  *                 name: "Eagles FC"
  *                 shorthand: "EFC"
  *                 department: "Engineering"
- *                 level: "300"
+ *                 year: "2024/2025"
  *                 players: ["650d1f99a2f45b1a3c2e77bd", "650d1f99a2f45b1a3c2e77be"]
  *       400:
  *         $ref: "#/components/responses/NotFoundError"
@@ -166,10 +164,9 @@
  *               department:
  *                 type: string
  *                 example: "Computer Science"
- *               level:
+ *               year:
  *                 type: string
- *                 enum: ["100", "200", "300", "400", "500", "General"]
- *                 example: "400"
+ *                 example: "2024/2025"
  *               coach:
  *                 type: string
  *                 example: "Head Coach"
@@ -191,7 +188,7 @@
  *                 name: "Eagles United"
  *                 shorthand: "EUFC"
  *                 department: "Computer Science"
- *                 level: "400"
+ *                 year: "2024/2025"
  *       400:
  *         $ref: "#/components/responses/NotFoundError"
  *       401:
