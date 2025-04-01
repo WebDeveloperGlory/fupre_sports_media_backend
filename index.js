@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./app/config/swagger');
+const { swaggerSpecV1, swaggerSpecV2 } = require('./app/config/swagger');
 const { PORT, ALLOWED_ORIGINS } = require('./app/config/env');
 const { initializeWebSocket } = require('./app/config/socket');
 const authRoutes = require('./app/routes/authRoutes');
@@ -21,6 +21,7 @@ const footballPlayerRoutes = require('./app/routes/football/footballPlayerRoutes
 const footballFixtureRoutes = require('./app/routes/football/footballFixtureRoutes');
 const footballTeamRoutes = require('./app/routes/football/footballTeamRoutes');
 const footballCompetitionRoutes = require('./app/routes/football/footballCompetitionRoutes');
+const footballTOTSRoutes = require('./app/routes/football/footballTOTSRoutes');
 
 const app = express();
 const APP_PORT = PORT;
@@ -42,9 +43,11 @@ const corsOptions = {
 
 // MIDDLEWARES //
 app.use( cors( corsOptions ) );
-// app.use( cors() );
 app.use( express.json() );
-app.use( '/api/api-docs', swaggerUi.serve, swaggerUi.setup( swaggerSpec ) );
+
+app.use( '/api/v1/api-docs', swaggerUi.serve, swaggerUi.setup( swaggerSpecV1 ) );
+app.use( '/api/v2/api-docs', swaggerUi.serve, swaggerUi.setup( swaggerSpecV2 ) );
+
 initializeWebSocket( server, corsOptions );
 app.use((req, res, next) => {
     req.auditInfo = {
@@ -65,13 +68,14 @@ app.get( '/', ( req, res ) => {
 //END OF TEST ROUTES //
 
 // ROUTES //
-app.use( '/api/authentication', authenticationRoutes );
-app.use( '/api/user', userRoutes );
-app.use( '/api/audit', auditRoutes );
-app.use( '/api/football/player', footballPlayerRoutes );
-app.use( '/api/football/fixture', footballFixtureRoutes );
-app.use( '/api/football/team', footballTeamRoutes );
-app.use( '/api/football/competition', footballCompetitionRoutes );
+app.use( '/api/v2/authentication', authenticationRoutes );
+app.use( '/api/v2/user', userRoutes );
+app.use( '/api/v2/audit', auditRoutes );
+app.use( '/api/v2/football/player', footballPlayerRoutes );
+app.use( '/api/v2/football/fixture', footballFixtureRoutes );
+app.use( '/api/v2/football/team', footballTeamRoutes );
+app.use( '/api/v2/football/competition', footballCompetitionRoutes );
+app.use( '/api/v2/football/tots', footballTOTSRoutes );
 
 app.use( '/api/auth', authRoutes );
 app.use( '/api/teams', teamRoutes );
@@ -89,6 +93,7 @@ app.use( '/api/player', playerRoutes );
 // });
 server.listen( PORT, () => {
     console.log(`Fupre Sports Media Server Running On Port: ${ APP_PORT }`);
-    console.log(`Swagger Docs Available At: ${ APP_PORT }/api/api-docs`);
+    console.log(`Swagger Docs Version 1 Available At: ${ APP_PORT }/api/v1/api-docs`);
+    console.log(`Swagger Docs Version 2 Available At: ${ APP_PORT }/api/v2/api-docs`);
     console.log(`Websockets server running on port ${ APP_PORT }`);
 });
