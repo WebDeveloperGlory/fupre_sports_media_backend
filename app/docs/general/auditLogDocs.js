@@ -1,13 +1,16 @@
 /**
  * @swagger
  * tags:
- *   name: AuditLog
- *   description: API for managing audit logs
- *
+ *   - name: Audit Logs (Admin)
+ *     description: Admin endpoints for managing audit logs (requires authentication)
+ */
+
+/**
+ * @swagger
  * /audit/audit-logs:
  *   get:
- *     summary: Get all audit logs
- *     tags: [AuditLog]
+ *     summary: Get all audit logs (Admin)
+ *     tags: [Audit Logs (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -15,15 +18,23 @@
  *         name: page
  *         schema:
  *           type: integer
- *         description: The page number for pagination
+ *           default: 1
+ *         description: Page number for pagination
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 20
  *         description: Number of results per page
+ *       - in: query
+ *         name: action
+ *         schema:
+ *           type: string
+ *           enum: [CREATE, UPDATE, DELETE, LOGIN, LOGOUT]
+ *         description: Filter by action type
  *     responses:
  *       200:
- *         description: Logs retrieved successfully
+ *         description: List of audit logs
  *         content:
  *           application/json:
  *             schema:
@@ -32,28 +43,28 @@
  *               code: "00"
  *               message: "Audit logs retrieved"
  *               data:
- *                 - _id: "650d1f99a2f45b1a3c2e77bc"
- *                   userId: "651d2e09b1c23e4d8c9f87ab"
- *                   action: "UPDATE"
- *                   entity: "Match"
- *                   entityId: "652a3b8cf9e3457d8a2e67cd"
- *                   details: { description: "Updated match score" }
- *                   previousValues: { score: "1-0" }
- *                   newValues: { score: "2-1" }
- *                   timestamp: "2024-03-09T12:34:56Z"
- *                   ipAddress: "192.168.1.1"
- *                   userAgent: "Mozilla/5.0"
+ *                 logs:
+ *                   - _id: "650d1f99a2f45b1a3c2e77bc"
+ *                     action: "UPDATE"
+ *                     entity: "Match"
+ *                     timestamp: "2024-03-09T12:34:56Z"
+ *                 pagination:
+ *                   total: 100
+ *                   page: 1
+ *                   pages: 5
+ *                   limit: 20
  *       400:
- *         $ref: "#/components/responses/NotFoundError"
- *       401:
- *         $ref: "#/components/responses/UnauthorizedError"
+ *         $ref: "#/components/responses/BadRequestError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /audit/audit-logs/{logId}:
  *   get:
- *     summary: Get a specific audit log
- *     tags: [AuditLog]
+ *     summary: Get detailed audit log (Admin)
+ *     tags: [Audit Logs (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -62,10 +73,10 @@
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the audit log to retrieve
+ *         description: ID of the audit log
  *     responses:
  *       200:
- *         description: Log retrieved successfully
+ *         description: Detailed audit log
  *         content:
  *           application/json:
  *             schema:
@@ -80,20 +91,27 @@
  *                 entity: "Player"
  *                 entityId: "652a3b8cf9e3457d8a2e67cd"
  *                 details: { reason: "Player contract terminated" }
+ *                 previousValues: { status: "active" }
+ *                 newValues: { status: "inactive" }
  *                 timestamp: "2024-03-09T12:34:56Z"
  *                 ipAddress: "192.168.1.1"
  *                 userAgent: "Mozilla/5.0"
- *       400:
- *         $ref: "#/components/responses/NotFoundError"
  *       401:
  *         $ref: "#/components/responses/UnauthorizedError"
+ *       403:
+ *         description: Forbidden (admin access required)
+ *       404:
+ *         $ref: "#/components/responses/NotFoundError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /audit/audit-logs/user/{userId}:
  *   get:
- *     summary: Get audit logs for a specific user
- *     tags: [AuditLog]
+ *     summary: Get user-specific audit logs (Admin)
+ *     tags: [Audit Logs (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -102,10 +120,16 @@
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the user whose logs to retrieve
+ *         description: ID of the user
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Maximum number of logs to return
  *     responses:
  *       200:
- *         description: Logs retrieved successfully
+ *         description: User audit logs
  *         content:
  *           application/json:
  *             schema:
@@ -115,24 +139,24 @@
  *               message: "User audit logs retrieved"
  *               data:
  *                 - _id: "650d1f99a2f45b1a3c2e77bc"
- *                   userId: "651d2e09b1c23e4d8c9f87ab"
  *                   action: "LOGIN"
  *                   entity: "User"
- *                   entityId: "651d2e09b1c23e4d8c9f87ab"
  *                   timestamp: "2024-03-09T12:34:56Z"
  *                   ipAddress: "192.168.1.1"
- *                   userAgent: "Mozilla/5.0"
- *       400:
- *         $ref: "#/components/responses/NotFoundError"
  *       401:
  *         $ref: "#/components/responses/UnauthorizedError"
+ *       403:
+ *         description: Forbidden (admin access required)
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /audit/audit-logs/entity/{entity}/{entityId}:
  *   get:
- *     summary: Get audit logs by entity
- *     tags: [AuditLog]
+ *     summary: Get entity-specific audit logs (Admin)
+ *     tags: [Audit Logs (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -141,16 +165,16 @@
  *         required: true
  *         schema:
  *           type: string
- *         description: The entity name
+ *         description: Entity type (e.g., Competition, Team)
  *       - in: path
  *         name: entityId
  *         required: true
  *         schema:
  *           type: string
- *         description: The entity ID
+ *         description: ID of the entity
  *     responses:
  *       200:
- *         description: Logs retrieved successfully
+ *         description: Entity audit history
  *         content:
  *           application/json:
  *             schema:
@@ -162,17 +186,61 @@
  *                 - _id: "650d1f99a2f45b1a3c2e77bc"
  *                   userId: "651d2e09b1c23e4d8c9f87ab"
  *                   action: "UPDATE"
- *                   entity: "Competition"
- *                   entityId: "652a3b8cf9e3457d8a2e67cd"
  *                   previousValues: { name: "Summer Cup 2023" }
  *                   newValues: { name: "Summer Cup 2024" }
  *                   timestamp: "2024-03-09T12:34:56Z"
- *                   ipAddress: "192.168.1.1"
- *                   userAgent: "Mozilla/5.0"
- *       400:
- *         $ref: "#/components/responses/NotFoundError"
  *       401:
  *         $ref: "#/components/responses/UnauthorizedError"
+ *       403:
+ *         description: Forbidden (admin access required)
  *       500:
  *         $ref: "#/components/responses/ServerError"
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     AuditLog:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         userId:
+ *           type: string
+ *         action:
+ *           type: string
+ *           enum: [CREATE, UPDATE, DELETE, LOGIN, LOGOUT]
+ *         entity:
+ *           type: string
+ *         entityId:
+ *           type: string
+ *         details:
+ *           type: object
+ *         previousValues:
+ *           type: object
+ *         newValues:
+ *           type: object
+ *         timestamp:
+ *           type: string
+ *           format: date-time
+ *         ipAddress:
+ *           type: string
+ *         userAgent:
+ *           type: string
+ */
+
+/**
+ * @swagger
+ * components:
+ *   responses:
+ *     ForbiddenError:
+ *       description: Forbidden (admin access required)
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/ErrorResponse"
+ *           example:
+ *             code: "03"
+ *             message: "Insufficient permissions"
  */

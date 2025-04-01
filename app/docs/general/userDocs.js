@@ -1,13 +1,26 @@
 /**
  * @swagger
  * tags:
- *   name: User
- *   description: API for managing users
- *
+ *   - name: User Management (Public)
+ *     description: Public user management endpoints
+ *   - name: User Management (Admin)
+ *     description: Admin user management operations
+ */
+
+
+// ### Public Routes (No Authentication Required) ### //
+
+// There are no public routes in the provided user management documentation
+
+
+// ### Admin Routes (Require Authentication) ### //
+
+/**
+ * @swagger
  * /user:
  *   get:
  *     summary: Get all users
- *     tags: [User]
+ *     tags: [User Management (Admin)]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -29,11 +42,14 @@
  *         $ref: "#/components/responses/NotFoundError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /user/{userId}:
  *   get:
  *     summary: Get a specific user
- *     tags: [User]
+ *     tags: [User Management (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -65,9 +81,16 @@
  *
  *   put:
  *     summary: Update a user's details
- *     tags: [User]
+ *     tags: [User Management (Admin)]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user to retrieve
  *     requestBody:
  *       required: true
  *       content:
@@ -100,9 +123,16 @@
  *
  *   delete:
  *     summary: Delete a user
- *     tags: [User]
+ *     tags: [User Management (Admin)]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user to retrieve
  *     responses:
  *       200:
  *         description: User deleted successfully
@@ -120,13 +150,23 @@
  *         $ref: "#/components/responses/UnauthorizedError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /user/{userId}/reset-password:
  *   put:
  *     summary: Reset user password
- *     tags: [User]
+ *     tags: [User Management (Admin)]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user whose password will be reset (SuperAdmin Only)
  *     requestBody:
  *       required: true
  *       content:
