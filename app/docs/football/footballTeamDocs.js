@@ -1,13 +1,30 @@
 /**
  * @swagger
  * tags:
- *   name: FootballTeam
- *   description: API for managing football teams
- *
+ *   - name: Football Team (Public)
+ *     description: Public football team endpoints
+ *   - name: Football Team (Admin)
+ *     description: Football team management endpoints requiring authentication
+ *   - name: Team Players
+ *     description: Player management for football teams
+ *   - name: Team Competitions
+ *     description: Team competition participation
+ *   - name: Team Statistics
+ *     description: Football team statistics and analytics
+ *   - name: Friendly Matches
+ *     description: Friendly match requests and management
+ *   - name: Team Management
+ *     description: Team administration and leadership
+ */
+
+// ==================== TEAM CRUD OPERATIONS ==================== //
+
+/**
+ * @swagger
  * /football/team:
  *   get:
  *     summary: Get all football teams
- *     tags: [FootballTeam]
+ *     tags: [Football Team (Public)]
  *     parameters:
  *       - in: query
  *         name: department
@@ -55,10 +72,14 @@
  *         $ref: "#/components/responses/NotFoundError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- * 
+ */
+
+/**
+ * @swagger
+ * /football/team:
  *   post:
  *     summary: Create a new football team
- *     tags: [FootballTeam]
+ *     tags: [Football Team (Admin)]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -102,11 +123,14 @@
  *         $ref: "#/components/responses/UnauthorizedError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /football/team/{teamId}:
  *   get:
  *     summary: Get details of a specific football team
- *     tags: [FootballTeam]
+ *     tags: [Football Team (Public)]
  *     parameters:
  *       - in: path
  *         name: teamId
@@ -135,10 +159,14 @@
  *         $ref: "#/components/responses/NotFoundError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- * 
+ */
+
+/**
+ * @swagger
+ * /football/team/{teamId}:
  *   put:
  *     summary: Update details of a football team
- *     tags: [FootballTeam]
+ *     tags: [Football Team (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -170,15 +198,15 @@
  *               coaches:
  *                 type: array
  *                 items:
- *                     type: object
- *                     properties:
- *                         name:
- *                             type: string                         
- *                             example: "Head Coach"
- *                         role:
- *                            type: string
- *                            enum: ["head", "assistant", "goalkeeping", "fitness"]
- *                            example: "head"                         
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                       example: "Head Coach"
+ *                     role:
+ *                       type: string
+ *                       enum: ["head", "assistant", "goalkeeping", "fitness"]
+ *                       example: "head"
  *     responses:
  *       200:
  *         description: Team updated successfully
@@ -201,10 +229,14 @@
  *         $ref: "#/components/responses/UnauthorizedError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- * 
+ */
+
+/**
+ * @swagger
+ * /football/team/{teamId}:
  *   delete:
  *     summary: Delete a football team (Admin Only)
- *     tags: [FootballTeam]
+ *     tags: [Football Team (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -233,11 +265,16 @@
  *         $ref: "#/components/responses/UnauthorizedError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+// ==================== TEAM PLAYERS MANAGEMENT ==================== //
+
+/**
+ * @swagger
  * /football/team/{teamId}/players:
  *   get:
  *     summary: Get all players in a specific football team
- *     tags: [FootballTeam]
+ *     tags: [Team Players]
  *     parameters:
  *       - in: path
  *         name: teamId
@@ -270,10 +307,14 @@
  *         $ref: "#/components/responses/NotFoundError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- * 
+ */
+
+/**
+ * @swagger
+ * /football/team/{teamId}/players:
  *   post:
  *     summary: Add a player to a football team
- *     tags: [FootballTeam]
+ *     tags: [Team Players]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -325,11 +366,14 @@
  *         $ref: "#/components/responses/UnauthorizedError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /football/team/{teamId}/players/{playerId}:
  *   delete:
  *     summary: Remove a player from a football team
- *     tags: [FootballTeam]
+ *     tags: [Team Players]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -361,11 +405,16 @@
  *         $ref: "#/components/responses/UnauthorizedError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+// ==================== TEAM COMPETITIONS ==================== //
+
+/**
+ * @swagger
  * /football/team/{teamId}/competitions:
  *   get:
  *     summary: Get competitions a team is participating in
- *     tags: [FootballTeam]
+ *     tags: [Team Competitions]
  *     parameters:
  *       - in: path
  *         name: teamId
@@ -396,11 +445,16 @@
  *         $ref: "#/components/responses/NotFoundError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+// ==================== TEAM STATISTICS ==================== //
+
+/**
+ * @swagger
  * /football/team/{teamId}/form:
  *   get:
  *     summary: Get the last five match results of a team
- *     tags: [FootballTeam]
+ *     tags: [Team Statistics]
  *     parameters:
  *       - in: path
  *         name: teamId
@@ -423,11 +477,14 @@
  *         $ref: "#/components/responses/NotFoundError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /football/team/{teamId}/team-statistics:
  *   get:
  *     summary: Get a team's statistics
- *     tags: [FootballTeam]
+ *     tags: [Team Statistics]
  *     parameters:
  *       - in: path
  *         name: teamId
@@ -447,48 +504,54 @@
  *               message: "Team Statistics Acquired"
  *               data:
  *                 team:
- *                      name: "Eagles FC"
- *                      shorthand: "EFC"
- *                      id: "651f1b29c45a1b3a3c4e8dcd"
+ *                   name: "Eagles FC"
+ *                   shorthand: "EFC"
+ *                   id: "651f1b29c45a1b3a3c4e8dcd"
  *                 stats:
- *                      played: 5
- *                      wins: 2
- *                      draws: 2
- *                      losses: 1
- *                      goalsScored: 12
- *                      goalsConceded: 7
- *                      cleanSheets: 2
- *                      shotsOnTarget: 27
- *                      shotsBlocked: 30
- *                      shotsOffTarget: 20
- *                      corners: 40
- *                      fouls: 73
- *                      yellowCards: 4
- *                      redCards: 2
- *                      homeRecord: { played: 3, wins: 2, draws: 1, losses: 0 }
- *                      awayRecord: { played: 2, wins: 0, draws: 1, losses: 1 }
- *                 form:
- *                      - "W"
- *                      - "L"
- *                      - "D"
- *                      - "W"
- *                      - "D"
+ *                   played: 5
+ *                   wins: 2
+ *                   draws: 2
+ *                   losses: 1
+ *                   goalsScored: 12
+ *                   goalsConceded: 7
+ *                   cleanSheets: 2
+ *                   shotsOnTarget: 27
+ *                   shotsBlocked: 30
+ *                   shotsOffTarget: 20
+ *                   corners: 40
+ *                   fouls: 73
+ *                   yellowCards: 4
+ *                   redCards: 2
+ *                   homeRecord: 
+ *                     played: 3
+ *                     wins: 2
+ *                     draws: 1
+ *                     losses: 0
+ *                   awayRecord:
+ *                     played: 2
+ *                     wins: 0
+ *                     draws: 1
+ *                     losses: 1
+ *                 form: ["W", "L", "D", "W", "D"]
  *                 fixtures:
- *                      - id: "651f1b29c45a1b3a3c4e8dcd"
- *                        date: "2021-09-20T00:00:00.000Z"
- *                        opponent: "Lions FC"
- *                        isHome: true
- *                        result: "win"
- *                        score: "3-1"
+ *                   - id: "651f1b29c45a1b3a3c4e8dcd"
+ *                     date: "2021-09-20T00:00:00.000Z"
+ *                     opponent: "Lions FC"
+ *                     isHome: true
+ *                     result: "win"
+ *                     score: "3-1"
  *       400:
  *         $ref: "#/components/responses/NotFoundError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /football/team/{teamId}/player-statistics:
  *   get:
  *     summary: Get a team's player statistics
- *     tags: [FootballTeam]
+ *     tags: [Team Statistics]
  *     parameters:
  *       - in: path
  *         name: teamId
@@ -496,26 +559,105 @@
  *         schema:
  *           type: string
  *         description: The ID of the team
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for filtering statistics (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date for filtering statistics (YYYY-MM-DD)
+ *       - in: query
+ *         name: competitionId
+ *         schema:
+ *           type: string
+ *         description: ID of competition to filter statistics by
  *     responses:
  *       200:
- *         description: Team statistics retrieved successfully
+ *         description: Team player statistics retrieved successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: "#/components/schemas/SuccessResponse"
  *             example:
  *               code: "00"
- *               message: "Team Statistics Acquired"
+ *               message: "Team Players Statistics Acquired"
  *               data:
+ *                 - playerId: "650d1f99a2f45b1a3c2e77bc"
+ *                   name: "John Doe"
+ *                   number: 9
+ *                   position: "ST"
+ *                   teamType: "base"
+ *                   appearances: 15
+ *                   starts: 12
+ *                   substitutions: 3
+ *                   minutesPlayed: 1125
+ *                   goals: 8
+ *                   ownGoals: 0
+ *                   assists: 5
+ *                   shotsOnTarget: 24
+ *                   shotsOffTarget: 18
+ *                   corners: 3
+ *                   offsides: 7
+ *                   foulsCommitted: 12
+ *                   foulsSuffered: 22
+ *                   yellowCards: 2
+ *                   redCards: 0
+ *                   goalsPerMatch: 0.53
+ *                   assistsPerMatch: 0.33
+ *                   shotAccuracy: 57.1
+ *                 - playerId: "650d1f99a2f45b1a3c2e77bd"
+ *                   name: "James Smith"
+ *                   number: 1
+ *                   position: "GK"
+ *                   teamType: "base"
+ *                   appearances: 15
+ *                   starts: 15
+ *                   substitutions: 0
+ *                   minutesPlayed: 1350
+ *                   goals: 0
+ *                   ownGoals: 0
+ *                   assists: 1
+ *                   cleanSheets: 6
+ *                   goalsConceded: 12
+ *                   saves: 42
+ *                   penaltySaves: 1
+ *                   goalsConcededPer90: 0.8
+ *                   savePercentage: 77.8
  *       400:
- *         $ref: "#/components/responses/NotFoundError"
+ *         description: Invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ErrorResponse"
+ *             example:
+ *               code: "400"
+ *               message: "Invalid Team"
+ *       404:
+ *         description: Team not found or has no players
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ErrorResponse"
+ *             example:
+ *               code: "404"
+ *               message: "Team Has No Players"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+// ==================== FRIENDLY MATCHES ==================== //
+
+/**
+ * @swagger
  * /football/team/{teamId}/friendly-requests:
  *   get:
  *     summary: Get friendly match requests for a football team
- *     tags: [FootballTeam]
+ *     tags: [Friendly Matches]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -547,10 +689,14 @@
  *         $ref: "#/components/responses/UnauthorizedError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- * 
+ */
+
+/**
+ * @swagger
+ * /football/team/{teamId}/friendly-requests:
  *   post:
  *     summary: Send a friendly match request to another team
- *     tags: [FootballTeam]
+ *     tags: [Friendly Matches]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -599,11 +745,14 @@
  *         $ref: "#/components/responses/UnauthorizedError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /football/team/{teamId}/friendly-requests/{requestId}/status:
  *   put:
  *     summary: Update the status of a friendly match request
- *     tags: [FootballTeam]
+ *     tags: [Friendly Matches]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -650,11 +799,16 @@
  *         $ref: "#/components/responses/UnauthorizedError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+// ==================== TEAM MANAGEMENT ==================== //
+
+/**
+ * @swagger
  * /football/team/{teamId}/captain:
  *   put:
  *     summary: Change the captain of a football team
- *     tags: [FootballTeam]
+ *     tags: [Team Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -693,11 +847,14 @@
  *         $ref: "#/components/responses/UnauthorizedError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /football/team/{teamId}/admin:
  *   put:
  *     summary: Update the admin of a football team
- *     tags: [FootballTeam]
+ *     tags: [Team Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -736,4 +893,141 @@
  *         $ref: "#/components/responses/UnauthorizedError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Team:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *         name:
+ *           type: string
+ *         shorthand:
+ *           type: string
+ *         department:
+ *           type: string
+ *         year:
+ *           type: string
+ *         players:
+ *           type: array
+ *           items:
+ *             type: string
+ *         coaches:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: ["head", "assistant", "goalkeeping", "fitness"]
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ * 
+ *     Player:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *         name:
+ *           type: string
+ *         position:
+ *           type: string
+ *           enum: ["CB", "LB", "RB", "WB", "GK", "CMF", "DMF", "AMF", "LW", "RW", "ST"]
+ *         number:
+ *           type: number
+ *         team:
+ *           type: string
+ * 
+ *     PlayerStatistics:
+ *       type: object
+ *       properties:
+ *         playerId:
+ *           type: string
+ *         name:
+ *           type: string
+ *         number:
+ *           type: integer
+ *         position:
+ *           type: string
+ *         teamType:
+ *           type: string
+ *         appearances:
+ *           type: integer
+ *         starts:
+ *           type: integer
+ *         substitutions:
+ *           type: integer
+ *         minutesPlayed:
+ *           type: integer
+ *         goals:
+ *           type: integer
+ *         ownGoals:
+ *           type: integer
+ *         assists:
+ *           type: integer
+ *         shotsOnTarget:
+ *           type: integer
+ *         shotsOffTarget:
+ *           type: integer
+ *         corners:
+ *           type: integer
+ *         offsides:
+ *           type: integer
+ *         foulsCommitted:
+ *           type: integer
+ *         foulsSuffered:
+ *           type: integer
+ *         yellowCards:
+ *           type: integer
+ *         redCards:
+ *           type: integer
+ *         cleanSheets:
+ *           type: integer
+ *         goalsConceded:
+ *           type: integer
+ *         saves:
+ *           type: integer
+ *         penaltySaves:
+ *           type: integer
+ *         goalsPerMatch:
+ *           type: number
+ *         assistsPerMatch:
+ *           type: number
+ *         shotAccuracy:
+ *           type: number
+ *         goalsConcededPer90:
+ *           type: number
+ *         savePercentage:
+ *           type: number
+ */
+
+/**
+ * @swagger
+ * components:
+ *   responses:
+ *     TeamNotFoundError:
+ *       description: Team not found
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/ErrorResponse"
+ *           example:
+ *             code: "04"
+ *             message: "Team not found"
+ *     PlayerNotFoundError:
+ *       description: Player not found
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/ErrorResponse"
+ *           example:
+ *             code: "05"
+ *             message: "Player not found"
  */
