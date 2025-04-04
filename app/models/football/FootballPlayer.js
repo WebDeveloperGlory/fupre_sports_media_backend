@@ -1,5 +1,18 @@
 const { Schema, default: mongoose } = require('mongoose');
 
+// Reusable season stat schema
+const seasonStatSchema = new Schema({
+    season: { type: String, required: true }, // e.g., "2023/2024"
+    goals: { type: Number, default: 0 },
+    ownGoals: { type: Number, default: 0 },
+    assists: { type: Number, default: 0 },
+    yellowCards: { type: Number, default: 0 },
+    redCards: { type: Number, default: 0 },
+    appearances: { type: Number, default: 0 },
+    cleanSheets: { type: Number, default: 0 },
+    minutesPlayed: { type: Number, default: 0 }
+});
+
 const footballPlayerSchema = new Schema({
     // Basic Info
     name: { type: String, required: true, },
@@ -86,18 +99,5 @@ const footballPlayerSchema = new Schema({
         ]
     }
 }, { timestamps: true });
-
-// Reusable season stat schema
-const seasonStatSchema = new Schema({
-    season: { type: String, required: true }, // e.g., "2023/2024"
-    goals: { type: Number, default: 0 },
-    ownGoals: { type: Number, default: 0 },
-    assists: { type: Number, default: 0 },
-    yellowCards: { type: Number, default: 0 },
-    redCards: { type: Number, default: 0 },
-    appearances: { type: Number, default: 0 },
-    cleanSheets: { type: Number, default: 0 },
-    minutesPlayed: { type: Number, default: 0 }
-});
 
 module.exports = mongoose.model( 'FootballPlayer', footballPlayerSchema );
