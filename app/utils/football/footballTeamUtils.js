@@ -207,11 +207,21 @@ const getTeamScores = ( fixture, teamId ) => {
     };
 }
 
+// Helper function to determine which team type this player belongs to for the given teamId
+function getPlayerTeamType(player, teamId) {
+    if (player.baseTeam?.toString() === teamId.toString()) return 'base';
+    if (player.departmentTeam?.toString() === teamId.toString()) return 'department';
+    if (player.clubTeam?.toString() === teamId.toString()) return 'club';
+    if (player.schoolTeam?.toString() === teamId.toString()) return 'school';
+    return 'unknown';
+}
+
 module.exports = {
     calculateTeamStats,
     getTeamForm,
     processPlayerStatsFromFixture,
     getMatchResult,
     getScoreString,
-    getTeamScores
+    getTeamScores,
+    getPlayerTeamType
 }

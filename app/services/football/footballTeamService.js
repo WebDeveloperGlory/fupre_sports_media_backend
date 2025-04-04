@@ -2,9 +2,10 @@ const mongoose = require('mongoose');
 const db = require('../../config/db');
 const { logActionManually } = require('../../middlewares/auditMiddleware');
 const { calculateTeamStats, getTeamForm, 
-    processPlayerStatsFromFixture, 
+    getPlayerTeamType,
     getMatchResult, getScoreString 
 } = require('../../utils/football/footballTeamUtils');
+const playerService = require('./footballPlayerService');
 
 exports.getAllTeams = async ({ department, year, limit = 10, page = 1 }) => {
     // Calculate the number of documents to skip
@@ -59,13 +60,20 @@ exports.getTeamPlayers = async ({ teamId }) => {
     if( !teamName ) return { success: false, message: 'Invalid Team' };
 
     // Check for team players
-    const players = await db.FootballPlayer.find({ team: teamId });
+    const players = await db.FootballPlayer.find({
+        $or: [
+            { baseTeam: teamId },
+            { departmentTeam: teamId },
+            { clubTeam: teamId },
+            { schoolTeam: teamId }
+        ]
+    });
 
     return { 
         success: true, 
         message: 'Team Players Aquired', 
         data: {
-            team: teamName,
+            team: teamName.name,
             players
         }
     }
@@ -92,7 +100,7 @@ exports.getTeamCompetitions = async ({ teamId }) => {
         success: true, 
         message: 'Team Competitions Aquired', 
         data: {
-            team: teamName,
+            team: teamName.name,
             competitions: competitions.filter( comp => comp.status === 'accepted' ),
         }
     }
@@ -190,12 +198,22 @@ exports.getTeamForm = async ({ teamId }) => {
 
 exports.getTeamPlayersStatistics = async ({ teamId }, { startDate, endDate, competitionId }) => {
     // Check if team exists
-    const foundTeam = await db.FootballTeam.findById( teamId );
-    if( !foundTeam ) return { success: false, message: 'Invalid Team' };
+    const foundTeam = await db.FootballTeam.findById(teamId);
+    if (!foundTeam) return { success: false, message: 'Invalid Team' };
 
-    // Check if team has players
-    const players = await db.FootballPlayer.find({ team: teamId });
-    if( !players || players.length === 0 ) return { success: false, message: 'Team Has No Players' };
+    // Get all players associated with this team through any team type
+    const players = await db.FootballPlayer.find({
+        $or: [
+            { baseTeam: teamId },
+            { departmentTeam: teamId },
+            { clubTeam: teamId },
+            { schoolTeam: teamId }
+        ]
+    }).select('_id name number position baseTeam departmentTeam clubTeam schoolTeam');
+
+    if (!players || players.length === 0) {
+        return { success: false, message: 'Team Has No Players' };
+    }
 
     // Build query for fixtures
     const fixtureQuery = {
@@ -205,55 +223,222 @@ exports.getTeamPlayersStatistics = async ({ teamId }, { startDate, endDate, comp
         ],
         status: 'completed'
     };
-    // Apply filters (similar to getTeamStatistics)
-    if ( startDate ) {
+
+    // Apply filters
+    if (startDate) {
         fixtureQuery.date = { $gte: new Date(startDate) };
     }
-    if ( endDate ) {
-        fixtureQuery.date = { ...fixtureQuery.date, $lte: new Date( endDate ) };
+    if (endDate) {
+        fixtureQuery.date = { ...fixtureQuery.date, $lte: new Date(endDate) };
     }
-    if ( competitionId ) {
+    if (competitionId) {
         fixtureQuery.type = 'competition';
         fixtureQuery.competition = competitionId;
     }
 
-    // Get all fixtures with match events
-    const fixtures = await db.FootballFixture.find( fixtureQuery ).lean();
+    // Get all completed fixtures with populated events
+    const fixtures = await db.FootballFixture.find(fixtureQuery)
+        .select('homeTeam awayTeam date result homeLineup awayLineup matchEvents')
+        .populate('matchEvents.player', 'name position number')
+        .populate('matchEvents.team', 'name')
+        .lean();
 
-    // Calculate statistics for each player
+    // Initialize player statistics with comprehensive metrics
     const playerStats = {};
-    
-    players.forEach( player => {
-        playerStats[ player._id.toString() ] = {
+
+    players.forEach(player => {
+        playerStats[player._id.toString()] = {
             playerId: player._id,
             name: player.name || 'Unknown Player',
             number: player.number,
             position: player.position,
+            teamType: getPlayerTeamType(player, teamId),
             appearances: 0,
+            starts: 0,
+            substitutions: 0,
+            minutesPlayed: 0,
             goals: 0,
             ownGoals: 0,
             assists: 0,
+            shotsOnTarget: 0,
+            shotsOffTarget: 0,
+            corners: 0,
+            offsides: 0,
+            foulsCommitted: 0,
+            foulsSuffered: 0,
             yellowCards: 0,
             redCards: 0,
-            minutesPlayed: 0
+            // Goalkeeper-specific stats
+            cleanSheets: 0,
+            goalsConceded: 0,
+            penaltySaves: 0,
+            // Calculated metrics (will be populated later)
+            goalsPerMatch: 0,
+            assistsPerMatch: 0,
+            shotAccuracy: 0
         };
     });
 
-    // Process each fixture to gather player statistics
+    // Process each fixture to gather comprehensive player statistics
     fixtures.forEach(fixture => {
-        processPlayerStatsFromFixture( fixture, teamId, playerStats );
+        const isHomeTeam = fixture.homeTeam.toString() === teamId.toString();
+        const lineup = isHomeTeam ? fixture.homeLineup?.startingXI : fixture.awayLineup?.startingXI;
+        const subs = isHomeTeam ? fixture.homeLineup?.subs : fixture.awayLineup?.subs;
+
+        // Process starting lineup
+        lineup?.forEach(playerId => {
+            const playerIdStr = playerId.toString();
+            if (playerStats[playerIdStr]) {
+                playerStats[playerIdStr].appearances += 1;
+                playerStats[playerIdStr].starts += 1;
+                playerStats[playerIdStr].minutesPlayed += 90; // Default full match
+            }
+        });
+
+        // Process substitutions
+        subs?.forEach(playerId => {
+            const playerIdStr = playerId.toString();
+            if (playerStats[playerIdStr]) {
+                playerStats[playerIdStr].appearances += 1;
+                playerStats[playerIdStr].substitutions += 1;
+                // Default substitution at 60th minute if no event data
+                playerStats[playerIdStr].minutesPlayed += 30;
+            }
+        });
+
+        // Process match events
+        fixture.matchEvents?.forEach(event => {
+            const playerIdStr = event.player?._id?.toString();
+            if (!playerIdStr || !playerStats[playerIdStr]) return;
+
+            switch (event.eventType) {
+                case 'goal':
+                    if (event.team?.toString() === teamId.toString()) {
+                        playerStats[playerIdStr].goals += 1;
+                        playerStats[playerIdStr].shotsOnTarget += 1;
+                    }
+                    break;
+                case 'ownGoal':
+                    playerStats[playerIdStr].ownGoals += 1;
+                    break;
+                case 'assist':
+                    playerStats[playerIdStr].assists += 1;
+                    break;
+                case 'yellowCard':
+                    playerStats[playerIdStr].yellowCards += 1;
+                    break;
+                case 'redCard':
+                    playerStats[playerIdStr].redCards += 1;
+                    break;
+                case 'shotOnTarget':
+                    playerStats[playerIdStr].shotsOnTarget += 1;
+                    break;
+                case 'shotOffTarget':
+                    playerStats[playerIdStr].shotsOffTarget += 1;
+                    break;
+                case 'corner':
+                    playerStats[playerIdStr].corners += 1;
+                    break;
+                case 'offside':
+                    playerStats[playerIdStr].offsides += 1;
+                    break;
+                case 'foul':
+                    if (event.team?.toString() === teamId.toString()) {
+                        playerStats[playerIdStr].foulsCommitted += 1;
+                    } else {
+                        playerStats[playerIdStr].foulsSuffered += 1;
+                    }
+                    break;
+                case 'substitution':
+                    // Update minutes for substituted player
+                    const subTime = event.time || 60; // Default to 60th minute if no time
+                    if (event.player?.toString() === playerIdStr) {
+                        // Player was subbed off
+                        playerStats[playerIdStr].minutesPlayed = 
+                            (playerStats[playerIdStr].minutesPlayed || 0) - (90 - subTime) + subTime;
+                    } else if (event.substitutedFor?.toString() === playerIdStr) {
+                        // Player was subbed on
+                        playerStats[playerIdStr].minutesPlayed += (90 - subTime);
+                    }
+                    break;
+            }
+        });
+
+        // Calculate clean sheets for goalkeepers
+        const isCleanSheet = isHomeTeam ? 
+            (fixture.result?.homeScore === 0) : 
+            (fixture.result?.awayScore === 0);
+        
+        if (isCleanSheet) {
+            lineup?.forEach(playerId => {
+                const playerIdStr = playerId.toString();
+                if (playerStats[playerIdStr]?.position === 'GK') {
+                    playerStats[playerIdStr].cleanSheets += 1;
+                }
+            });
+        }
+
+        // Calculate goals conceded for goalkeepers
+        if (isHomeTeam && fixture.result?.awayScore > 0) {
+            lineup?.forEach(playerId => {
+                const playerIdStr = playerId.toString();
+                if (playerStats[playerIdStr]?.position === 'GK') {
+                    playerStats[playerIdStr].goalsConceded += fixture.result.awayScore;
+                }
+            });
+        } else if (!isHomeTeam && fixture.result?.homeScore > 0) {
+            lineup?.forEach(playerId => {
+                const playerIdStr = playerId.toString();
+                if (playerStats[playerIdStr]?.position === 'GK') {
+                    playerStats[playerIdStr].goalsConceded += fixture.result.homeScore;
+                }
+            });
+        }
+    });
+
+    // Calculate derived metrics
+    Object.values(playerStats).forEach(stats => {
+        const totalShots = stats.shotsOnTarget + stats.shotsOffTarget;
+        
+        if (stats.appearances > 0) {
+            stats.goalsPerMatch = parseFloat((stats.goals / stats.appearances).toFixed(2));
+            stats.assistsPerMatch = parseFloat((stats.assists / stats.appearances).toFixed(2));
+            
+            if (totalShots > 0) {
+                stats.shotAccuracy = parseFloat(
+                    ((stats.shotsOnTarget / totalShots) * 100).toFixed(1)
+                );
+            }
+            
+            if (stats.position === 'GK' && stats.minutesPlayed > 0) {
+                stats.goalsConcededPer90 = parseFloat(
+                    ((stats.goalsConceded * 90) / stats.minutesPlayed).toFixed(2)
+                );
+            }
+        }
     });
 
     return {
         success: true,
         message: 'Team Players Statistics Acquired',
-        data: Object.values( playerStats ).sort((a, b) => b.goals - a.goals)
+        data: Object.values(playerStats).sort((a, b) => {
+            // Primary sort by goals
+            if (b.goals !== a.goals) return b.goals - a.goals;
+            // Secondary sort by assists
+            if (b.assists !== a.assists) return b.assists - a.assists;
+            // Tertiary sort by minutes played
+            return b.minutesPlayed - a.minutesPlayed;
+        })
     };
-}
+};
 
-exports.createTeam = async ({ name, shorthand, department, year }, { userId, auditInfo }) => {
+exports.createTeam = async ({ name, shorthand, department, year, type }, { userId, auditInfo }) => {
+    // Check for valid type
+    const validTypes = [ 'base', 'department', 'club', 'school' ];
+    if( !validTypes.includes( type ) ) return { success: false, message: 'Invalid Team Type' };
+
     // Create team
-    const createdTeam = await db.FootballTeam.create({ name, shorthand, department, year });
+    const createdTeam = await db.FootballTeam.create({ name, shorthand, department, year, type });
 
     // Log action
     logActionManually({
@@ -270,50 +455,17 @@ exports.createTeam = async ({ name, shorthand, department, year }, { userId, aud
     return { success: true, message: 'Team Created', data: createdTeam };
 }
 
-exports.addPlayerToTeam = async ({ teamId }, { name, position, number }, { userId, auditInfo }) => {
+exports.addPlayerToTeam = async ({ teamId }, { name, department, position, number }, { userId, auditInfo }) => {
     // Check if team exists
     const team = await db.FootballTeam.findById( teamId );
     if( !team ) return { success: false, message: 'Invalid Team' };
 
-    // Check if player already exists
-    const existingPlayers = await db.FootballPlayer.find({ name, team: teamId });
-    if( existingPlayers.length > 0 ) {
-        const existingNames = existingPlayers.map( player => player.name );
-        return { success: false, message: `Players with names ${ existingNames.join(', ') } already exist in team`}
-    }
-
     // Create player
-    const createdPlayer = await db.FootballPlayer.create({ 
-        name, position, number, 
-        team: teamId, 
-        generalRecord: [
-            {
-                year: new Date().getFullYear(),
-                goals: 0,
-                ownGoals: 0,
-                assists: 0,
-                yellowCards: 0,
-                redCards: 0,
-                appearances: 0,
-                cleanSheets: 0
-            }
-        ] 
-    });
-
-    // Update team players array
-    team.players.push( createdPlayer._id );
-    await team.save();
-
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'CREATE',
-        entity: 'FootballPlayer',
-        entityId: createdPlayer._id,
-        details: {
-            message: `New Player: ${ player.name } Created For Team ${ team.name }`
-        }
-    });
+    playerService.addPlayers({ 
+        playerArray: [{ name, department, position, number }],
+        teamType: `${ team.type }Team`,
+        teamId: teamId,
+    }, { userId, auditInfo });
 
     // Return success
     return { success: true, message: 'Players Added', data: createdPlayer };
@@ -325,7 +477,15 @@ exports.removePlayerFromTeam = async ({ teamId, playerId }, { userId, auditInfo 
     if( !team ) return { success: false, message: 'Invalid Team' };
 
     // Check if player exists
-    const player = await db.FootballPlayer.findById( playerId );
+    const player = await db.FootballPlayer.findOne({ 
+        _id: playerId,
+        $or: [
+            { baseTeam: teamId },
+            { departmentTeam: teamId },
+            { clubTeam: teamId },
+            { schoolTeam: teamId }
+        ]
+    });
     if( !player ) return { success: false, message: 'Invalid Player' };
 
     // Remove player from team
@@ -334,7 +494,6 @@ exports.removePlayerFromTeam = async ({ teamId, playerId }, { userId, auditInfo 
 
     // Delete player
     await db.FootballPlayer.findByIdAndDelete( playerId );
-    const deletedCompetitionStat = await db.FootballPlayerCompetitionStat.findOneAndDelete({ player: foundPlayer._id });
 
     // Log action
     logActionManually({
@@ -348,58 +507,9 @@ exports.removePlayerFromTeam = async ({ teamId, playerId }, { userId, auditInfo 
         previousValues: player.toObject(),
         newValues: null
     });
-    logActionManually({
-        userId, auditInfo,
-        action: 'DELETE',
-        entity: 'FootballPlayerCompetitionStat',
-        entityId: deletedCompetitionStat._id,
-        details: {
-            message: 'Player Competition Stat Deleted',
-        },
-        previousValues: deletedCompetitionStat.toObject(),
-        newValues: null
-    });
 
     // Return success
     return { success: true, message: 'Player Removed' };
-}
-
-exports.transferOrLoanPlayer = async ({ playerId }, { status, fromTeam, toTeam, transferDate, returnDate }, { userId, auditInfo }) => {
-    // Check if player exists
-    const player = await db.FootballPlayer.findById( playerId );
-    if( !player ) return { success: false, message: 'Invalid Player' };
-
-    // Save old data
-    const oldPlayer = await db.FootballPlayer.findById( playerId );
-
-    // Update player details
-    player.status = status;
-    player.transferDetails = { status, fromTeam, toTeam, transferDate, returnDate };
-    player.team = toTeam;
-    await player.save();
-
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballPlayer',
-        entityId: playerId,
-        details: {
-            message: 'Player Transfer/Loan Details Updated',
-            affectedFields: [
-                status !== undefined ? 'status' : null,
-                fromTeam !== undefined ? 'fromTeam' : null,
-                toTeam !== undefined ? 'toTeam' : null,
-                transferDate !== undefined ? 'transferDate' : null,
-                returnDate !== undefined ? 'returnDate' : null
-            ].filter(Boolean)
-        },
-        previousValues: oldPlayer.toObject(),
-        newValues: player.toObject()
-    });
-
-    // Return success
-    return { success: true, message: 'Player Transfer/Loan Details Updated', data: player };
 }
 
 exports.changeTeamCaptain = async ({ teamId }, { playerId }, { userId, auditInfo }) => {

@@ -3,6 +3,7 @@ const { Schema, default: mongoose } = require('mongoose');
 const REQUIRED_EVENT_TYPES = ['goal', 'assist', 'ownGoal', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget'];
 
 const footballFixtureSchema = new Schema({
+    // Baic Info
     homeTeam: {
         type: Schema.Types.ObjectId,
         ref: 'FootballTeam',
@@ -41,6 +42,8 @@ const footballFixtureSchema = new Schema({
         enum: [ 'live', 'upcoming', 'completed', 'postponed' ],
         default: 'upcoming'
     },
+
+    // Results and Statistics
     result: {
         homeScore: { type: Number, default: null },
         awayScore: { type: Number, default: null },
@@ -48,6 +51,12 @@ const footballFixtureSchema = new Schema({
         halftimeAwayScore: { type: Number, default: null },
         homePenalty: { type: Number, default: null },
         awayPenalty: { type: Number, default: null },
+        winner: {
+            type: String,
+            enum: [ 'home', 'away', 'draw' ],
+            default: null
+        },
+        isPenaltyShootout: { type: Boolean, default: false }
     },
     goalScorers: [{
         id: {
@@ -64,6 +73,8 @@ const footballFixtureSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'FootballMatchStatistic'
     },
+
+    // Lineups and Events
     homeLineup: {
         formation: { type: String, default: null },
         startingXI: [{
@@ -91,6 +102,7 @@ const footballFixtureSchema = new Schema({
             type: Number,
             required: true
         },
+        half: { type: Number, enum: [ 1, 2 ], default: 1 },
         eventType: {
             type: String,
             enum: ['goal', 'ownGoal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget', 'kickoff', 'halftime', 'fulltime'],
@@ -127,10 +139,20 @@ const footballFixtureSchema = new Schema({
             type: Number 
         },
     }],
+
+    // Match Odds
     preMatchOdds: {
         homeOdds: { type: Number },
         drawOdds: { type: Number },
         awayOdds: { type: Number },
+    },
+
+    // Post-Match
+    highlightsVideo: { type: String },
+    matchReport: { type: String },
+    manOfTheMatch: { 
+        type: Schema.Types.ObjectId,
+        ref: 'FootballPlayer'
     }
 }, { timestamps: true })
 

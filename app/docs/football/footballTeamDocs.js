@@ -167,12 +167,18 @@
  *               year:
  *                 type: string
  *                 example: "2024/2025"
- *               coach:
- *                 type: string
- *                 example: "Head Coach"
- *               assistantCoach:
- *                 type: string
- *                 example: "Assistant Coach"
+ *               coaches:
+ *                 type: array
+ *                 items:
+ *                     type: object
+ *                     properties:
+ *                         name:
+ *                             type: string                         
+ *                             example: "Head Coach"
+ *                         role:
+ *                            type: string
+ *                            enum: ["head", "assistant", "goalkeeping", "fitness"]
+ *                            example: "head"                         
  *     responses:
  *       200:
  *         description: Team updated successfully
@@ -287,6 +293,9 @@
  *               name:
  *                 type: string
  *                 example: "John Doe"
+ *               department:
+ *                 type: string
+ *                 example: "Electrical/Electronics Engineering"
  *               position:
  *                 type: string
  *                 enum: ["CB", "LB", "RB", "WB", "GK", "CMF", "DMF", "AMF", "LW", "RW", "ST"]
@@ -346,74 +355,6 @@
  *             example:
  *               code: "00"
  *               message: "Player Removed"
- *       400:
- *         $ref: "#/components/responses/NotFoundError"
- *       401:
- *         $ref: "#/components/responses/UnauthorizedError"
- *       500:
- *         $ref: "#/components/responses/ServerError"
- * 
- * /football/team/{teamId}/players/{playerId}/transfer:
- *   put:
- *     summary: Transfer or loan a player to another team
- *     tags: [FootballTeam]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: teamId
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the player's current team
- *       - in: path
- *         name: playerId
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the player being transferred or loaned
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               status:
- *                 type: string
- *                 enum: ["loaned", "transferred"]
- *                 example: "loaned"
- *               fromTeam:
- *                 type: string
- *                 example: "650d1f99a2f45b1a3c2e77bd"
- *               toTeam:
- *                 type: string
- *                 example: "652a3b8cf9e3457d8a2e67cd"
- *               transferDate:
- *                 type: string
- *                 format: date-time
- *                 example: "2024-04-01T15:00:00Z"
- *               returnDate:
- *                 type: string
- *                 format: date-time
- *                 example: "2024-06-01T15:00:00Z"
- *     responses:
- *       200:
- *         description: Player transfer/loan details updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
- *             example:
- *               code: "00"
- *               message: "Player Transfer/Loan Details Updated"
- *               data:
- *                 id: "651d2e09b1c23e4d8c9f87ab"
- *                 status: "loaned"
- *                 fromTeam: "650d1f99a2f45b1a3c2e77bd"
- *                 toTeam: "652a3b8cf9e3457d8a2e67cd"
- *                 transferDate: "2024-04-01T15:00:00Z"
- *                 returnDate: "2024-06-01T15:00:00Z"
  *       400:
  *         $ref: "#/components/responses/NotFoundError"
  *       401:

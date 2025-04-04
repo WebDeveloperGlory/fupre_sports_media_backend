@@ -114,7 +114,7 @@ exports.createTeam = async ( req, res ) => {
 
 exports.updateTeam = async ( req, res ) => {
     try {
-        const restrictedFields = [ 'captain', 'players', 'competitionInvitations', 'friendlyRequests', 'admin' ];
+        const restrictedFields = [ 'captain', 'players', 'competitionInvitations', 'friendlyRequests', 'admin', 'stats' ];
         const teamDocument = await teamService.getSingleTeam( req.params );
         const result = await dynamicUpdateService.dynamicUpdate(
             teamDocument,
@@ -161,26 +161,6 @@ exports.removePlayerFromTeam = async ( req, res ) => {
     try {
         const result = await teamService.removePlayerFromTeam(
             req.params,
-            { 
-                userId: req.user.userId, 
-                auditInfo: req.auditInfo 
-            }
-        );
-
-        if( result.success ) {
-            return success( res, result.message, result.data );
-        }
-        return error( res, result.message );
-    } catch ( err ) {
-        return serverError( res, err );
-    }
-}
-
-exports.transferOrLoanPlayer = async ( req, res ) => {
-    try {
-        const result = await teamService.transferOrLoanPlayer(
-            req.params,
-            req.body,
             { 
                 userId: req.user.userId, 
                 auditInfo: req.auditInfo 

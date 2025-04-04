@@ -21,7 +21,6 @@ router.put( '/:teamId/captain', authenticateUser, controller.changeTeamCaptain )
 router.put( '/:teamId/admin', authenticateUser, authorize([ 'superAdmin' ]), controller.updateTeamAdmin );
 router.post( '/:teamId/players', authenticateUser, controller.addPlayerToTeam );
 router.delete( '/:teamId/players/:playerId', authenticateUser, controller.removePlayerFromTeam );
-router.put( '/:teamId/players/:playerId/transfer', authenticateUser, controller.transferOrLoanPlayer );
 router.get( '/:teamId/friendly-requests', authenticateUser, controller.getFriendlyRequests );
 router.post( '/:teamId/friendly-requests', authenticateUser, controller.sendFriendlyRequest );
 router.put( '/:teamId/friendly-requests/:requestId/status', authenticateUser, controller.updateFriendlyRequestStatus );

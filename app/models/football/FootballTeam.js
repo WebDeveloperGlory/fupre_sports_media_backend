@@ -38,14 +38,8 @@ const footballTeamSchema = new Schema({
     // Coaches and Players
     coaches: [{
         _id: false,
-        user: { 
-            type: Schema.Types.ObjectId,
-            ref: 'RefactoredUser'
-        },
-        role: {
-            type: String,
-            enum: ['head', 'assistant', 'goalkeeping', 'fitness']
-        }
+        name: { type: String },
+        role: { type: String, enum: ['head', 'assistant', 'goalkeeping', 'fitness'] }
     }],
     captain: {
         type: Schema.Types.ObjectId,
