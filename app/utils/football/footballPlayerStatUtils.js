@@ -145,8 +145,107 @@ const processAppearanceUpdate = async ( players, competitionId ) => {
     }));
 };
 
+// Helper function to update player stats
+async function updatePlayerStats({
+    playerId,
+    teamId,
+    competitionId,
+    season,
+    matchType,
+    updates
+}) {
+    if (!playerId) return;
+
+    async function determineTeamType(teamId) {
+        if (!teamId) return 'unknown';
+        
+        const team = await db.FootballTeam.findById(teamId).select('type').lean();
+        
+        if (!team) return 'unknown';
+        
+        // Map team.type to the corresponding player field prefix
+        const typeMap = {
+            base: 'base',
+            department: 'department',
+            club: 'club',
+            school: 'school'
+        };
+        
+        return typeMap[team.type] || 'unknown';
+    }
+  
+    const $inc = {};
+    const teamType = await determineTeamType(teamId); // Implement based on your team model
+  
+    // Update career totals
+    Object.keys(updates).forEach(stat => {
+        $inc[`stats.careerTotals.${stat}`] = updates[stat];
+    });
+  
+    // Update team-specific stats
+    if (teamType) {
+        Object.keys(updates).forEach(stat => {
+            $inc[`stats.byTeam.${teamType}.totals.${stat}`] = updates[stat];
+            $inc[`stats.byTeam.${teamType}.${matchType}.$[elem].${stat}`] = updates[stat];
+        });
+    }
+  
+    // Update competition stats if applicable
+    if (competitionId) {
+        Object.keys(updates).forEach(stat => {
+            $inc[`stats.byCompetition.$[comp].stats.${stat}`] = updates[stat];
+        });
+    }
+  
+    const updateOps = {
+        $inc,
+        $setOnInsert: {
+            // Initialize fields if needed
+        }
+    };
+  
+    const arrayFilters = [];
+    
+    if (teamType) {
+        arrayFilters.push({
+            'elem.season': season
+        });
+    }
+  
+    if (competitionId) {
+        arrayFilters.push({
+            'comp.competition': competitionId,
+            'comp.season': season
+        });
+    }
+  
+    await db.FootballPlayer.findByIdAndUpdate(
+        playerId,
+        updateOps,
+        {
+            arrayFilters: arrayFilters.length ? arrayFilters : undefined,
+            upsert: true
+        }
+    );
+}
+  
+// Helper to get goalkeepers from lineup
+async function getGoalkeepers(lineup) {
+    if (!lineup?.startingXI) return [];
+    
+    const players = await db.FootballPlayer.find({
+        _id: { $in: lineup.startingXI },
+        position: 'GK'
+    }).select('_id');
+    
+    return players.map(p => p._id);
+}
+
 module.exports = { 
     updatePlayerGeneralRecord, updatePlayerGeneralAppearances,
     updatePlayerCompetitionStats, updatePlayerCompetitionAppearances,
     processStatUpdate, processAppearanceUpdate,
+
+    updatePlayerStats,
+    getGoalkeepers
 }

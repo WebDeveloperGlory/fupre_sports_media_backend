@@ -1,6 +1,6 @@
 const db = require('../../config/db');
 const { logActionManually } = require('../../middlewares/auditMiddleware');
-const { processStatUpdate, updatePlayerGeneralRecord, processAppearanceUpdate } = require('../../utils/football/footballPlayerStatUtils');
+const { processStatUpdate, updatePlayerGeneralRecord, processAppearanceUpdate, updatePlayerStats, getGoalkeepers } = require('../../utils/football/footballPlayerStatUtils');
 
 
 exports.getAllFixtures = async ({ limit, page, filterBy, completed, live, upcoming, postponed, startDate }) => {
@@ -252,57 +252,232 @@ exports.getTeamFixtures = async ({ teamId }) => {
     return { success: true, message: 'Team Fixtures Acquired', data: fixtures };
 }
 
-exports.createFriendlyFixture = async ({ homeTeam, awayTeam, date, stadium }, { userId, auditInfo }) => {
+exports.createFriendlyFixture = async ({ 
+    homeTeam, 
+    awayTeam, 
+    date, 
+    stadium,
+    isDateTBD = false,
+}, { userId, auditInfo }) => {
+    // Validate teams aren't the same
+    if (homeTeam.toString() === awayTeam.toString()) {
+        return { 
+            success: false, 
+            message: 'Home and away teams cannot be the same',
+            code: 400
+        };
+    }
+  
+    // Validate date logic
+    if ( isDateTBD && date ) {
+        return {
+            success: false,
+            message: 'Cannot specify both date and isDateTBD',
+            code: 400
+        };
+    }
+  
     // Create fixture
     const createdFixture = await db.FootballFixture.create({ 
-        homeTeam, awayTeam, 
+        homeTeam, 
+        awayTeam,
         type: 'friendly',
-        date, stadium
+        date: isDateTBD ? null : date,
+        stadium,
+        isDateTBD,
+        status: isDateTBD ? 'tbd' : 'upcoming'
     });
-
+  
     // Log action
     logActionManually({
-        userId, auditInfo,
+        userId, 
+        auditInfo,
         action: 'CREATE',
         entity: 'FootballFixture',
         entityId: createdFixture._id,
         details: {
-            message: `Fixture Created`
+            message: `Friendly fixture created ${isDateTBD ? '(TBD)' : ''}`
         }
     });
-
-    // Return success
-    return { success: true, message: 'Fixture Created', data: createdFixture };
+  
+    return { 
+        success: true, 
+        message: 'Friendly fixture created',
+        data: createdFixture 
+    };
 }
 
-exports.updateFixtureStatus = async ({ fixtureId }, { status }, { userId, auditInfo }) => {
+exports.updateFixtureStatus = async (
+    { fixtureId }, 
+    { status, postponementReason, newDate }, 
+    { userId, auditInfo }
+) => {
     // Get initial fixture
-    const initialFixture = await db.FootballFixture.findById( fixtureId );
-    if( !initialFixture ) return { success: false, message: 'Invalid Fixture' };
-
-    // Update fixture status
+    const initialFixture = await db.FootballFixture.findById(fixtureId);
+    if (!initialFixture) {
+        return { 
+            success: false, 
+            message: 'Fixture not found', 
+            code: 404 
+        };
+    }
+  
+    // Prepare update
+    const update = { status };
+    const changedFields = ['status'];
+  
+    // Handle postponement specifics
+    if ( status === 'postponed' ) {
+        if (!postponementReason) {
+            return {
+                success: false,
+                message: 'Postponement reason required',
+                code: 400
+            };
+        }
+  
+        update.isPostponed = true;
+        update.postponementInfo = {
+            reason: postponementReason,
+            originalDate: initialFixture.date,
+            ...(newDate && { newDate })
+        };
+        changedFields.push('isPostponed', 'postponementInfo');
+    } else if (initialFixture.status === 'postponed' && status !== 'postponed') {
+        // Clearing postponement status
+        update.isPostponed = false;
+        changedFields.push('isPostponed');
+    }
+  
+    // Handle TBD status changes
+    if (status === 'tbd') {
+        update.isDateTBD = true;
+        update.date = null;
+        changedFields.push('isDateTBD', 'date');
+    } else if (initialFixture.status === 'tbd' && status !== 'tbd') {
+        update.isDateTBD = false;
+        changedFields.push('isDateTBD');
+    }
+  
+    // Update fixture
     const updatedFixture = await db.FootballFixture.findByIdAndUpdate(
         fixtureId,
-        { status },
+        update,
         { new: true }
     );
-
+  
     // Log action
     logActionManually({
-        userId, auditInfo,
+        userId,
+        auditInfo,
         action: 'UPDATE',
         entity: 'FootballFixture',
         entityId: updatedFixture._id,
         details: {
-            message: 'Fixture Updated',
-            affectedFields: ['status']
+            message: `Fixture status updated to ${status}`,
+            affectedFields: changedFields
         },
         previousValues: initialFixture.toObject(),
         newValues: updatedFixture.toObject()
     });
-
-    // Return success
-    return { success: true, message: 'Fixture Status Updated', data: updatedFixture };
+  
+    return { 
+        success: true, 
+        message: 'Fixture status updated',
+        data: updatedFixture 
+    };
+}
+  
+exports.updateFixtureFormation = async (
+    { fixtureId }, 
+    { homeLineup, awayLineup }, 
+    { userId, auditInfo }
+) => {
+    // Validate fixture exists
+    const initialFixture = await db.FootballFixture.findById(fixtureId);
+    if (!initialFixture) {
+        return { 
+            success: false, 
+            message: 'Fixture not found', 
+            code: 404 
+        };
+    }
+  
+    // Validate lineup structures if provided
+    if (homeLineup) {
+        if (homeLineup.startingXI && homeLineup.startingXI.length !== 11) {
+            return {
+                success: false,
+                message: 'Starting XI must have exactly 11 players',
+                code: 400
+            };
+        }
+      if (homeLineup.subs && homeLineup.subs.length > 9) {
+        return {
+            success: false,
+            message: 'Maximum 9 substitutes allowed',
+            code: 400
+        };
+      }
+    }
+  
+    if (awayLineup) {
+        if (awayLineup.startingXI && awayLineup.startingXI.length !== 11) {
+            return {
+                success: false,
+                message: 'Starting XI must have exactly 11 players',
+                code: 400
+            };
+        }
+        if (awayLineup.subs && awayLineup.subs.length > 9) {
+            return {
+                success: false,
+                message: 'Maximum 9 substitutes allowed',
+                code: 400
+            };
+        }
+    }
+  
+    // Prepare update
+    const update = {};
+    const changedFields = [];
+  
+    if (homeLineup) {
+        update.homeLineup = homeLineup;
+        changedFields.push('homeLineup');
+    }
+    if (awayLineup) {
+        update.awayLineup = awayLineup;
+        changedFields.push('awayLineup');
+    }
+  
+    // Update fixture
+    const updatedFixture = await db.FootballFixture.findByIdAndUpdate(
+        fixtureId,
+        update,
+        { new: true }
+    );
+  
+    // Log action
+    logActionManually({
+        userId,
+        auditInfo,
+        action: 'UPDATE',
+        entity: 'FootballFixture',
+        entityId: updatedFixture._id,
+        details: {
+            message: 'Fixture lineup updated',
+            affectedFields: changedFields
+        },
+        previousValues: initialFixture.toObject(),
+        newValues: updatedFixture.toObject()
+    });
+  
+    return { 
+        success: true, 
+        message: 'Fixture lineup updated',
+        data: updatedFixture 
+    };
 }
 
 exports.deleteFriendlyFixture = async ({ fixtureId }, { userId, auditInfo }) => {
@@ -327,225 +502,231 @@ exports.deleteFriendlyFixture = async ({ fixtureId }, { userId, auditInfo }) => 
     return { success: true, message: 'Fixture Deleted', data: deletedFixture };
 }
 
-exports.updateFixtureResult = async ({ fixtureId }, { result, statistics, matchEvents, homeSubs, awaySubs }, { userId, auditInfo }) => {
-    // Check if fixture exists
-    const foundFixture = await db.FootballFixture.findById( fixtureId );
-    if( !foundFixture ) return { success: false, message: 'Invalid Fixture' };
-
-    // Initialize initial fixture
-    const initialFixture = await db.FootballFixture.findById( fixtureId );
-
-    // Check if user passed in statistics
-    if( statistics ) {
-        // Check if statistics does not exist and create
-        const { home, away } = statistics;
-        if( !foundFixture.statistics ) {
-            const createdStatistics = await db.FootballMatchStatistic.create({ 
-                fixture: foundFixture._id, 
-                home, away 
-            });
-            foundFixture.statistics = createdStatistics._id;
-        } else {
-            const foundStatistics = await db.FootballMatchStatistic.findByIdAndUpdate( 
-                foundFixture.statistics, 
-                { home, away }
-            );
-        }
+exports.updateFixtureResult = async (
+    { fixtureId }, 
+    { result, statistics, matchEvents, homeSubs, awaySubs }, 
+    { userId, auditInfo }
+) => {
+    // Validate fixture exists
+    const fixture = await db.FootballFixture.findById(fixtureId)
+        .populate('homeTeam awayTeam competition');
+      
+    if (!fixture) {
+        return { 
+            success: false, 
+            message: 'Fixture not found', 
+            code: 404 
+        };
+    }
+  
+    // Validate fixture isn't already completed
+    if (fixture.status === 'completed') {
+        return {
+            success: false,
+            message: 'Cannot update completed fixture',
+            code: 400
+        };
     }
 
-    // Check if homeSubs
-    if( homeSubs ) {
-        foundFixture.homeLineup = {
-            ...foundFixture.homeLineup,
-            subs: homeSubs
-        }
-    }
-    if( awaySubs ) {
-        foundFixture.awayLineup = {
-            ...foundFixture.awayLineup,
-            subs: awaySubs
-        }
-    }
-
-    // Save changes
-    await foundFixture.save();
-
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballFixture',
-        entityId: foundFixture._id,
-        details: {
-            message: 'Fixture Updated',
-            affectedFields: [
-                homeSubs !== undefined ? "homeLineup.subs" : null,
-                awaySubs !== undefined ? "awayLineup.subs" : null,
-                statistics !== undefined ? "statistics" : null,
-            ].filter(Boolean), // Remove null values
-        },
-        previousValues: initialFixture.toObject(),
-        newValues: foundFixture.toObject()
-    });
-
-    // Update player appearances
-    const alsoFixture = await db.FootballFixture.findById( fixtureId );
-    if( alsoFixture.homeLineup.startingXI && alsoFixture.homeLineup.startingXI.length > 0 ) {
-        const playersArr = [ ...alsoFixture.homeLineup.startingXI, ...alsoFixture.homeLineup.subs ]
-        await processAppearanceUpdate( playersArr )
-    }
-    if( alsoFixture.awayLineup.startingXI && alsoFixture.awayLineup.startingXI.length > 0 ) {
-        const playersArr = [ ...alsoFixture.awayLineup.startingXI, ...alsoFixture.awayLineup.subs ]
-        await processAppearanceUpdate( playersArr )
-    }
-
-    // Update player stats if available
-    if( matchEvents && matchEvents.length > 0 ) {
-        // Save matchEvents
-        foundFixture.matchEvents = matchEvents;
-
-        // Extract events
-        const goals = matchEvents.filter( event => event.eventType === "goal" );
-        const ownGoals = matchEvents.filter( event => event.eventType === "ownGoal" );
-        const assists = matchEvents.filter( event => event.eventType === "assist" );
-        const yellowCards = matchEvents.filter( event => event.eventType === "yellowCard" );
-        const redCards = matchEvents.filter( event => event.eventType === "redCard" );
-
-        // ✅ 1️⃣ Update Goal Stats
-        if ( goals.length > 0 ) {
-            await processStatUpdate(
-                goals.map( goal => ({ playerId: goal.player, count: 1 })), 
-                "goals"
-            );
-
-            goals.forEach( goal => {
-                foundFixture.goalScorers.push({
-                    id: goal.player,
-                    team: goal.team,
-                    time: goal.time || 90
-                });
-            });
-        }
-
-        // ✅ 2️⃣ Update ownGoal Stats
-        await processStatUpdate(
-            ownGoals.map( ownGoal => ({ playerId: ownGoal.player, count: 1 })), 
-            "ownGoals", 
-        );
+    function getCurrentSeason() {
+        const now = new Date();
+        const currentYear = now.getFullYear();
         
-        // ✅ 2️⃣ Update Assist Stats
-        await processStatUpdate(
-            assists.map( assist => ({ playerId: assist.player, count: 1 })), 
-            "assists", 
-        );
-
-        // ✅ 3️⃣ Update Yellow & Red Card Stats
-        await processStatUpdate(
-            yellowCards.map(card => ({ playerId: card.player, count: 1 })), 
-            "yellowCards", 
-        );
-
-        await processStatUpdate(
-            redCards.map(card => ({ playerId: card.player, count: 1 })), 
-            "redCards",
-        );
-
-        if( foundFixture.homeLineup.startingXI && foundFixture.homeLineup.startingXI.length > 0 ) {
-            // ✅ 4️⃣ Handle Clean Sheets
-            const homeConceded = result.awayScore > 0;
-            // Get all goalkeepers from lineup
-            const homeGoalkeepers = foundFixture.homeLineup.startingXI.filter( player => player.position === 'GK' );
-
-            await Promise.all(
-                homeGoalkeepers.map( async ( player ) => {
-                    const playerDoc = await db.Player.findById( player._id );
-                    if ( !playerDoc ) return;
-    
-                    if ( !homeConceded ) {
-                        await updatePlayerGeneralRecord( player._id, "cleanSheets", 1 );
-                    }
-                })
+        return `${currentYear}/${currentYear + 1}`;
+    }
+  
+    const initialFixture = fixture.toObject();
+    const changes = [];
+    const currentSeason = getCurrentSeason(); // Implement this helper based on your logic
+  
+    // 1. Update Statistics
+    if ( statistics ) {
+        if ( !fixture.statistics ) {
+            const createdStats = await db.FootballMatchStatistic.create({
+                fixture: fixtureId,
+                ...statistics
+            });
+            fixture.statistics = createdStats._id;
+            changes.push('statistics');
+        } else {
+            await db.FootballMatchStatistic.findByIdAndUpdate(
+                fixture.statistics,
+                statistics
             );
-        }
-        if( foundFixture.awayLineup.startingXI && foundFixture.awayLineup.startingXI.length > 0 ) {
-            // ✅ 4️⃣ Handle Clean Sheets
-            const awayConceded = result.homeScore > 0;
-            // Get all goalkeepers from lineup
-            const awayGoalkeepers = foundFixture.awayLineup.startingXI.filter( player => player.position === 'GK' );
-
-            await Promise.all(
-                awayGoalkeepers.map( async ( player ) => {
-                    const playerDoc = await db.Player.findById( player._id );
-                    if ( !playerDoc ) return;
-
-                    if ( !awayConceded ) {
-                        await updatePlayerGeneralRecord( player._id, "cleanSheets", 1 );
-                    }
-                })
-            );
+            changes.push('statistics');
         }
     }
-
-    // Update fixture scores and status
-    if( result ) foundFixture.result = result;
-    foundFixture.status = 'completed';
-    await foundFixture.save();
-
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballFixture',
-        entityId: foundFixture._id,
-        details: {
-            message: 'Fixture Updated',
-            affectedFields: [
-                result !== undefined ? "result" : null,
-                matchEvents !== undefined ? "matchEvents" : null,
-                "status",
-            ].filter(Boolean), // Remove null values
-        },
-        previousValues: initialFixture.toObject(),
-        newValues: foundFixture.toObject()
-    });
-
-    // Return success
-    return { success: true, messsage: 'Fixture Result Updated', data: foundFixture };
-}
-
-exports.updateFixtureFormation = async ({ fixtureId }, { homeLineup, awayLineup }, { userId, auditInfo }) => {
-    // Check if fixture exists
-    const initialFixture = await db.FootballFixture.findById( fixtureId );
-    if( !initialFixture ) return { success: false, message: 'Invalid Fixture' };
-
-    // Update fixture
-    const updatedFixture = await db.FootballFixture.findByIdAndUpdate( 
-        fixtureId,
-        {
-            homeLineup,
-            awayLineup
-        }, 
-        { new: true }
+  
+    // 2. Update Subs
+    if ( homeSubs ) {
+        fixture.homeLineup.subs = homeSubs;
+        changes.push('homeLineup.subs');
+    }
+    if ( awaySubs ) {
+        fixture.awayLineup.subs = awaySubs;
+        changes.push('awayLineup.subs');
+    }
+  
+    // 3. Process Match Events
+    if (matchEvents?.length > 0) {
+        fixture.matchEvents = matchEvents;
+        changes.push('matchEvents');
+    
+        // Categorize events
+        const eventTypes = {
+            goals: matchEvents.filter(e => e.eventType === 'goal'),
+            ownGoals: matchEvents.filter(e => e.eventType === 'ownGoal'),
+            assists: matchEvents.filter(e => e.eventType === 'assist'),
+            yellowCards: matchEvents.filter(e => e.eventType === 'yellowCard'),
+            redCards: matchEvents.filter(e => e.eventType === 'redCard')
+        };
+  
+        // Process each event type
+        await Promise.all([
+            ...eventTypes.goals.map(event => 
+                updatePlayerStats({
+                    playerId: event.player,
+                    teamId: event.team,
+                    competitionId: fixture.competition?._id,
+                    season: currentSeason,
+                    matchType: fixture.type,
+                    updates: { goals: 1 }
+                })
+            ),
+            ...eventTypes.ownGoals.map(event =>
+                updatePlayerStats({
+                    playerId: event.player,
+                    teamId: event.team,
+                    competitionId: fixture.competition?._id,
+                    season: currentSeason,
+                    matchType: fixture.type,
+                    updates: { ownGoals: 1 }
+                })
+            ),
+            ...eventTypes.assists.map(event =>
+                updatePlayerStats({
+                    playerId: event.player,
+                    teamId: event.team,
+                    competitionId: fixture.competition?._id,
+                    season: currentSeason,
+                    matchType: fixture.type,
+                    updates: { assists: 1 }
+                })
+            ),
+            ...eventTypes.yellowCards.map(event =>
+                updatePlayerStats({
+                    playerId: event.player,
+                    teamId: event.team,
+                    competitionId: fixture.competition?._id,
+                    season: currentSeason,
+                    matchType: fixture.type,
+                    updates: { yellowCards: 1 }
+                })
+            ),
+            ...eventTypes.redCards.map(event =>
+                updatePlayerStats({
+                    playerId: event.player,
+                    teamId: event.team,
+                    competitionId: fixture.competition?._id,
+                    season: currentSeason,
+                    matchType: fixture.type,
+                    updates: { redCards: 1 }
+                })
+            )
+        ]);
+  
+        // Update goal scorers
+        fixture.goalScorers = eventTypes.goals.map(goal => ({
+            id: goal.player,
+            team: goal.team,
+            time: goal.time
+        }));
+        changes.push('goalScorers');
+    }
+  
+    // 4. Update Appearances
+    const allPlayers = [
+        ...(fixture.homeLineup.startingXI || []),
+        ...(fixture.homeLineup.subs || []),
+        ...(fixture.awayLineup.startingXI || []),
+        ...(fixture.awayLineup.subs || [])
+    ];
+  
+    await Promise.all(
+        allPlayers.map(playerId =>
+            updatePlayerStats({
+                playerId,
+                teamId: fixture.homeLineup.startingXI.includes(playerId) ? 
+                    fixture.homeTeam._id : fixture.awayTeam._id,
+                competitionId: fixture.competition?._id,
+                season: currentSeason,
+                matchType: fixture.type,
+                updates: { appearances: 1 }
+            })
+        )
     );
-
-    // Log action
+  
+    // 5. Update Clean Sheets (for goalkeepers)
+    if (result?.homeScore !== undefined && result?.awayScore !== undefined) {
+        fixture.result = result;
+        changes.push('result');
+    
+        const homeGKs = await getGoalkeepers(fixture.homeLineup);
+        const awayGKs = await getGoalkeepers(fixture.awayLineup);
+    
+        await Promise.all([
+            ...homeGKs.map(playerId =>
+                updatePlayerStats({
+                    playerId,
+                    teamId: fixture.homeTeam._id,
+                    competitionId: fixture.competition?._id,
+                    season: currentSeason,
+                    matchType: fixture.type,
+                    updates: { 
+                        cleanSheets: result.awayScore === 0 ? 1 : 0 
+                    }
+                })
+            ),
+            ...awayGKs.map(playerId =>
+                updatePlayerStats({
+                    playerId,
+                    teamId: fixture.awayTeam._id,
+                    competitionId: fixture.competition?._id,
+                    season: currentSeason,
+                    matchType: fixture.type,
+                    updates: { 
+                        cleanSheets: result.homeScore === 0 ? 1 : 0 
+                    }
+                })
+            )
+        ]);
+    }
+  
+    // 6. Finalize fixture
+    fixture.status = 'completed';
+    changes.push('status');
+    await fixture.save();
+  
+    // Audit logging
     logActionManually({
-        userId, auditInfo,
+        userId,
+        auditInfo,
         action: 'UPDATE',
         entity: 'FootballFixture',
-        entityId: updatedFixture._id,
+        entityId: fixture._id,
         details: {
-            message: 'Fixture Updated',
-            affectedFields: [
-                homeLineup !== undefined ? "homeLineup" : null,
-                awayLineup !== undefined ? "awayLineup" : null,
-            ].filter(Boolean), // Remove null values
+            message: 'Fixture result updated',
+            affectedFields: changes
         },
-        previousValues: initialFixture.toObject(),
-        newValues: updatedFixture.toObject()
+        previousValues: initialFixture,
+        newValues: fixture.toObject()
     });
-
-    return { success: true, message: 'Fixture Lineup Updated', data: updatedFixture }
-}
+  
+    return { 
+        success: true, 
+        message: 'Fixture result updated',
+        data: fixture 
+    };
+};
 
 module.exports = exports;
