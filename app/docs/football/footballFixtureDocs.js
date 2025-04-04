@@ -1,13 +1,20 @@
 /**
  * @swagger
  * tags:
- *   name: FootballFixture
- *   description: API for managing football fixtures
- *
+ *   - name: Football Fixture (Public)
+ *     description: Public football fixture endpoints
+ *   - name: Football Fixture (Admin)
+ *     description: Football fixture management endpoints requiring authentication
+ */
+
+// ==================== FIXTURE CRUD OPERATIONS ==================== //
+
+/**
+ * @swagger
  * /football/fixture:
  *   get:
  *     summary: Get all football fixtures with advanced filtering
- *     tags: [FootballFixture]
+ *     tags: [Football Fixture (Public)]
  *     parameters:
  *       - in: query
  *         name: page
@@ -90,10 +97,14 @@
  *         $ref: "#/components/responses/BadRequestError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
+ * /football/fixture:
  *   post:
  *     summary: Create a new football fixture
- *     tags: [FootballFixture]
+ *     tags: [Football Fixture (Admin)]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -164,11 +175,14 @@
  *               code: 400
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
  * /football/fixture/{fixtureId}:
  *   get:
  *     summary: Get details of a specific football fixture
- *     tags: [FootballFixture]
+ *     tags: [Football Fixture (Public)]
  *     parameters:
  *       - in: path
  *         name: fixtureId
@@ -217,11 +231,127 @@
  *         $ref: "#/components/responses/NotFoundError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+/**
+ * @swagger
+ * /football/fixture/{fixtureId}:
+ *   put:
+ *     summary: Dynamically update fixture fields (excluding protected fields)
+ *     tags: [Football Fixture (Admin)]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: fixtureId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the fixture to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               updates:
+ *                 type: object
+ *                 description: Key-value pairs of fields to update
+ *                 example:
+ *                   referee: "John Smith"
+ *                   stadium: "Main Stadium"
+ *                   date: "2024-03-25T15:00:00Z"
+ *     responses:
+ *       200:
+ *         description: Fixture updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *             example:
+ *               success: true
+ *               message: "Fixture Updated"
+ *               data:
+ *                 _id: "652a3b8cf9e3457d8a2e67cd"
+ *                 referee: "John Smith"
+ *                 stadium: "Main Stadium"
+ *                 date: "2024-03-25T15:00:00Z"
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             examples:
+ *               invalidDocument:
+ *                 value:
+ *                   success: false
+ *                   message: "Invalid Document"
+ *                   code: 400
+ *               noUpdates:
+ *                 value:
+ *                   success: false
+ *                   message: "Updates Not Provided"
+ *                   code: 400
+ *               restrictedField:
+ *                 value:
+ *                   success: false
+ *                   message: "Cannot update restricted field: status"
+ *                   code: 400
+ *       404:
+ *         $ref: "#/components/responses/NotFoundError"
+ *       500:
+ *         $ref: "#/components/responses/ServerError"
+ */
+
+/**
+ * @swagger
+ * /football/fixture/{fixtureId}:
+ *   delete:
+ *     summary: Delete a friendly fixture
+ *     tags: [Football Fixture (Admin)]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: fixtureId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the fixture to delete
+ *     responses:
+ *       200:
+ *         description: Fixture deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *             example:
+ *               success: true
+ *               message: "Friendly fixture deleted"
+ *               data:
+ *                 _id: "652a3b8cf9e3457d8a2e67cd"
+ *       403:
+ *         description: Forbidden - Cannot delete competition fixtures
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: false
+ *               message: "Only friendly fixtures can be deleted"
+ *               code: 403
+ *       404:
+ *         $ref: "#/components/responses/NotFoundError"
+ *       500:
+ *         $ref: "#/components/responses/ServerError"
+ */
+
+// ==================== FIXTURE STATUS MANAGEMENT ==================== //
+
+/**
+ * @swagger
  * /football/fixture/{fixtureId}/status:
  *   put:
  *     summary: Update fixture status
- *     tags: [FootballFixture]
+ *     tags: [Football Fixture (Admin)]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -271,11 +401,16 @@
  *         $ref: "#/components/responses/NotFoundError"
  *       500:
  *         $ref: "#/components/responses/ServerError"
- *
+ */
+
+// ==================== FIXTURE RESULTS MANAGEMENT ==================== //
+
+/**
+ * @swagger
  * /football/fixture/{fixtureId}/result:
  *   put:
  *     summary: Update fixture result and statistics
- *     tags: [FootballFixture]
+ *     tags: [Football Fixture (Admin)]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -368,64 +503,146 @@
  * @swagger
  * components:
  *   schemas:
- *     SuccessResponse:
+ *     Fixture:
  *       type: object
  *       properties:
- *         success:
- *           type: boolean
- *         message:
+ *         _id:
  *           type: string
- *         data:
+ *         homeTeam:
+ *           $ref: "#/components/schemas/TeamReference"
+ *         awayTeam:
+ *           $ref: "#/components/schemas/TeamReference"
+ *         type:
+ *           type: string
+ *           enum: [friendly, competition]
+ *         competition:
+ *           $ref: "#/components/schemas/CompetitionReference"
+ *         date:
+ *           type: string
+ *           format: date-time
+ *         isDateTBD:
+ *           type: boolean
+ *         tentativeSchedule:
  *           type: object
+ *           properties:
+ *             period:
+ *               type: string
+ *             weekNumber:
+ *               type: number
+ *         status:
+ *           type: string
+ *           enum: [live, upcoming, completed, postponed, scheduled, tbd]
+ *         result:
+ *           type: object
+ *           properties:
+ *             homeScore:
+ *               type: integer
+ *             awayScore:
+ *               type: integer
+ *             halftimeHomeScore:
+ *               type: integer
+ *             halftimeAwayScore:
+ *               type: integer
+ *             homePenalty:
+ *               type: integer
+ *             awayPenalty:
+ *               type: integer
+ *             isPenaltyShootout:
+ *               type: boolean
+ *         matchEvents:
+ *           type: array
+ *           items:
+ *             $ref: "#/components/schemas/MatchEvent"
+ *         homeLineup:
+ *           type: object
+ *           properties:
+ *             formation:
+ *               type: string
+ *             startingXI:
+ *               type: array
+ *               items:
+ *                 type: string
+ *             subs:
+ *               type: array
+ *               items:
+ *                 type: string
+ *         awayLineup:
+ *           type: object
+ *           properties:
+ *             formation:
+ *               type: string
+ *             startingXI:
+ *               type: array
+ *               items:
+ *                 type: string
+ *             subs:
+ *               type: array
+ *               items:
+ *                 type: string
+ *         stadium:
+ *           type: string
+ *         referee:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ * 
+ *     TeamReference:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         name:
+ *           type: string
+ *         shorthand:
+ *           type: string
+ *         department:
+ *           type: string
+ * 
+ *     CompetitionReference:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         name:
+ *           type: string
+ * 
+ *     MatchEvent:
+ *       type: object
+ *       properties:
+ *         eventType:
+ *           type: string
+ *           enum: [goal, ownGoal, assist, yellowCard, redCard, substitution, foul, corner, offside, shotOnTarget, shotOffTarget, kickoff, halftime, fulltime, varDecision, injury, injuryTime, goalDisallowed, goalConfirmed, penaltyAwarded, penaltyScored, penaltyMissed, penaltySaved]
+ *         player:
+ *           type: string
+ *         team:
+ *           type: string
+ *         time:
+ *           type: number
+ *         substitutedFor:
+ *           type: string
+ * 
+ *     DynamicUpdateRequest:
+ *       type: object
+ *       properties:
+ *         updates:
+ *           type: object
+ *           description: Key-value pairs of fields to update
+ *           additionalProperties: true
+ *       required:
+ *         - updates
+ * 
  *   responses:
- *     NotFoundError:
- *       description: The requested resource was not found
+ *     FixtureNotFoundError:
+ *       description: Fixture not found
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               success:
- *                 type: boolean
- *                 example: false
- *               message:
- *                 type: string
- *                 example: "Fixture not found"
- *               code:
- *                 type: integer
- *                 example: 404
- *     BadRequestError:
- *       description: Invalid request parameters
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               success:
- *                 type: boolean
- *                 example: false
- *               message:
- *                 type: string
- *                 example: "Invalid date format"
- *               code:
- *                 type: integer
- *                 example: 400
- *     ServerError:
- *       description: Internal server error
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               success:
- *                 type: boolean
- *                 example: false
- *               message:
- *                 type: string
- *                 example: "Internal server error"
- *               code:
- *                 type: integer
- *                 example: 500
+ *             $ref: "#/components/schemas/ErrorResponse"
+ *           example:
+ *             code: "06"
+ *             message: "Fixture not found"
+ * 
  *   securitySchemes:
  *     bearerAuth:
  *       type: http
