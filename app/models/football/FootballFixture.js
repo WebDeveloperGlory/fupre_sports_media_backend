@@ -34,13 +34,33 @@ const footballFixtureSchema = new Schema({
     },
     date: {
         type: Date,
-        required: true
+        required: function() {
+            return !this.isDateTBD && this.status !== 'postponed';
+        }
+    },
+    isDateTBD: {
+        type: Boolean,
+        default: false
     },
     stadium: { type: String },
     status: {
         type: String,
-        enum: [ 'live', 'upcoming', 'completed', 'postponed' ],
-        default: 'upcoming'
+        enum: ['live', 'upcoming', 'completed', 'postponed', 'scheduled', 'tbd'],
+        default: 'upcoming',
+        validate: {
+            validator: function(v) {
+                if (v === 'tbd') return this.isDateTBD;
+                if (v === 'postponed') return this.isPostponed;
+                return true;
+            },
+            message: 'Status must align with isDateTBD/isPostponed flags'
+        }
+    },
+    isPostponed: { type: Boolean, default: false },
+    postponementInfo: {
+        reason: String,
+        newDate: Date,
+        originalDate: Date
     },
 
     // Results and Statistics
@@ -105,7 +125,7 @@ const footballFixtureSchema = new Schema({
         half: { type: Number, enum: [ 1, 2 ], default: 1 },
         eventType: {
             type: String,
-            enum: ['goal', 'ownGoal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget', 'kickoff', 'halftime', 'fulltime'],
+            enum: ['goal', 'ownGoal', 'assist', 'yellowCard', 'redCard', 'substitution', 'foul', 'corner', 'offside', 'shotOnTarget', 'shotOffTarget', 'kickoff', 'halftime', 'fulltime', 'varDecision', 'injury', 'injuryTime', 'goalDisallowed', 'goalConfirmed', 'penaltyAwarded', 'penaltyScored', 'penaltyMissed', 'penaltySaved'],
             required: true
         },
         player: {
@@ -154,6 +174,40 @@ const footballFixtureSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'FootballPlayer'
     }
-}, { timestamps: true })
+}, { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+})
+
+footballFixtureSchema.virtual('displayDate').get(function() {
+    if (this.date) return this.date;
+    if (this.postponementInfo?.newDate) return `Rescheduled: ${this.postponementInfo.newDate}`;
+    if (this.tentativeSchedule?.period) return `Tentative: ${this.tentativeSchedule.period}`;
+    return 'Date TBD';
+});
+
+footballFixtureSchema.pre('validate', function(next) {
+    // Ensure TBD logic is consistent
+    if (this.isDateTBD && this.date) {
+        this.invalidate('isDateTBD', 'Cannot have both date and isDateTBD true');
+    }
+    
+    // Validate postponement info
+    if (this.isPostponed && !this.postponementInfo.reason) {
+        this.invalidate('postponementInfo.reason', 'Reason required for postponed matches');
+    }
+    
+    next();
+});
+
+footballFixtureSchema.pre('save', function(next) {
+    if (this.result.homeScore !== null && this.result.awayScore !== null) {
+      this.result.winner = 
+        this.result.homeScore > this.result.awayScore ? 'home' :
+        this.result.awayScore > this.result.homeScore ? 'away' : 'draw';
+    }
+    next();
+});
 
 module.exports = mongoose.model( 'FootballFixture', footballFixtureSchema );
