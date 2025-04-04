@@ -27,6 +27,8 @@ const footballPlayerSchema = new Schema({
         ]
     },
     number: { type: Number },
+    status: { type: String, enum: ['active', 'inactive', 'injured'], default: 'active' },
+    birthDate: { type: Date },
 
     // Team Associations
     baseTeam: { type: Schema.Types.ObjectId, ref: 'FootballTeam', required: true },

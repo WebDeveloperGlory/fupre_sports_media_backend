@@ -7,8 +7,8 @@ const router = Router();
 
 router.post('/', authenticateUser, authorize([ 'superAdmin' ]), controller.addPlayers);
 router.get('/:playerId', controller.getPlayer);
-router.put('/:playerId', authenticateUser, refactoredHasPlayerPermisions, controller.updateTeamPlayer);
+router.put('/:playerId', authenticateUser, refactoredHasPlayerPermisions, controller.updatePlayer);
 router.delete('/:playerId', authenticateUser, refactoredHasPlayerPermisions, controller.deleteTeamPlayer);
-router.put('/:playerId/records', authenticateUser, refactoredHasPlayerPermisions, controller.updatePlayerRecords);
+router.put('/:playerId/stats', authenticateUser, refactoredHasPlayerPermisions, controller.updatePlayerStats);
 
 module.exports = router;

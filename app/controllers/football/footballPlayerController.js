@@ -5,7 +5,6 @@ exports.addPlayers = async ( req, res ) => {
     try {
         const result = await playerService.addPlayers( 
             req.body, 
-            req.body.team,
             { 
                 userId: req.user.userId, 
                 auditInfo: req.auditInfo 
@@ -34,9 +33,9 @@ exports.getPlayer = async ( req, res ) => {
     }
 }
 
-exports.updateTeamPlayer = async ( req, res ) => {
+exports.updatePlayer = async ( req, res ) => {
     try {
-        const result = await playerService.updateTeamPlayer( 
+        const result = await playerService.updatePlayer( 
             req.params, 
             req.body,
             { 
@@ -73,9 +72,9 @@ exports.deleteTeamPlayer = async ( req, res ) => {
     }
 }
 
-exports.updatePlayerRecords = async ( req, res ) => {
+exports.updatePlayerStats = async ( req, res ) => {
     try {
-        const result = await playerService.updatePlayerRecords( 
+        const result = await playerService.updatePlayerStats( 
             req.params, 
             req.body,
             { 

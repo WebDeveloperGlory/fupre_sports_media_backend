@@ -1,102 +1,206 @@
 const db = require('../../config/db');
 const { logActionManually } = require('../../middlewares/auditMiddleware');
 
-exports.addPlayers = async ({ playerArray }, team, { userId, auditInfo } ) => {
-    // Check if team exists
-    const foundTeam = await db.FootballTeam.findById( team );
-    if( !foundTeam ) return { success: false, message: 'Invalid Team' }
-
-    // Check if player already exists
-    const existingPlayers = await db.FootballPlayer.find({ name: { $in: playerArray.map( player => player.name ) }, team: foundTeam._id }, "name" );
-    if( existingPlayers.length > 0 ) {
-        const existingNames = existingPlayers.map( player => player.name );
-        return { success: false, message: `Players with names ${ existingNames.join(', ') } already exist in team`}
+exports.addPlayers = async ({ playerArray, teamType, teamId }, { userId, auditInfo }) => {
+    // Validate team exists and type is valid
+    const validTeamTypes = [ 'baseTeam', 'departmentTeam', 'clubTeam', 'schoolTeam' ];
+    if (!validTeamTypes.includes(teamType)) {
+        return { success: false, message: 'Invalid team type' };
     }
 
-    // Loop through each player and create them
-    const playersData = playerArray.map( player => ({
+    const foundTeam = await db.FootballTeam.findById( teamId );
+    if (!foundTeam) return { success: false, message: 'Invalid Team' };
+
+    // Check for existing players by name
+    const names = playerArray.map(player => player.name);
+    const existingPlayers = await db.FootballPlayer.find({ 
+        name: { $in: names },
+        $or: [
+            { baseTeam: teamId },
+            { departmentTeam: teamId },
+            { clubTeam: teamId },
+            { schoolTeam: teamId }
+        ]
+    }, "name");
+
+    if (existingPlayers.length > 0) {
+        const existingMatrics = existingPlayers.map(p => p.matricNumber);
+        return { 
+            success: false, 
+            message: `Players with matric numbers ${existingMatrics.join(', ')} already exist` 
+        };
+    }
+
+    // Create players with proper team assignment
+    const currentYear = new Date().getFullYear();
+    const academicYear = `${currentYear}/${currentYear + 1}`;
+    
+    const playersData = playerArray.map(player => ({
         ...player,
-        team: foundTeam._id,
-        generalRecord: [
-            {
-                year: new Date().getFullYear(),
+        [teamType]: teamId,
+        stats: {
+            careerTotals: {
                 goals: 0,
                 ownGoals: 0,
                 assists: 0,
                 yellowCards: 0,
                 redCards: 0,
                 appearances: 0,
-                cleanSheets: 0
-            }
-        ]
-    }) );
-    const createdPlayers = await db.FootballPlayer.insertMany( playersData );
+                cleanSheets: 0,
+                minutesPlayed: 0
+            },
+            byTeam: {
+                [teamType.replace('Team', '')]: {
+                    friendly: [],
+                    competitive: [],
+                    totals: {
+                        season: academicYear,
+                        goals: 0,
+                        ownGoals: 0,
+                        assists: 0,
+                        yellowCards: 0,
+                        redCards: 0,
+                        appearances: 0,
+                        cleanSheets: 0,
+                        minutesPlayed: 0
+                    }
+                }
+            },
+            byCompetition: []
+        }
+    }));
+
+    const createdPlayers = await db.FootballPlayer.insertMany(playersData);
 
     // Update team document
-    const playerIds = createdPlayers.map( player => {
-        // Log action
+    const playerIds = createdPlayers.map(player => {
         logActionManually({
-            userId, auditInfo,
+            userId,
+            auditInfo,
             action: 'CREATE',
             entity: 'FootballPlayer',
             entityId: player._id,
             details: {
-                message: `New Player: ${ player.name } Created For Team ${ foundTeam.name }`
+                message: `New Player ${player.name} (${player.matricNumber}) added to ${foundTeam.name}`
             }
         });
-
-        return player._id 
+        return player._id;
     });
-    foundTeam.players.push( ...playerIds );
-    await team.save();    
 
-    // Return success
-    return { success: true, message: 'Players Added', data: createdPlayers };
-}
+    foundTeam.players.push(...playerIds);
+    await foundTeam.save();
+
+    return { 
+        success: true, 
+        message: `${createdPlayers.length} players added successfully`, 
+        data: createdPlayers 
+    };
+};
 
 exports.getPlayer = async ({ playerId }) => {
-    const foundPlayer = await db.FootballPlayer.findById( playerId );
-    if( !foundPlayer ) return { success: false, message: 'Invalid Player' };
+    const foundPlayer = await db.FootballPlayer.findById( playerId )
+        .populate('baseTeam', 'name type')
+        .populate('departmentTeam', 'name type')
+        .populate('clubTeam', 'name type')
+        .populate('schoolTeam', 'name type');
 
-    // Return success
-    return { success: true, message: 'Player Acquired', data: foundPlayer };
-}
+    if (!foundPlayer) return { success: false, message: 'Player not found' };
 
-exports.updateTeamPlayer = async ({ playerId }, { name, position, number }, { userId, auditInfo }) => {
-    const foundPlayer = await db.FootballPlayer.findById( playerId );
-    if( !foundPlayer ) return { success: false, message: 'Invalid Player' };
+    // Calculate age if birthDate exists
+    let age = null;
+    if (foundPlayer.birthDate) {
+        const diff = Date.now() - foundPlayer.birthDate.getTime();
+        age = Math.abs(new Date(diff).getUTCFullYear() - 1970);
+    }
 
-    // Save to a const as old data
-    const oldPlayer = await db.FootballPlayer.findById( playerId );
+    // Prepare simplified response
+    const playerData = {
+        ...foundPlayer.toObject(),
+        age,
+        currentTeams: {
+            base: foundPlayer.baseTeam,
+            department: foundPlayer.departmentTeam,
+            club: foundPlayer.clubTeam,
+            school: foundPlayer.schoolTeam
+        }
+    };
 
-    if( name ) foundPlayer.name = name;
-    if( position ) foundPlayer.position = position;
-    if( number ) foundPlayer.number = number;
+    return { 
+        success: true, 
+        message: 'Player data retrieved', 
+        data: playerData 
+    };
+};
 
-    // Save updates
-    await foundPlayer.save();
+exports.updatePlayer = async ({ playerId }, { updateData }, { userId, auditInfo }) => {
+    const allowedUpdates = [
+        'name', 'position', 'number', 'birthDate', 
+        'departmentTeam', 'clubTeam', 'schoolTeam', 'clubStatus'
+    ];
+    
+    const updates = Object.keys( updateData );
+    const isValidUpdate = updates.every(update => allowedUpdates.includes( update ));
+    
+    if (!isValidUpdate) {
+        return { 
+            success: false, 
+            message: 'Invalid update fields attempted' 
+        };
+    }
 
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballPlayer',
-        entityId: foundPlayer._id,
-        details: {
-            message: 'Player Updated',
-            affectedFields: [
-                name !== undefined ? "name" : null,
-                position !== undefined ? "position" : null,
-                number !== undefined ? "number" : null,
-            ].filter(Boolean), // Remove null values
-        },
-        previousValues: oldPlayer.toObject(),
-        newValues: foundPlayer.toObject()
+    const player = await db.FootballPlayer.findById(playerId);
+    if (!player) return { success: false, message: 'Player not found' };
+
+    const oldPlayer = player.toObject();
+    
+    // Handle team transfers
+    if ( updateData.clubTeam && updateData.clubTeam !== player.clubTeam?.toString() ) {
+        player.transferDetails = {
+            status: 'transferred',
+            fromClub: player.clubTeam,
+            toClub: updateData.clubTeam,
+            transferDate: new Date()
+        };
+        player.clubStatus = 'transferred';
+    }
+
+    // Apply other updates
+    updates.forEach(update => {
+        if (update !== 'clubTeam') {
+            player[update] = updateData[update];
+        }
     });
 
-    // Return success
-    return { success: true, message: 'Player Updated', data: foundPlayer };
-}
+    // Save changes
+    await player.save();
+
+    // Log the action
+    const changedFields = updates.filter(field => 
+        JSON.stringify(oldPlayer[field]) !== JSON.stringify(player[field])
+    );
+
+    if (changedFields.length > 0) {
+        logActionManually({
+            userId,
+            auditInfo,
+            action: 'UPDATE',
+            entity: 'FootballPlayer',
+            entityId: player._id,
+            details: {
+                message: 'Player profile updated',
+                affectedFields: changedFields
+            },
+            previousValues: oldPlayer,
+            newValues: player.toObject()
+        });
+    }
+
+    return { 
+        success: true, 
+        message: 'Player updated successfully', 
+        data: player 
+    };
+};
 
 exports.deleteTeamPlayer = async ({ playerId }, { userId, auditInfo }) => {
     const foundPlayer = await db.FootballPlayer.findById( playerId );
@@ -137,6 +241,142 @@ exports.deleteTeamPlayer = async ({ playerId }, { userId, auditInfo }) => {
     // Return success
     return { success: true, message: 'Player Deleted', data: deletedPlayer }    
 }
+
+exports.updatePlayerStats = async ({ playerId }, { statsUpdate }, { userId, auditInfo }) => {
+    const { teamType, matchType, competitionId, season, stats } = statsUpdate;
+    
+    const validTeamTypes = ['base', 'department', 'club', 'school'];
+    const validMatchTypes = ['friendly', 'competitive'];
+    
+    if (!validTeamTypes.includes(teamType) || 
+        (matchType && !validMatchTypes.includes(matchType))
+    ) {
+        return { 
+            success: false, 
+            message: 'Invalid team type or match type' 
+        };
+    }
+
+    const player = await db.FootballPlayer.findById(playerId);
+    if (!player) return { success: false, message: 'Player not found' };
+
+    // Initialize stats objects if they don't exist
+    if (!player.stats.byTeam[teamType]) {
+        player.stats.byTeam[teamType] = {
+            friendly: [],
+            competitive: [],
+            totals: {
+                season: season || `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`,
+                goals: 0,
+                ownGoals: 0,
+                assists: 0,
+                yellowCards: 0,
+                redCards: 0,
+                appearances: 0,
+                cleanSheets: 0,
+                minutesPlayed: 0
+            }
+        };
+    }
+
+    // Update career totals
+    Object.keys(stats).forEach(stat => {
+        if (player.stats.careerTotals[stat] !== undefined) {
+            player.stats.careerTotals[stat] += stats[stat] || 0;
+        }
+    });
+
+    // Update team-specific totals
+    Object.keys(stats).forEach(stat => {
+        if (player.stats.byTeam[teamType].totals[stat] !== undefined) {
+            player.stats.byTeam[teamType].totals[stat] += stats[stat] || 0;
+        }
+    });
+
+    // Update match-type specific stats if provided
+    if (matchType) {
+        let seasonStats = player.stats.byTeam[teamType][matchType].find(
+            s => s.season === season
+        );
+
+        if (!seasonStats) {
+            seasonStats = {
+                season,
+                goals: 0,
+                ownGoals: 0,
+                assists: 0,
+                yellowCards: 0,
+                redCards: 0,
+                appearances: 0,
+                cleanSheets: 0,
+                minutesPlayed: 0
+            };
+            player.stats.byTeam[teamType][matchType].push(seasonStats);
+        }
+
+        Object.keys(stats).forEach(stat => {
+            if (seasonStats[stat] !== undefined) {
+                seasonStats[stat] += stats[stat] || 0;
+            }
+        });
+    }
+
+    // Update competition stats if provided
+    if (competitionId) {
+        let compStats = player.stats.byCompetition.find(
+            c => c.competition.equals(competitionId) && c.season === season
+        );
+
+        if (!compStats) {
+            compStats = {
+                competition: competitionId,
+                season,
+                stats: {
+                    goals: 0,
+                    ownGoals: 0,
+                    assists: 0,
+                    yellowCards: 0,
+                    redCards: 0,
+                    appearances: 0,
+                    cleanSheets: 0,
+                    minutesPlayed: 0
+                }
+            };
+            player.stats.byCompetition.push(compStats);
+        }
+
+        Object.keys(stats).forEach(stat => {
+            if (compStats.stats[stat] !== undefined) {
+                compStats.stats[stat] += stats[stat] || 0;
+            }
+        });
+    }
+
+    await player.save();
+
+    // Log the action
+    logActionManually({
+        userId,
+        auditInfo,
+        action: 'UPDATE',
+        entity: 'FootballPlayer',
+        entityId: player._id,
+        details: {
+            message: 'Player stats updated',
+            teamType,
+            matchType,
+            competitionId,
+            season,
+            statChanges: stats
+        }
+    });
+
+    return { 
+        success: true, 
+        message: 'Player stats updated successfully', 
+        data: player.stats 
+    };
+};
 
 exports.updatePlayerRecords = async ({ playerId }, { goals, ownGoals, assists, yellowCards, redCards, appearances, cleanSheets }) => {
     const foundPlayer = await db.FootballPlayer.findById( playerId );
