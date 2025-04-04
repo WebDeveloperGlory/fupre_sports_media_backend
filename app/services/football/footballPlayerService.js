@@ -378,6 +378,124 @@ exports.updatePlayerStats = async ({ playerId }, { statsUpdate }, { userId, audi
     };
 };
 
+exports.transferOrLoanPlayer = async (
+    { playerId }, 
+    { status, toClub, transferDate, returnDate }, 
+    { userId, auditInfo }
+) => {
+    // Validate input
+    if (!['loaned', 'transferred'].includes(status)) {
+        return { success: false, message: 'Invalid transfer/loan status' };
+    }
+  
+    // Check if player exists
+    const player = await db.FootballPlayer.findById( playerId )
+        .populate('clubTeam', 'name type');
+    if ( !player ) {
+        return { success: false, message: 'Player not found' };
+    }
+  
+    // Check if target club exists (only for club transfers)
+    const targetClub = await db.FootballTeam.findOne({
+        _id: toClub,
+        type: 'club'
+    });
+    if ( !targetClub ) {
+        return { success: false, message: 'Invalid target club' };
+    }
+  
+    // Save old data for audit
+    const oldPlayer = player.toObject();
+    const fromClub = player.clubTeam;
+  
+    // Validate transfer conditions
+    if (status === 'loaned' && !returnDate) {
+        return { success: false, message: 'Return date required for loans' };
+    }
+  
+    if ( fromClub && fromClub._id.equals(toClub) ) {
+        return { success: false, message: 'Cannot transfer/loan to same club' };
+    }
+  
+    // Update player details
+    player.clubTeam = toClub;
+    player.clubStatus = status;
+    player.transferDetails = {
+        status,
+        fromClub: fromClub?._id || null,
+        toClub,
+        transferDate: transferDate || new Date(),
+        returnDate: status === 'loaned' ? returnDate : null
+    };
+  
+    await player.save();
+  
+    // Update team rosters (remove from old club, add to new club)
+    if ( fromClub ) {
+        await db.FootballTeam.updateOne(
+            { _id: fromClub._id },
+            { 
+                $pull: { 
+                    players: playerId
+                } 
+            }
+        );
+    }
+  
+    await db.FootballTeam.updateOne(
+        { _id: toClub },
+        {
+            $push: {
+                players: playerId
+            }
+        }
+    );
+  
+    // Log action
+    logActionManually({
+        userId,
+        auditInfo,
+        action: status === 'loaned' ? 'LOAN' : 'TRANSFER',
+        entity: 'FootballPlayer',
+        entityId: playerId,
+        details: {
+            message: `Player ${status} from ${fromClub?.name || 'No Club'} to ${targetClub.name}`,
+            affectedFields: ['clubTeam', 'clubStatus', 'transferDetails'],
+            transferDetails: player.transferDetails
+        },
+        previousValues: {
+            clubTeam: oldPlayer.clubTeam,
+            clubStatus: oldPlayer.clubStatus,
+            transferDetails: oldPlayer.transferDetails
+        },
+        newValues: {
+            clubTeam: player.clubTeam,
+            clubStatus: player.clubStatus,
+            transferDetails: player.transferDetails
+        }
+    });
+  
+    return { 
+        success: true, 
+        message: `Player ${status} successfully`,
+        data: {
+            player: {
+                _id: player._id,
+                name: player.name,
+                newClub: {
+                    _id: targetClub._id,
+                    name: targetClub.name
+                },
+                oldClub: fromClub ? {
+                    _id: fromClub._id,
+                    name: fromClub.name
+                } : null,
+                transferDetails: player.transferDetails
+            }
+        }
+    };
+};
+
 exports.updatePlayerRecords = async ({ playerId }, { goals, ownGoals, assists, yellowCards, redCards, appearances, cleanSheets }) => {
     const foundPlayer = await db.FootballPlayer.findById( playerId );
     if( !foundPlayer ) return { success: false, message: 'Invalid Player' };

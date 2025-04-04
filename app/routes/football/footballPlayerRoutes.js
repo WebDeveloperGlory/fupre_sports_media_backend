@@ -10,5 +10,6 @@ router.get('/:playerId', controller.getPlayer);
 router.put('/:playerId', authenticateUser, refactoredHasPlayerPermisions, controller.updatePlayer);
 router.delete('/:playerId', authenticateUser, refactoredHasPlayerPermisions, controller.deleteTeamPlayer);
 router.put('/:playerId/stats', authenticateUser, refactoredHasPlayerPermisions, controller.updatePlayerStats);
+router.put( '/:playerId/transfer', authenticateUser, authorize([ 'superAdmin' ]), controller.transferOrLoanPlayer );
 
 module.exports = router;

@@ -456,6 +456,119 @@
 
 /**
  * @swagger
+ * /football/player/{playerId}/transfer:
+ *   put:
+ *     summary: Transfer or loan a player to another club
+ *     description: |
+ *       Handles club-to-club transfers and loans. 
+ *       For loans, a returnDate must be provided.
+ *     tags: [Football Player (Admin)]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: playerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the player being transferred or loaned
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *               - toClub
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: ["loaned", "transferred"]
+ *                 description: Type of movement between clubs
+ *                 example: "loaned"
+ *               toClub:
+ *                 type: string
+ *                 description: ID of the destination club team
+ *                 example: "652a3b8cf9e3457d8a2e67cd"
+ *               transferDate:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Date when transfer/loan takes effect (defaults to now)
+ *                 example: "2024-04-01T15:00:00Z"
+ *               returnDate:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Required for loans - date when loan ends
+ *                 example: "2024-06-01T15:00:00Z"
+ *     responses:
+ *       200:
+ *         description: Player transfer/loan processed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *             example:
+ *               code: "00"
+ *               message: "Player loaned successfully"
+ *               data:
+ *                 player:
+ *                   id: "651d2e09b1c23e4d8c9f87ab"
+ *                   name: "John Doe"
+ *                 newClub:
+ *                   id: "652a3b8cf9e3457d8a2e67cd"
+ *                   name: "Thunder FC"
+ *                 oldClub:
+ *                   id: "650d1f99a2f45b1a3c2e77bd"
+ *                   name: "Lightning FC"
+ *                 transferDetails:
+ *                   status: "loaned"
+ *                   fromClub: "650d1f99a2f45b1a3c2e77bd"
+ *                   toClub: "652a3b8cf9e3457d8a2e67cd"
+ *                   transferDate: "2024-04-01T15:00:00Z"
+ *                   returnDate: "2024-06-01T15:00:00Z"
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ErrorResponse"
+ *             examples:
+ *               invalidStatus:
+ *                 value:
+ *                   code: "400"
+ *                   message: "Invalid transfer/loan status"
+ *               missingReturnDate:
+ *                 value:
+ *                   code: "400"
+ *                   message: "Return date required for loans"
+ *               sameClub:
+ *                 value:
+ *                   code: "400"
+ *                   message: "Cannot transfer/loan to same club"
+ *       401:
+ *         $ref: "#/components/responses/UnauthorizedError"
+ *       404:
+ *         description: Not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ErrorResponse"
+ *             examples:
+ *               playerNotFound:
+ *                 value:
+ *                   code: "404"
+ *                   message: "Player not found"
+ *               clubNotFound:
+ *                 value:
+ *                   code: "404"
+ *                   message: "Target club not found"
+ *       500:
+ *         $ref: "#/components/responses/ServerError"
+ */
+
+/**
+ * @swagger
  * components:
  *   schemas:
  *     Player:

@@ -92,4 +92,24 @@ exports.updatePlayerStats = async ( req, res ) => {
     }
 }
 
+exports.transferOrLoanPlayer = async ( req, res ) => {
+    try {
+        const result = await playerService.transferOrLoanPlayer(
+            req.params,
+            req.body,
+            { 
+                userId: req.user.userId, 
+                auditInfo: req.auditInfo 
+            }
+        );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 module.exports = exports;
