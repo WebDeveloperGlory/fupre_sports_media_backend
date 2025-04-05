@@ -45,7 +45,7 @@ exports.logoutUser = async ( req, res ) => {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'None',
-                maxAge: 1 * 1000,
+                maxAge: 5 * 1000,
             });
             // Clear Cookies
             res.clearCookie('authToken', {
