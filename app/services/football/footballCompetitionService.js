@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const db = require('../../config/db');
 const { logActionManually } = require('../../middlewares/auditMiddleware');
 const { addToFront, calculatePercentage } = require('../../utils/functionUtils');
@@ -517,194 +518,170 @@ exports.inviteTeamsToCompetition = async ({ competitionId }, { teamIds }, { user
 };
 
 exports.addTeamsToCompetition = async ({ competitionId }, { teamIds }, { userId, auditInfo }) => {
-    // Validate input
-    if( !Array.isArray( teamIds ) ) return { success: false, message: 'Invalid Input Format' };
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId );
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
-
-    // Loop through teamIds
-    const updates = teamIds.map( async ( teamId ) => {
-        // Check if team exists
-        const team = await db.FootballTeam.findById( teamId );
-        if( !team ) {
-            console.warn( 'Skipped A Team' );
-            return null;
+    try {
+        if (!Array.isArray(teamIds)) {
+            throw new Error('Invalid team IDs format');
         }
 
-        // Check if cpompetition invite has already been sent
-        const competitionInvite = team.competitionInvitations.some( invite => invite.competition.equals( foundCompetition._id ) );
-        if( competitionInvite ) {
-            const updatedTeam = await db.FootballTeam.findOneAndUpdate(
-                { _id: teamId, "competitionInvitations.competitions": foundCompetition._id },
-                { $set: { "competitionInvitations.$.status": "accepted" } },
-                { new: true }
-            );
-            const updatedCompetition = await db.FootballCompetition.findByIdAndUpdate(
-                competitionId,
-                { 
-                    $addToSet: { 
-                        teams: { 
-                            team: updatedTeam._id 
-                        } 
-                    } 
-                },
-                { new: true }
-            )
+        const competition = await db.FootballCompetition.findById(competitionId).session(session);
+        if (!competition) {
+            throw new Error('Competition not found');
+        }
 
-            // Log action
+        const teams = await db.FootballTeam.find({ _id: { $in: teamIds } }).session(session);
+        const validTeamIds = teams.map(team => team._id);
+        const invalidTeamIds = teamIds.filter(id => !validTeamIds.includes(id));
+
+        // Update team invitations and add to competition
+        await Promise.all(teams.map(async team => {
+            await db.FootballTeam.updateOne(
+                { _id: team._id },
+                {
+                    $set: {
+                        'competitionInvitations.$[elem].status': 'accepted'
+                    }
+                },
+                {
+                    arrayFilters: [{ 'elem.competition': competitionId }],
+                    session
+                }
+            );
+        }));
+
+        await db.FootballCompetition.updateOne(
+            { _id: competitionId },
+            {
+                $addToSet: {
+                    teams: { $each: validTeamIds.map(teamId => ({ team: teamId })) }
+                }
+            },
+            { session }
+        );
+
+        await session.commitTransaction();
+
+        // Log actions
+        await Promise.all(teams.map(team => {
             logActionManually({
-                userId, auditInfo,
-                action: 'UPDATE',
+                userId,
+                auditInfo,
+                action: 'TEAM_ADD',
                 entity: 'FootballTeam',
                 entityId: team._id,
                 details: {
-                    message: `Competition Invitation Sent`,
-                    affectedFields: [ 'competitionInvitations' ]
-                },
-                previousValues: team.competitionInvitations,
-                newValues: updatedTeam.competitionInvitations,
+                    message: `Added to competition: ${competition.name}`,
+                    competitionId
+                }
             });
+        }));
 
-            return updatedTeam
-        } else {
-            const updatedTeam = await db.FootballTeam.findByIdAndUpdate( 
-                teamId,
-                { 
-                    $addToSet: { 
-                        competitionInvitations: { 
-                            competition: foundCompetition._id, 
-                            status: 'accepted' 
-                        }
-                    } 
-                },
-                { new: true }
-            );
-            const updatedCompetition = await db.FootballCompetition.findByIdAndUpdate(
-                competitionId,
-                { 
-                    $addToSet: { 
-                        teams: { 
-                            team: updatedTeam._id 
-                        } 
-                    } 
-                },
-                { new: true }
-            )
-
-            // Log action
-            logActionManually({
-                userId, auditInfo,
-                action: 'UPDATE',
-                entity: 'FootballTeam',
-                entityId: team._id,
-                details: {
-                    message: `Competition Invitation Sent`,
-                    affectedFields: [ 'competitionInvitations' ]
-                },
-                previousValues: team.competitionInvitations,
-                newValues: [ ...team.competitionInvitations, { competition: foundCompetition._id, status: 'accepted' }]
-            });
-
-            return updatedTeam;
-        }
-    });
-
-    // Wait for updates, filter all invalidIds and refresh competitions
-    await Promise.all( updates );
-    const validUpdates = updates.filter( id => id !== null );
-    const invalidUpdates = updates.filter( id => id === null );
-    const refreshedCompetition = await db.FootballCompetition.findById( competitionId ).populate({ path: 'teams.team', select: 'name shorthand' } );
-
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballCompetition',
-        entityId: foundCompetition._id,
-        details: {
-            message: `Competition Teams Updated`,
-            affectedFields: [ 'teams' ]
-        },
-        previousValues: foundCompetition,
-        newValues: refreshedCompetition
-    });
-
-    // Return success
-    return { success: true, message: 'Invitations Sent Successfully', data: { validUpdates, invalidUpdates, refreshedCompetition } };
-}
-
-exports.removeTeamFromCompetition = async ({ competitionId, teamId }, { userId, auditInfo }) => {
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId );
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
-    if( foundCompetition.status !== 'upcoming' ) return { success: false, message: 'Competition Started' }
-
-    // Check if team exists
-    const team = await db.FootballTeam.findById( teamId );
-    if( !team ) return { success: false, message: 'Invalid Team' };
-
-    // Check if team is a part of competition
-    if( !foundCompetition.teams.some( team => team === teamId )) return { success: false, message: 'Team Not In Competition' };
-
-    // Map through team invitations and reject invite
-    const updatedInvitations = await db.FootballTeam.findOneAndUpdate(
-        { _id: teamId, "competitionInvitations.competition": competitionId },
-        {
-            $set: {
-                "competitionInvitations.$.status": "rejected"
+        logActionManually({
+            userId,
+            auditInfo,
+            action: 'UPDATE',
+            entity: 'FootballCompetition',
+            entityId: competitionId,
+            details: {
+                message: `Added ${validTeamIds.length} teams to competition`,
+                addedTeams: validTeamIds
             }
-        },
-        { new: true }
-    )
-
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballTeam',
-        entityId: team._id,
-        details: {
-            message: `Competition Invitation Rejected`,
-            affectedFields: [ 'competitionInvitations' ]
-        },
-        previousValues: team.competitionInvitations,
-        newValues: updatedInvitations.competitionInvitations
-    });
-
-    // Remove team from competition
-    const refreshedCompetition = await db.FootballCompetition.findByIdAndUpdate(
-        competitionId,
-        {
-            $pull: {
-                teams: { team: teamId }
-            }
-        },
-        { new: true }
-    )
-        .populate({
-            path: 'teams',
-            select: 'name shorthand'
         });
 
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballCompetition',
-        entityId: foundCompetition._id,
-        details: {
-            message: `Competition Team Removed`,
-            affectedFields: [ 'teams' ]
-        },
-        previousValues: foundCompetition.teams,
-        newValues: refreshedCompetition.teams
-    });
+        const updatedCompetition = await db.FootballCompetition.findById(competitionId)
+            .populate('teams.team', 'name shorthand');
 
-    // Return success
-    return { success: true, message: 'Team Removed', data: refreshedCompetition.teams }
-}
+        return {
+            success: true,
+            message: 'Teams added to competition',
+            data: {
+                competition: updatedCompetition,
+                invalidTeamIds
+            }
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        return { success: false, message: error.message };
+    } finally {
+        session.endSession();
+    }
+};
+
+exports.removeTeamFromCompetition = async ({ competitionId, teamId }, { userId, auditInfo }) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const [competition, team] = await Promise.all([
+            db.FootballCompetition.findById(competitionId).session(session),
+            db.FootballTeam.findById(teamId).session(session)
+        ]);
+
+        if (!competition) throw new Error('Competition not found');
+        if (!team) throw new Error('Team not found');
+        if (competition.status !== 'upcoming') throw new Error('Cannot remove teams from ongoing/completed competition');
+
+        const isTeamInCompetition = competition.teams.some(t => t.team.equals(teamId));
+        if (!isTeamInCompetition) throw new Error('Team not in competition');
+
+        // Update team invitation status
+        await db.FootballTeam.updateOne(
+            { _id: teamId, 'competitionInvitations.competition': competitionId },
+            { $set: { 'competitionInvitations.$.status': 'rejected' } },
+            { session }
+        );
+
+        // Remove from competition
+        await db.FootballCompetition.updateOne(
+            { _id: competitionId },
+            { $pull: { teams: { team: teamId } } },
+            { session }
+        );
+
+        await session.commitTransaction();
+
+        // Log actions
+        logActionManually({
+            userId,
+            auditInfo,
+            action: 'TEAM_REMOVE',
+            entity: 'FootballTeam',
+            entityId: teamId,
+            details: {
+                message: `Removed from competition: ${competition.name}`,
+                competitionId
+            }
+        });
+
+        logActionManually({
+            userId,
+            auditInfo,
+            action: 'UPDATE',
+            entity: 'FootballCompetition',
+            entityId: competitionId,
+            details: {
+                message: `Removed team: ${team.name}`,
+                removedTeam: teamId
+            }
+        });
+
+        const updatedCompetition = await db.FootballCompetition.findById(competitionId)
+            .populate('teams.team', 'name shorthand');
+
+        return {
+            success: true,
+            message: 'Team removed from competition',
+            data: updatedCompetition
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        return { success: false, message: error.message };
+    } finally {
+        session.endSession();
+    }
+};
 
 exports.registerTeamSquadList = async ({ competitionId, teamId }, { players }, { userId, auditInfo }) => {
     // Check if competition exists
