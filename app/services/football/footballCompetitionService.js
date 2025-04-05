@@ -684,217 +684,351 @@ exports.removeTeamFromCompetition = async ({ competitionId, teamId }, { userId, 
 };
 
 exports.registerTeamSquadList = async ({ competitionId, teamId }, { players }, { userId, auditInfo }) => {
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId );
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Initialize old competition
-    const oldCompetition = await db.FootballCompetition.findById( competitionId );
+    try {
+        // Validate input
+        if (!Array.isArray(players) || players.length === 0) {
+            throw new Error('Invalid players array');
+        }
 
-    // Check if the team exists in the competition
-    const teamIndex = foundCompetition.teams.findIndex(team => team.team.toString() === teamId);
-    if (teamIndex === -1) return { success: false, message: 'Team not found in the competition' };
+        // Check competition exists
+        const competition = await db.FootballCompetition.findById(competitionId).session(session);
+        if (!competition) throw new Error('Competition not found');
 
-    // Validate that the players are part of the team
-    const team = foundCompetition.teams[ teamIndex ];
-    const teamPlayers = await db.FootballPlayer.find({ team: teamId });
-    const playerIds = teamPlayers.map( player => player._id );
+        // Check team is in competition
+        const teamInCompetition = competition.teams.find(t => t.team.toString() === teamId);
+        if (!teamInCompetition) throw new Error('Team not in competition');
 
-    const invalidPlayers = players.filter(playerId => !playerIds.includes(playerId));
-    if (invalidPlayers.length > 0) {
-        return { success: false, message: `Player(s) ${invalidPlayers.join(', ')} are not part of this team` };
+        // Get all valid players for this team
+        const teamPlayers = await db.FootballPlayer.find(
+            { baseTeam: teamId },
+            '_id',
+            { session }
+        );
+        const validPlayerIds = teamPlayers.map(p => p._id.toString());
+
+        // Validate all provided players belong to the team
+        const invalidPlayers = players.filter(p => !validPlayerIds.includes(p));
+        if (invalidPlayers.length > 0) {
+            throw new Error(`Invalid players: ${invalidPlayers.join(', ')}`);
+        }
+
+        // Update squad list
+        teamInCompetition.squadList = players;
+        await competition.save({ session });
+
+        // Log action
+        logActionManually({
+            userId,
+            auditInfo,
+            action: 'UPDATE_SQUAD',
+            entity: 'FootballCompetition',
+            entityId: competitionId,
+            details: {
+                message: `Updated squad list for team ${teamId}`,
+                teamId,
+                playerCount: players.length
+            }
+        });
+
+        await session.commitTransaction();
+
+        return { 
+            success: true, 
+            message: 'Squad list updated successfully',
+            data: {
+                teamId,
+                playerCount: players.length
+            }
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        return { success: false, message: error.message };
+    } finally {
+        session.endSession();
     }
-
-    // Update the squad list with the provided players
-    team.squadList = players.map(player => player);
-
-    // Save the updated competition document
-    await foundCompetition.save();
-
-    // Log actions
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballCompetition',
-        entityId: foundCompetition._id,
-        details: {
-            message: `Competition Teams Updated`,
-            affectedFields: [ 'teams' ]
-        },
-        previousValues: oldCompetition.toObject(),
-        newValues: foundCompetition.toObject()
-    });
-
-    // Return success
-    return { success: true, message: 'Team squad list updated successfully' };
-}
+};
 
 // Start Competition And Set Table From Array Of Teams In Competition
 exports.initializeLeagueTable = async ({ competitionId }, { userId, auditInfo }) => {
-    // Check if competition exists and is league
-    const foundCompetition = await db.FootballCompetition.findById( competitionId );
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
-    if( foundCompetition.format !== 'league' ) return { success: false, message: 'Invalid Competition Type' };
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    if( foundCompetition.leagueTable && foundCompetition.leagueTable.length > 0 ) return { success: false, message: 'League Table Initialized' };
+    try {
+        // Check competition exists
+        const competition = await db.FootballCompetition.findById(competitionId).session(session);
+        if (!competition) throw new Error('Competition not found');
+        
+        // Validate competition type
+        if (competition.format !== 'league') {
+            throw new Error('Only league competitions can initialize tables');
+        }
 
-    // Create league table and status
-    foundCompetition.leagueTable = foundCompetition.teams.map( ( team ) => ({
-        team: team.team,
-        played: 0,
-        points: 0,
-        wins: 0,
-        losses: 0,
-        draws: 0,
-        goalsFor: 0,
-        goalsAgainst: 0,
-        goalDifference: 0,
-        form: [],
-        position: 0
-    }));
-    foundCompetition.status = 'ongoing';
+        // Check if already initialized
+        if (competition.leagueTable && competition.leagueTable.length > 0) {
+            throw new Error('League table already initialized');
+        }
 
-    // Save updated table
-    await foundCompetition.save();
+        // Validate has teams
+        if (competition.teams.length === 0) {
+            throw new Error('Cannot initialize table - no teams in competition');
+        }
 
-    // Refresh Competition
-    const refreshedCompetition = await db.FootballCompetition.findById( competitionId )
-        .populate({
-            path: 'leagueTable.team',
-            select: 'name shorthand'
+        // Initialize table
+        competition.leagueTable = competition.teams.map((team, index) => ({
+            team: team.team,
+            played: 0,
+            points: 0,
+            wins: 0,
+            losses: 0,
+            draws: 0,
+            goalsFor: 0,
+            goalsAgainst: 0,
+            goalDifference: 0,
+            form: [],
+            position: index + 1
+        }));
+
+        competition.status = 'ongoing';
+        await competition.save({ session });
+
+        // Log action
+        logActionManually({
+            userId,
+            auditInfo,
+            action: 'INIT_TABLE',
+            entity: 'FootballCompetition',
+            entityId: competitionId,
+            details: {
+                message: 'League table initialized',
+                teamCount: competition.teams.length
+            }
         });
 
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballCompetition',
-        entityId: foundCompetition._id,
-        details: {
-            message: `Competition Table Initialized`,
-            affectedFields: [ 'leagueTable' ]
-        },
-        previousValues: foundCompetition,
-        newValues: refreshedCompetition
-    });
+        await session.commitTransaction();
 
-    // Return success
-    return { success: true, message: 'League Table Initialized', data: refreshedCompetition };
-}
+        // Get populated result
+        const result = await db.FootballCompetition.findById(competitionId)
+            .populate('leagueTable.team', 'name shorthand')
+            .lean();
+
+        return {
+            success: true,
+            message: 'League table initialized successfully',
+            data: result.leagueTable
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        return { success: false, message: error.message };
+    } finally {
+        session.endSession();
+    }
+};
 
 exports.addKnockoutPhases = async ({ competitionId }, { name, fixtureFormat }, { userId, auditInfo }) => {
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId );
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
-    if( foundCompetition.format === 'league' ) return { success: false, message: 'Invalid Competition Type' };
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Update knockout rounds
-    const updatedCompetition = await db.FootballCompetition.findByIdAndUpdate(
-        competitionId,
-        {
-            $addToSet: {
-                knockoutRounds: {
-                    name,
-                    fixtureFormat,
-                    fixtures: [],
-                    completed: false
-                }
+    try {
+        // Validate input
+        if (!name || !fixtureFormat) {
+            throw new Error('Name and fixture format are required');
+        }
+
+        // Check competition exists
+        const competition = await db.FootballCompetition.findById(competitionId).session(session);
+        if (!competition) throw new Error('Competition not found');
+
+        // Validate competition type
+        if (competition.format === 'league') {
+            throw new Error('Cannot add knockout phases to league competition');
+        }
+
+        // Check if round name already exists
+        if (competition.knockoutRounds.some(r => r.name === name)) {
+            throw new Error('Round with this name already exists');
+        }
+
+        // Add new round
+        const newRound = {
+            name,
+            fixtureFormat,
+            fixtures: [],
+            completed: false
+        };
+
+        competition.knockoutRounds.push(newRound);
+        await competition.save({ session });
+
+        // Log action
+        logActionManually({
+            userId,
+            auditInfo,
+            action: 'ADD_KNOCKOUT',
+            entity: 'FootballCompetition',
+            entityId: competitionId,
+            details: {
+                message: `Added knockout round: ${name}`,
+                roundName: name,
+                fixtureFormat
             }
-        },
-        { new: true }
-    );
+        });
 
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballCompetition',
-        entityId: foundCompetition._id,
-        details: {
-            message: `Knockout Phase Added`,
-            affectedFields: [ 'knockoutRounds' ]
-        },
-        previousValues: foundCompetition,
-        newValues: updatedCompetition
-    });
+        await session.commitTransaction();
 
-    // Return success
-    return { success: true, message: 'Knockout Rounds Added', data: updatedCompetition.knockoutRounds }
-}
+        return {
+            success: true,
+            message: 'Knockout round added successfully',
+            data: newRound
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        return { success: false, message: error.message };
+    } finally {
+        session.endSession();
+    }
+};
 
 exports.addGroupStage = async ({ competitionId }, { name }, { userId, auditInfo }) => {
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId );
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
-    if( foundCompetition.format !== 'hybrid' ) return { success: false, message: 'Invalid Competition Type' };
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Add group stage
-    const updatedCompetition = await db.FootballCompetition.findByIdAndUpdate(
-        competitionId,
-        {
-            $addToSet: {
-                groupStage: {
-                    name,
-                    fixtures: [],
-                    standings: []
-                }
+    try {
+        // Validate input
+        if (!name) throw new Error('Group name is required');
+
+        // Check competition exists
+        const competition = await db.FootballCompetition.findById(competitionId).session(session);
+        if (!competition) throw new Error('Competition not found');
+
+        // Validate competition type
+        if (competition.format !== 'hybrid') {
+            throw new Error('Only hybrid competitions can add group stages');
+        }
+
+        // Check if group name exists
+        if (competition.groupStage.some(g => g.name === name)) {
+            throw new Error('Group with this name already exists');
+        }
+
+        // Add new group
+        const newGroup = {
+            name,
+            fixtures: [],
+            standings: []
+        };
+
+        competition.groupStage.push(newGroup);
+        await competition.save({ session });
+
+        // Log action
+        logActionManually({
+            userId,
+            auditInfo,
+            action: 'ADD_GROUP',
+            entity: 'FootballCompetition',
+            entityId: competitionId,
+            details: {
+                message: `Added group stage: ${name}`
             }
+        });
+
+        await session.commitTransaction();
+
+        return {
+            success: true,
+            message: 'Group stage added successfully',
+            data: newGroup
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        return { success: false, message: error.message };
+    } finally {
+        session.endSession();
+    }
+};
+
+exports.addCompetitionFixture = async ({ competitionId }, fixtureData, { userId, auditInfo }) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // Validate required fields
+        const { homeTeam, awayTeam, date, referee, stadium } = fixtureData;
+        if (!homeTeam || !awayTeam || !date) {
+            throw new Error('Home team, away team and date are required');
         }
-    )
 
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballCompetition',
-        entityId: foundCompetition._id,
-        details: {
-            message: `Group Stage Added`,
-            affectedFields: [ 'groupStage' ]
-        },
-        previousValues: foundCompetition,
-        newValues: updatedCompetition
-    });
+        // Check competition exists
+        const competition = await db.FootballCompetition.findById(competitionId).session(session);
+        if (!competition) throw new Error('Competition not found');
 
-    // Return success
-    return { success: true, message: 'Group Stage Added', data: updatedCompetition.groupStage }
-}
-
-exports.addCompetitionFixture = async ({ competitionId }, { homeTeam, awayTeam, matchWeek, referee, date, stadium }, { userId, auditInfo }) => {
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId );
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
-
-    const competitionTeams = foundCompetition.teams.map( ( team ) => String( team.team ) ); // Convert to string for comparison
-
-    // Check if home and away teams are in competition
-    if( !competitionTeams.includes( homeTeam ) || !competitionTeams.includes( awayTeam ) ) return { success: false, message: 'Invalid Teams' }
-
-
-    // Loop through fixtures and create
-    const createdFixture = await db.FootballFixture.create({
-        homeTeam, awayTeam,
-        date, stadium,
-        type: 'competition',
-        competition: foundCompetition._id,
-        referee, matchWeek
-    });
-
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'CREATE',
-        entity: 'FootballFixture',
-        entityId: createdFixture._id,
-        details: {
-            message: `Fixture Created`
+        // Check teams are in competition
+        const competitionTeamIds = competition.teams.map(t => t.team.toString());
+        if (!competitionTeamIds.includes(homeTeam) || !competitionTeamIds.includes(awayTeam)) {
+            throw new Error('One or both teams not in competition');
         }
-    });
 
-    // Return success
-    return { success: true, message: 'Fixture Created', data: createdFixture };
-}
+        // Check not scheduling team against itself
+        if (homeTeam === awayTeam) {
+            throw new Error('A team cannot play against itself');
+        }
+
+        // Check date is valid
+        if (new Date(date) < new Date(competition.startDate) || 
+            new Date(date) > new Date(competition.endDate)) {
+            throw new Error('Fixture date must be within competition dates');
+        }
+
+        // Create fixture
+        const newFixture = await db.FootballFixture.create([{
+            ...fixtureData,
+            type: 'competition',
+            competition: competitionId,
+            status: 'scheduled',
+            stadium
+        }], { session });
+
+        // Add fixture reference to competition
+        if (fixtureData.matchWeek) {
+            // For league fixtures
+            await db.FootballCompetition.updateOne(
+                { _id: competitionId },
+                { $push: { fixtures: newFixture[0]._id } },
+                { session }
+            );
+        }
+
+        // Log action
+        logActionManually({
+            userId,
+            auditInfo,
+            action: 'CREATE_FIXTURE',
+            entity: 'FootballFixture',
+            entityId: newFixture[0]._id,
+            details: {
+                message: `Created fixture ${homeTeam} vs ${awayTeam}`,
+                competitionId,
+                date
+            }
+        });
+
+        await session.commitTransaction();
+
+        return {
+            success: true,
+            message: 'Fixture created successfully',
+            data: newFixture[0]
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        return { success: false, message: error.message };
+    } finally {
+        session.endSession();
+    }
+};
 
 // Update Competition Fixture And Calculate Competition Standings/Rounds/Data
 exports.updateCompetitionFixtureResult = async({ competitionId, fixtureId }, { result, statistics,  matchEvents, homeSubs, awaySubs }, { userId, auditInfo }) => {
