@@ -101,6 +101,10 @@
  *               year:
  *                 type: string
  *                 example: "2024/2025"
+ *               type:
+ *                 type: string
+ *                 enum: ["base", "department", "club", "school"]
+ *                 example: "base"
  *     responses:
  *       200:
  *         description: Team created successfully

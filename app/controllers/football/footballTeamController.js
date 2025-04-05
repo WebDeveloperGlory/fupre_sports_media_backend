@@ -117,8 +117,8 @@ exports.updateTeam = async ( req, res ) => {
         const restrictedFields = [ 'captain', 'players', 'competitionInvitations', 'friendlyRequests', 'admin', 'stats' ];
         const teamDocument = await teamService.getSingleTeam( req.params );
         const result = await dynamicUpdateService.dynamicUpdate(
-            teamDocument,
-            req.body,
+            teamDocument.data,
+            { updates: req.body },
             restrictedFields,
             {
                 entityName: 'FootballTeam', 
