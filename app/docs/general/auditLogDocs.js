@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /audit/audit-logs:
+ * /audit:
  *   get:
  *     summary: Get all audit logs (Admin)
  *     tags: [Audit Logs (Admin)]
@@ -61,7 +61,7 @@
 
 /**
  * @swagger
- * /audit/audit-logs/{logId}:
+ * /audit/{logId}:
  *   get:
  *     summary: Get detailed audit log (Admin)
  *     tags: [Audit Logs (Admin)]
@@ -108,7 +108,7 @@
 
 /**
  * @swagger
- * /audit/audit-logs/user/{userId}:
+ * /audit/user/{userId}:
  *   get:
  *     summary: Get user-specific audit logs (Admin)
  *     tags: [Audit Logs (Admin)]
@@ -153,7 +153,7 @@
 
 /**
  * @swagger
- * /audit/audit-logs/entity/{entity}/{entityId}:
+ * /audit/entity/{entity}/{entityId}:
  *   get:
  *     summary: Get entity-specific audit logs (Admin)
  *     tags: [Audit Logs (Admin)]

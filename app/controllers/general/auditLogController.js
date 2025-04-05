@@ -40,9 +40,22 @@ exports.getAllAuditLogs = async ( req, res ) => {
     }
 }
 
+exports.getSingleAuditLog = async ( req, res ) => {
+    try {
+        const result = await auditLogService.getSingleAuditLog( req.params );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 exports.deleteAuditLog = async ( req, res ) => {
     try {
-        const result = await auditLogService.deleteAuditLog( req.query );
+        const result = await auditLogService.deleteAuditLog( req.params );
 
         if( result.success ) {
             return success( res, result.message, result.data );

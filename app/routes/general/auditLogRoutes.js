@@ -5,9 +5,10 @@ const { authorize } = require('../../middlewares/adminMiddleware');
 
 const router = Router();
 
-router.get( '/', authenticateUser, authorize( [ 'super-admin' ] ), controller.getAllAuditLogs );
-router.get( '/:logId', authenticateUser, authorize( [ 'super-admin' ] ), controller.deleteAuditLog );
-router.get( '/user/:userId', authenticateUser, authorize( [ 'super-admin' ] ), controller.getAuditLogsByUser );
-router.get( '/entity/:entity/:entityId', authenticateUser, authorize( [ 'super-admin' ] ), controller.getAuditLogsByEntity );
+router.get( '/', authenticateUser, authorize( [ 'superAdmin' ] ), controller.getAllAuditLogs );
+router.get( '/:logId', authenticateUser, authorize( [ 'superAdmin' ] ), controller.getSingleAuditLog );
+router.delete( '/:logId', authenticateUser, authorize( [ 'superAdmin' ] ), controller.deleteAuditLog );
+router.get( '/user/:userId', authenticateUser, authorize( [ 'superAdmin' ] ), controller.getAuditLogsByUser );
+router.get( '/entity/:entity/:entityId', authenticateUser, authorize( [ 'superAdmin' ] ), controller.getAuditLogsByEntity );
 
 module.exports = router;

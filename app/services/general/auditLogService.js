@@ -104,6 +104,15 @@ exports.getAllAuditLogs = async({ page = 1, limit = 10 }) => {
     };
 }
 
+exports.getSingleAuditLog = async ({ logId }) => {
+    // Check if log exists
+    const log = await db.AuditLog.findById( logId )
+    if( !log ) return { success: false, message: 'Invalid Log' };
+
+    // Return success
+    return { success: true, message: 'Log Acquired', data: log };
+}
+
 exports.deleteAuditLog = async({ logId }) => {
     // Find and delete log
     const deletedLog = await db.AuditLog.findByIdAndDelete( logId );
