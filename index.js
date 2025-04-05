@@ -5,6 +5,8 @@ const swaggerUi = require('swagger-ui-express');
 const { swaggerSpecV1, swaggerSpecV2 } = require('./app/config/swagger');
 const { PORT, ALLOWED_ORIGINS } = require('./app/config/env');
 const { initializeWebSocket } = require('./app/config/socket');
+
+// V1 ROUTES //
 const authRoutes = require('./app/routes/authRoutes');
 const teamRoutes = require('./app/routes/teamRoutes');
 const fixtureRoutes = require('./app/routes/fixtureRoutes');
@@ -13,7 +15,9 @@ const adminRoutes = require('./app/routes/adminRoutes');
 const liveFixtureRoutes = require('./app/routes/liveFixtureRoutes');
 const generalRoutes = require('./app/routes/generalRoutes');
 const playerRoutes = require('./app/routes/playerRoutes');
+// END OF V1 ROUTES //
 
+// V2 ROUTES //
 const authenticationRoutes = require('./app/routes/general/authRoutes');
 const userRoutes = require('./app/routes/general/userRoutes');
 const auditRoutes = require('./app/routes/general/auditLogRoutes');
@@ -22,6 +26,11 @@ const footballFixtureRoutes = require('./app/routes/football/footballFixtureRout
 const footballTeamRoutes = require('./app/routes/football/footballTeamRoutes');
 const footballCompetitionRoutes = require('./app/routes/football/footballCompetitionRoutes');
 const footballTOTSRoutes = require('./app/routes/football/footballTOTSRoutes');
+// END OF V2 ROUTES //
+
+// V2 VIEWS ROUTES //
+const viewRoutes = require('./app/routes/views/viewRoutes');
+// END OF V2 VIEWS ROUTES //
 
 const app = express();
 const APP_PORT = PORT;
@@ -67,7 +76,7 @@ app.get( '/', ( req, res ) => {
 });
 //END OF TEST ROUTES //
 
-// ROUTES //
+// V2 ROUTES //
 app.use( '/api/v2/authentication', authenticationRoutes );
 app.use( '/api/v2/user', userRoutes );
 app.use( '/api/v2/audit', auditRoutes );
@@ -76,7 +85,13 @@ app.use( '/api/v2/football/fixture', footballFixtureRoutes );
 app.use( '/api/v2/football/team', footballTeamRoutes );
 app.use( '/api/v2/football/competition', footballCompetitionRoutes );
 app.use( '/api/v2/football/tots', footballTOTSRoutes );
+// END OF V2 ROUTES //
 
+// V2 VIEWS ROUTES //
+app.use( '/api/v2/views', viewRoutes );
+// END OF V2 VIEWS ROUTES //
+
+// V1 ROUTES //
 app.use( '/api/auth', authRoutes );
 app.use( '/api/teams', teamRoutes );
 app.use( '/api/fixture', fixtureRoutes );
@@ -85,7 +100,7 @@ app.use( '/api/admin', adminRoutes );
 app.use( '/api/live-fixtures', liveFixtureRoutes );
 app.use( '/api/general', generalRoutes );
 app.use( '/api/player', playerRoutes );
-// END OF ROUTES //
+// END OF V1 ROUTES //
 
 // app.listen( PORT, () => {
 //     console.log(`Fupre Sports Media Server Running On Port: ${ APP_PORT }`);

@@ -4,12 +4,13 @@ const { logActionManually } = require('../../middlewares/auditMiddleware');
 // const { addToFront, calculatePercentage } = require('../../utils/functionUtils');
 // const { processStatUpdate, updatePlayerGeneralRecord, processAppearanceUpdate } = require('../../utils/football/footballPlayerStatUtils');
 
-exports.getAllCompetitions = async ({ status, sportType, limit = 10, page = 1, sort = '-createdAt' }) => {
+exports.getAllCompetitions = async ({ status, sportType, limit = 10, page = 1, sort = '-createdAt', isFeatured }) => {
     const skip = (page - 1) * limit;
     const filter = {};
     
     if (status) filter.status = status;
     if (sportType) filter.sportType = sportType;
+    if ( isFeatured ) filter.isFeatured = isFeatured;
 
     const [totalCompetitions, competitions] = await Promise.all([
         db.FootballCompetition.countDocuments(filter),
@@ -19,7 +20,6 @@ exports.getAllCompetitions = async ({ status, sportType, limit = 10, page = 1, s
             .skip(skip)
             .limit(limit)
             .lean()
-            .cache({ key: `competitions:${status}:${sportType}:${page}` })
     ]);
 
     return { 
