@@ -65,8 +65,8 @@ exports.updateFixture = async ( req, res ) => {
         const restrictedFields = [ 'type', 'competition', 'status', 'result', 'goalScorers', 'statistics', 'homeLineup', 'awayLineup', 'matchEvents', 'preMatchOdds' ];
         const fixtureDocument = await fixtureService.getOneFixture( req.params );
         const result = await dynamicUpdateService.dynamicUpdate(
-            fixtureDocument,
-            req.body,
+            fixtureDocument.data,
+            { updates: req.body },
             restrictedFields,
             {
                 entityName: 'FootballFixture', 

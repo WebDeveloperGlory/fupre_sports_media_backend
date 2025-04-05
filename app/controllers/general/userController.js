@@ -54,7 +54,7 @@ exports.updateUser = async ( req, res ) => {
         const userDocument = await userService.getOneUser( req.user );
         const result = await dynamicUpdateService.dynamicUpdate(
             userDocument.data,
-            req.body,
+            { updates: req.body },
             restrictedFields,
             {
                 entityName: 'RefactoredUser', 
