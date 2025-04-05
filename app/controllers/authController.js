@@ -25,6 +25,7 @@ exports.loginUser = async ( req, res ) => {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'None',
+                maxAge: 24 * 60 * 60 * 1000,
             });
 
             return success( res, result.message, result.data );
@@ -44,9 +45,14 @@ exports.logoutUser = async ( req, res ) => {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'None',
+                maxAge: 1 * 1000,
             });
             // Clear Cookies
-            // res.clearCookie('authToken');
+            res.clearCookie('authToken', {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'None',
+            });
 
             return success( res, result.message, result.data );
         }
