@@ -307,147 +307,214 @@ exports.getCompetitionSingleGroup = async ({ competitionId, groupName }) => {
     };
 }
 
-exports.createCompetition = async ({ name, sportType, description, rounds, startDate, endDate, format, rules }, { userId, auditInfo } ) => {
-    // Create competition
+exports.createCompetition = async ({ name, sportType, description, rounds, startDate, endDate, format, rules }, { userId, auditInfo }) => {
+    // Validate dates
+    if (new Date(startDate) >= new Date(endDate)) {
+        return { success: false, message: 'End date must be after start date' };
+    }
+
+    // Create competition with additional validation
     const competition = await db.FootballCompetition.create({
-        name, sportType, 
-        description, rounds, 
-        startDate, endDate, 
-        format, rules
+        name,
+        sportType,
+        description,
+        rounds,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        format,
+        rules,
+        createdBy: userId,
+        admin: userId
     });
 
-    // Log action
+    // Log action with more details
     logActionManually({
-        userId, auditInfo,
+        userId,
+        auditInfo,
         action: 'CREATE',
         entity: 'FootballCompetition',
         entityId: competition._id,
         details: {
-            message: `Competition Created`
+            message: `Created competition: ${name}`,
+            competitionType: format,
+            duration: `${competition.startDate.toDateString()} to ${competition.endDate.toDateString()}`
         }
     });
     
-    // Return success
-    return { success: true, message: 'Competition Created', data: competition };
-}
+    return { 
+        success: true, 
+        message: 'Competition created successfully', 
+        data: competition 
+    };
+};
 
-exports.updateCompetition = async ({ competitionId }, { name, description, rounds, startDate, endDate, format, rules }, { userId, auditInfo }) => {
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId );
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
+exports.updateCompetition = async ({ competitionId }, updates, { userId, auditInfo }) => {
+    const allowedUpdates = ['name', 'description', 'rounds', 'startDate', 'endDate', 'format', 'rules'];
+    const updatesToApply = Object.keys(updates)
+        .filter(key => allowedUpdates.includes(key))
+        .reduce((obj, key) => {
+            obj[key] = updates[key];
+            return obj;
+        }, {});
 
-    // Update competition
+    if (Object.keys(updatesToApply).length === 0) {
+        return { success: false, message: 'No valid updates provided' };
+    }
+
+    // Check date validity if being updated
+    if (updatesToApply.startDate && updatesToApply.endDate && 
+        new Date(updatesToApply.startDate) >= new Date(updatesToApply.endDate)) {
+        return { success: false, message: 'End date must be after start date' };
+    }
+
+    const foundCompetition = await db.FootballCompetition.findById(competitionId);
+    if (!foundCompetition) return { success: false, message: 'Competition not found' };
+
+    // Check if competition has started
+    if (foundCompetition.status !== 'upcoming') {
+        return { success: false, message: 'Cannot update ongoing or completed competition' };
+    }
+
     const updatedCompetition = await db.FootballCompetition.findByIdAndUpdate(
         competitionId,
-        { name, description, rounds, startDate, endDate, format, rules },
-        { new: true }
+        updatesToApply,
+        { new: true, runValidators: true }
     );
 
-    // Log action
-    logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
-        entity: 'FootballCompetition',
-        entityId: foundCompetition._id,
-        details: {
-            message: `Competition Updated`,
-            affectedFields: [ 
-                name !== undefined ? 'name' : null,
-                description !== undefined ? 'description' : null,
-                rounds !== undefined ? 'rounds' : null,
-                startDate !== undefined ? 'startDate' : null,
-                endDate !== undefined ? 'endDate' : null,
-                format !== undefined ? 'format' : null,
-                rules !== undefined ? 'rules' : null,
-            ].filter(Boolean), // Remove null values
-        },
-        previousValues: foundCompetition.toObject(),
-        newValues: updatedCompetition.toObject()
-    });
+    // Get changed fields
+    const changedFields = Object.keys(updatesToApply).filter(key => 
+        JSON.stringify(foundCompetition[key]) !== JSON.stringify(updatedCompetition[key])
+    );
 
-    // Return success
-    return { success: true, message: 'Competition Updated', data: updatedCompetition };
-}
+    if (changedFields.length > 0) {
+        logActionManually({
+            userId,
+            auditInfo,
+            action: 'UPDATE',
+            entity: 'FootballCompetition',
+            entityId: competitionId,
+            details: {
+                message: `Updated competition details`,
+                changedFields,
+                previousValues: foundCompetition.toObject(),
+                newValues: updatedCompetition.toObject()
+            }
+        });
+    }
+
+    return { 
+        success: true, 
+        message: 'Competition updated successfully', 
+        data: updatedCompetition 
+    };
+};
 
 exports.updateCompetitionStatus = async ({ competitionId }, { status }, { userId, auditInfo }) => {
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId );
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
+    const validTransitions = {
+        upcoming: ['ongoing', 'cancelled'],
+        ongoing: ['completed', 'cancelled'],
+        completed: [],
+        cancelled: []
+    };
 
-    // Update competition
+    const foundCompetition = await db.FootballCompetition.findById(competitionId);
+    if (!foundCompetition) return { success: false, message: 'Competition not found' };
+
+    // Validate status transition
+    if (!validTransitions[foundCompetition.status].includes(status)) {
+        return { success: false, message: `Invalid status transition from ${foundCompetition.status} to ${status}` };
+    }
+
     const updatedCompetition = await db.FootballCompetition.findByIdAndUpdate(
         competitionId,
         { status },
         { new: true }
     );
 
-    // Log action
     logActionManually({
-        userId, auditInfo,
-        action: 'UPDATE',
+        userId,
+        auditInfo,
+        action: 'STATUS_CHANGE',
         entity: 'FootballCompetition',
-        entityId: foundCompetition._id,
+        entityId: competitionId,
         details: {
-            message: `Competition Updated`,
-            affectedFields: [ 'status' ]
-        },
-        previousValues: foundCompetition.toObject(),
-        newValues: updatedCompetition.toObject()
+            message: `Competition status changed from ${foundCompetition.status} to ${status}`,
+            previousStatus: foundCompetition.status,
+            newStatus: status
+        }
     });
 
-    // Return success
-    return { success: true, message: 'Competition Updated', data: updatedCompetition };
-}
+    return { 
+        success: true, 
+        message: 'Competition status updated', 
+        data: updatedCompetition 
+    };
+};
 
 exports.inviteTeamsToCompetition = async ({ competitionId }, { teamIds }, { userId, auditInfo }) => {
-    // Validate input
-    if( !Array.isArray( teamIds ) ) return { success: false, message: 'Invalid Input Format' };
+    if (!Array.isArray(teamIds) || teamIds.length === 0) {
+        return { success: false, message: 'No team IDs provided' };
+    }
 
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId );
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
+    const [competition, existingTeams] = await Promise.all([
+        db.FootballCompetition.findById(competitionId),
+        db.FootballTeam.find({ _id: { $in: teamIds } })
+    ]);
 
-    // Loop through teamIds
-    const updates = teamIds.map( async ( teamId ) => {
-        // Check if team exists
-        const team = await db.FootballTeam.findById( teamId );
-        if( !team ) {
-            console.warn( 'Skipped A Team' );
-            return null;
+    if (!competition) return { success: false, message: 'Competition not found' };
+
+    const validTeamIds = existingTeams.map(team => team._id);
+    const invalidTeamIds = teamIds.filter(id => !validTeamIds.includes(id));
+
+    // Bulk update teams with new invitations
+    const bulkOps = validTeamIds.map(teamId => ({
+        updateOne: {
+            filter: { 
+                _id: teamId,
+                'competitionInvitations.competition': { $ne: competitionId }
+            },
+            update: {
+                $addToSet: {
+                    competitionInvitations: {
+                        competition: competitionId,
+                        status: 'pending',
+                        registrationDate: new Date()
+                    }
+                }
+            }
         }
+    }));
 
-        // Update competitionInvitations in team
-        await db.FootballTeam.findByIdAndUpdate( 
-            teamId, 
-            { $addToSet: { competitionInvitations: foundCompetition._id } },
-            { new: true }
-        );
+    if (bulkOps.length > 0) {
+        await db.FootballTeam.bulkWrite(bulkOps);
+    }
 
-        // Log action
+    // Log action for each team
+    await Promise.all(existingTeams.map(async team => {
         logActionManually({
-            userId, auditInfo,
-            action: 'UPDATE',
+            userId,
+            auditInfo,
+            action: 'INVITE',
             entity: 'FootballTeam',
             entityId: team._id,
             details: {
-                message: `Competition Invitation Sent`,
-                affectedFields: [ 'competitionInvitations' ]
-            },
-            previousValues: team.competitionInvitations,
-            newValues: [ ...team.competitionInvitations, { competition: foundCompetition._id, status: 'pending' }]
+                message: `Invited to competition: ${competition.name}`,
+                competitionId,
+                competitionName: competition.name
+            }
         });
+    }));
 
-        return teamId
-    });
-
-    // Wait for updates and filter all invalidIds
-    await Promise.all( updates );
-    const validUpdates = updates.filter( id => id !== null );
-    const invalidUpdates = updates.filter( id => id === null );
-
-    // Return success
-    return { success: true, message: 'Invitations Sent Successfully', data: { validUpdates, invalidUpdates } };
-}
+    return {
+        success: true,
+        message: 'Team invitations processed',
+        data: {
+            invitedTeams: validTeamIds.length,
+            invalidTeamIds,
+            duplicateInvites: teamIds.length - validTeamIds.length - invalidTeamIds.length
+        }
+    };
+};
 
 exports.addTeamsToCompetition = async ({ competitionId }, { teamIds }, { userId, auditInfo }) => {
     // Validate input
