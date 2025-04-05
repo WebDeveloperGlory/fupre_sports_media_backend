@@ -3,26 +3,24 @@ const { logActionManually } = require('../../middlewares/auditMiddleware');
 const { addToFront, calculatePercentage } = require('../../utils/functionUtils');
 const { processStatUpdate, updatePlayerGeneralRecord, processAppearanceUpdate } = require('../../utils/football/footballPlayerStatUtils');
 
-exports.getAllCompetitions = async ({ status, sportType, limit = 10, page = 1 }) => {
-    // Calculate the number of documents to skip
-    const skip = ( page - 1 ) * limit;
-    let filter = {};
+exports.getAllCompetitions = async ({ status, sportType, limit = 10, page = 1, sort = '-createdAt' }) => {
+    const skip = (page - 1) * limit;
+    const filter = {};
+    
+    if (status) filter.status = status;
+    if (sportType) filter.sportType = sportType;
 
-    // Check for filters
-    if( status ) { filter.status = status }
-    if( sportType ) { filter.sportType = sportType }
+    const [totalCompetitions, competitions] = await Promise.all([
+        db.FootballCompetition.countDocuments(filter),
+        db.FootballCompetition.find(filter)
+            .select('-admin')
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean()
+            .cache({ key: `competitions:${status}:${sportType}:${page}` })
+    ]);
 
-    // Get total count for pagination
-    const totalCompetitions = await db.FootballCompetition.countDocuments(filter);
-
-    // Get all competitions
-    const competitions = await db.FootballCompetition.find( filter )
-        .select('-admin')
-        .skip( skip )
-        .limit( limit )
-        .lean();
-
-    // Return success 
     return { 
         success: true, 
         message: 'All Competitions Acquired', 
@@ -32,68 +30,69 @@ exports.getAllCompetitions = async ({ status, sportType, limit = 10, page = 1 })
                 total: totalCompetitions,
                 page,
                 limit,
-                pages: Math.ceil( totalCompetitions / limit ),
+                pages: Math.ceil(totalCompetitions / limit),
             }
         }
     };
 }
 
 exports.getSingleCompetition = async ({ competitionId }) => {
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId )
+    const foundCompetition = await db.FootballCompetition.findById(competitionId)
         .populate([
             {
                 path: 'teams.team',
-                select: 'name shorthand'
+                select: 'name shorthand logo colors'
             },
             {
                 path: 'teams.squadList',
-                select: 'name position number'
+                select: 'name position number department'
             },
-            // {
-            //     path: 'leagueTable.team',
-            //     select: 'name shorthand'
-            // },
-            // {
-            //     path: 'groupStage.standings.team',
-            //     select: 'name shorthand'
-            // },
+            {
+                path: 'admin',
+                select: 'firstName lastName email'
+            }
         ])
-        .select('-admin');
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
-
-    // Return success
-    return { success: true, message: 'Competition Acquired', data: foundCompetition }
-}
-
-exports.getCompetitionFixtures = async ({ competitionId }, { limit = 10, page = 1 }) => {
-    // Calculate the number of documents to skip
-    const skip = ( page - 1 ) * limit;
-
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId );
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
-
-    // Get total count for pagination
-    const totalFixtures = await db.FootballFixture.countDocuments({ competition: competitionId });
-
-    // Check competition fixtures
-    const competitionFixtures = await db.FootballFixture.find({ competition: competitionId })
-        .skip( skip )
-        .limit( limit )
         .lean();
 
-    // Return success 
+    if (!foundCompetition) return { success: false, message: 'Invalid Competition' };
+
     return { 
         success: true, 
-        message: 'All Competitions Acquired', 
+        message: 'Competition Acquired', 
+        data: foundCompetition 
+    };
+}
+
+exports.getCompetitionFixtures = async ({ competitionId }, { limit = 10, page = 1, fromDate, toDate }) => {
+    const skip = (page - 1) * limit;
+    const filter = { competition: competitionId };
+
+    if (fromDate || toDate) {
+        filter.date = {};
+        if (fromDate) filter.date.$gte = new Date(fromDate);
+        if (toDate) filter.date.$lte = new Date(toDate);
+    }
+
+    const [totalFixtures, fixtures] = await Promise.all([
+        db.FootballFixture.countDocuments(filter),
+        db.FootballFixture.find(filter)
+            .populate('homeTeam awayTeam', 'name shorthand logo')
+            .sort({ date: 1 })
+            .skip(skip)
+            .limit(limit)
+            .lean()
+    ]);
+
+    return {
+        success: true,
+        message: 'Competition Fixtures Acquired',
         data: {
-            fixtures: competitionFixtures,
+            fixtures,
             pagination: {
                 total: totalFixtures,
                 page,
                 limit,
-                pages: Math.ceil( totalFixtures / limit ),
+                pages: Math.ceil(totalFixtures / limit),
             }
         }
     };
@@ -123,105 +122,189 @@ exports.getCompetitionTeams = async ({ competitionId }) => {
 }
 
 exports.getCompetitionTeamSquadList = async ({ competitionId, teamId }) => {
-    // Check if competition exists
-    const foundCompetition = await db.FootballCompetition.findById( competitionId )
-        .populate([
-            {
-                path: 'teams.team',
-                select: 'name shorthand'
-            },
-            {
-                path: 'teams.squadList',
-                select: 'name position name'
-            },
-        ]);
-    if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
+    const foundCompetition = await db.FootballCompetition.findById(competitionId)
+        .populate({
+            path: 'teams',
+            match: { 'team': teamId },
+            populate: [
+                {
+                    path: 'team',
+                    select: 'name shorthand logo colors'
+                },
+                {
+                    path: 'squadList',
+                    select: 'name position number department stats.careerTotals'
+                }
+            ]
+        });
 
-    // Get specific team
-    const specificTeam = foundCompetition.teams.find( team => team.team._id === teamId );
+    if (!foundCompetition) return { success: false, message: 'Invalid Competition' };
+    if (!foundCompetition.teams.length) return { success: false, message: 'Team not in competition' };
 
-    // Return success
+    const teamData = foundCompetition.teams[0];
+    
     return {
         success: true,
-        message: 'Competition Teams Squad Aquired',
+        message: 'Competition Team Squad Acquired',
         data: {
-            team: specificTeam.team,
-            squad: specificTeam.squadList
+            team: teamData.team,
+            squad: teamData.squadList.sort((a, b) => a.number - b.number)
         }
-    }
+    };
 }
 
 exports.getCompetitionStandings = async ({ competitionId }) => {
-    // Check if competition exists
-    const competition = await db.FootballCompetition.findById( competitionId )
-        .populate( 'leagueTable.team' );
-    if (!competition) return { success: false, message: 'Invalid Competition' }
+    const competition = await db.FootballCompetition.findById(competitionId)
+        .populate({
+            path: 'leagueTable.team',
+            select: 'name shorthand logo'
+        });
+
+    if (!competition) return { success: false, message: 'Invalid Competition' };
 
     const table = competition.leagueTable
-        .sort( ( a, b ) => a.position - b.position );
+        .sort((a, b) => {
+            // Sort by points, then GD, then GF
+            if (b.points !== a.points) return b.points - a.points;
+            if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+            return b.goalsFor - a.goalsFor;
+        })
+        .map((team, index) => ({
+            ...team.toObject(),
+            position: index + 1
+        }));
 
-    // Return success
-    return { success: true, message: 'League Table Acquired', data: table };
+    return { 
+        success: true, 
+        message: 'League Table Acquired', 
+        data: table 
+    };
 }
 
 exports.getCompetitionKnockouts = async ({ competitionId }) => {
-    // Check if competition exists
-    const competition = await db.FootballCompetition.findById( competitionId )
+    const competition = await db.FootballCompetition.findById(competitionId)
         .populate([
             {
                 path: 'knockoutRounds.fixtures',
-                select: 'homeTeam awayTeam date result status round',
-                populate: {
-                    path: 'homeTeam awayTeam',
-                    select: 'name shorthand'
-                }
+                select: 'homeTeam awayTeam date result status',
+                populate: [
+                    {
+                        path: 'homeTeam',
+                        select: 'name shorthand logo'
+                    },
+                    {
+                        path: 'awayTeam',
+                        select: 'name shorthand logo'
+                    }
+                ]
             }
         ]);
-    if ( !competition ) return { success: false, message: 'Invalid Competition' };
 
-    // Return success
-    return { success: true, message: 'Knockout Rounds Acquired', data: competition.knockoutRounds };
+    if (!competition) return { success: false, message: 'Invalid Competition' };
+
+    // Add bracket visualization data
+    const roundsWithBrackets = competition.knockoutRounds.map(round => ({
+        ...round.toObject(),
+        bracket: generateBracketData(round.fixtures)
+    }));
+
+    return { 
+        success: true, 
+        message: 'Knockout Rounds Acquired', 
+        data: roundsWithBrackets 
+    };
+}
+
+// Helper function for bracket generation
+function generateBracketData( fixtures ) {
+    return fixtures.map(f => ({
+        id: f._id,
+        teams: [f.homeTeam, f.awayTeam],
+        score: f.result ? [f.result.homeScore, f.result.awayScore] : null,
+        penaltyScore: f.result && f.result.isPenaltyShootout ? [f.result.homePenalty, f.result.awayPenalty] : null,
+        winner: f.result?.winner,
+        date: f.date
+    }));
 }
 
 exports.getCompetitionGroups = async ({ competitionId }) => {
-    // Check if competition exists
-    const competition = await db.FootballCompetition.findById( competitionId )
+    const competition = await db.FootballCompetition.findById(competitionId)
         .populate([
             {
                 path: 'groupStage.standings.team',
-                select: 'name shorthand'
+                select: 'name shorthand logo'
             }
         ]);
-    if ( !competition ) return { success: false, message: 'Invalid Competition' };
 
-    // Return success
-    return { success: true, message: 'All Groups Acquired', data: competition.groupStage };
+    if (!competition) return { success: false, message: 'Invalid Competition' };
+
+    // Sort each group's standings
+    const sortedGroups = competition.groupStage.map(group => ({
+        ...group.toObject(),
+        standings: group.standings.sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+            return b.goalsFor - a.goalsFor;
+        }).map((team, index) => ({
+            ...team.toObject(),
+            position: index + 1
+        }))
+    }));
+
+    return { 
+        success: true, 
+        message: 'All Groups Acquired', 
+        data: sortedGroups 
+    };
 }
 
 exports.getCompetitionSingleGroup = async ({ competitionId, groupName }) => {
-    // Check if competition exists
-    const competition = await db.FootballCompetition.findById( competitionId )
+    const competition = await db.FootballCompetition.findById(competitionId)
         .populate([
             {
                 path: 'groupStage.standings.team',
-                select: 'name shorthand'
+                select: 'name shorthand logo stats'
             },
             {
                 path: 'groupStage.fixtures',
-                select: 'homeTeam awayTeam date result status round',
-                populate: {
-                    path: 'homeTeam awayTeam',
-                    select: 'name shorthand'
-                }
+                select: 'homeTeam awayTeam date result status',
+                populate: [
+                    {
+                        path: 'homeTeam',
+                        select: 'name shorthand logo'
+                    },
+                    {
+                        path: 'awayTeam',
+                        select: 'name shorthand logo'
+                    }
+                ]
             }
         ]);
-    if ( !competition ) return { success: false, message: 'Invalid Competition' };
 
-    // Get specific group
-    const groupStage = competition.groupStage.find( stage => stage.name === groupName );
+    if (!competition) return { success: false, message: 'Invalid Competition' };
 
-    // Return success
-    return { success: true, message: 'Single Group Acquired', data: groupStage };
+    const group = competition.groupStage.find(g => g.name === groupName);
+    if (!group) return { success: false, message: 'Group not found' };
+
+    // Sort standings
+    const sortedStandings = group.standings.sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+        return b.goalsFor - a.goalsFor;
+    }).map((team, index) => ({
+        ...team.toObject(),
+        position: index + 1
+    }));
+
+    return { 
+        success: true, 
+        message: 'Single Group Acquired', 
+        data: {
+            ...group.toObject(),
+            standings: sortedStandings,
+            fixtures: group.fixtures.sort((a, b) => a.date - b.date)
+        } 
+    };
 }
 
 exports.createCompetition = async ({ name, sportType, description, rounds, startDate, endDate, format, rules }, { userId, auditInfo } ) => {
