@@ -19,6 +19,7 @@ const playerRoutes = require('./app/routes/playerRoutes');
 
 // V2 ROUTES //
 const authenticationRoutes = require('./app/routes/general/authRoutes');
+const notificationRoutes = require('./app/routes/general/notificationRoutes');
 const userRoutes = require('./app/routes/general/userRoutes');
 const auditRoutes = require('./app/routes/general/auditLogRoutes');
 const footballPlayerRoutes = require('./app/routes/football/footballPlayerRoutes');
@@ -78,6 +79,7 @@ app.get( '/', ( req, res ) => {
 
 // V2 ROUTES //
 app.use( '/api/v2/authentication', authenticationRoutes );
+app.use( '/api/v2/notification', notificationRoutes );
 app.use( '/api/v2/user', userRoutes );
 app.use( '/api/v2/audit', auditRoutes );
 app.use( '/api/v2/football/player', footballPlayerRoutes );
