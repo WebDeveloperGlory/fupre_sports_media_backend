@@ -16,7 +16,7 @@ const userSchema = new Schema({
     password: { type: String },
     role: {
         type: String,
-        enum: [ 'team-admin', 'super-admin', 'competition-admin', 'live-match-admin' ],
+        enum: [ 'team-admin', 'super-admin', 'competition-admin', 'live-match-admin', 'user' ],
         required: true
     },
     associatedTeam: {

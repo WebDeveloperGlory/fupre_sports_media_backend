@@ -15,6 +15,7 @@ const adminRoutes = require('./app/routes/adminRoutes');
 const liveFixtureRoutes = require('./app/routes/liveFixtureRoutes');
 const generalRoutes = require('./app/routes/generalRoutes');
 const playerRoutes = require('./app/routes/playerRoutes');
+const totsRoutes = require('./app/routes/TOTSRoutes');
 // END OF V1 ROUTES //
 
 // V2 ROUTES //
@@ -102,6 +103,7 @@ app.use( '/api/admin', adminRoutes );
 app.use( '/api/live-fixtures', liveFixtureRoutes );
 app.use( '/api/general', generalRoutes );
 app.use( '/api/player', playerRoutes );
+app.use( '/api/tots', totsRoutes );
 // END OF V1 ROUTES //
 
 // app.listen( PORT, () => {

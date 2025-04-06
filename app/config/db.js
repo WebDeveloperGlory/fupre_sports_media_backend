@@ -18,6 +18,9 @@ module.exports.MatchStatistic = require('../models/MatchStatistic');
 module.exports.MatchEvent = require('../models/MatchEvent');
 module.exports.Notification = require('../models/Notification');
 module.exports.LiveFixture = require('../models/LiveFixture');
+module.exports.TOTSSession = require('../models/TOTSSession');
+module.exports.TOTSResult = require('../models/TOTSResult');
+module.exports.Vote = require('../models/Vote');
 
 // GENERAL SCHEMAS //
 module.exports.AuditLog = require('../models/general/AuditLog');
