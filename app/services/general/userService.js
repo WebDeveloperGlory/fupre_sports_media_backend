@@ -9,6 +9,28 @@ exports.getAllUsers = async () => {
     return { success: true, message: 'All Users Aquired', data: foundUsers };
 }
 
+exports.getProfile = async ({ userId }) => {
+    // Find user in database
+    const foundUser = await db.RefactoredUser.findById( userId ).select('-password');
+    if( !foundUser ) return { success: false, message: 'User Not Found' };
+
+    // Find User Notifications
+    const notifications = await db.RefactoredNotification.find({ recipient: userId })
+        .sort({ createdAt: -1 })
+        .select('-userId -__v');
+    const unreadNotifications = await db.RefactoredNotification.find({ recipient: userId, read: false }).countDocuments();
+
+    return { 
+        success: true, 
+        message: 'User Aquired', 
+        data: {
+            user: foundUser,
+            unreadNotifications,
+            notifications
+        } 
+    };
+}
+
 exports.getOneUser = async ({ userId }) => {
     // Find user in database
     const foundUser = await db.RefactoredUser.findById( userId ).select('-password');

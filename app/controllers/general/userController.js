@@ -15,6 +15,19 @@ exports.getAllUsers = async ( req, res ) => {
     }
 }
 
+exports.getProfile = async ( req, res ) => {
+    try {
+        const result = await userService.getProfile( req.user );
+
+        if( result.success ) {
+            return success( res, result.message, result.data );
+        }
+        return error( res, result.message );
+    } catch ( err ) {
+        return serverError( res, err );
+    }
+}
+
 exports.getOneUser = async ( req, res ) => {
     try {
         const result = await userService.getOneUser( req.params );

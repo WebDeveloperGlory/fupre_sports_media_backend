@@ -6,6 +6,7 @@ const { authorize } = require('../../middlewares/adminMiddleware');
 const router = Router();
 
 router.get( '/', authenticateUser, authorize([ 'superAdmin' ]), controller.getAllUsers );
+router.get( '/me', authenticateUser, controller.getProfile );
 router.get( '/:userId', authenticateUser, controller.getOneUser );
 router.put( '/:userId', authenticateUser, controller.updateUser );
 router.delete( '/:userId', authenticateUser, authorize([ 'superAdmin' ]), controller.deleteUser );

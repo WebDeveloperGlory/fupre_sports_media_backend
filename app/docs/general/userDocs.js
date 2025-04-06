@@ -46,6 +46,35 @@
 
 /**
  * @swagger
+ * /user/me:
+ *   get:
+ *     summary: Get Profile
+ *     tags: [User Management (Public)]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile and notifications retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *             example:
+ *               code: "00"
+ *               message: "Users Profile and Notifications Acquired"
+ *               data:
+ *                 - _id: "651d2e09b1c23e4d8c9f87ab"
+ *                   name: "John Doe"
+ *                   email: "john.doe@example.com"
+ *                   role: "user"
+ *       400:
+ *         $ref: "#/components/responses/NotFoundError"
+ *       500:
+ *         $ref: "#/components/responses/ServerError"
+ */
+
+/**
+ * @swagger
  * /user/{userId}:
  *   get:
  *     summary: Get a specific user
