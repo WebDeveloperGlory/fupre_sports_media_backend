@@ -1,6 +1,7 @@
 const db = require('../../config/db');
 const { generateToken } = require('../../utils/jwtUtils');
 const { logActionManually } = require('../../middlewares/auditMiddleware');
+const { sendNotification } = require('../../utils/general/notificationUtils');
 
 exports.registerRegularUser = async ({ name, email, password }, { auditInfo }) => {
     // Check if user already exists
@@ -17,6 +18,12 @@ exports.registerRegularUser = async ({ name, email, password }, { auditInfo }) =
         email: createdUser.email,
         role: createdUser.role
     }
+
+    await sendNotification({
+        recipient: createdUser._id,
+        title: 'Welcome to FUPRE Sports Media',
+        message: `Welcome to FUPRE Sports Media, ${createdUser.name}. Your account has been successfully created.`
+    });
 
     // Log action
     logActionManually({
