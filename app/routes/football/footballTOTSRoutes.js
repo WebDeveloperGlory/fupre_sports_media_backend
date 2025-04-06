@@ -14,11 +14,11 @@ router.get('/:sessionId/vote/regular', authenticateUser, controller.getUserVote)
 router.post('/:sessionId/vote/regular', authenticateUser, controller.submitUserVote);
 
 // Private Routes //
-router.post('/', authenticateUser, authorize([ 'superAdmin, headMediaAdmin' ]), controller.createSession);
-router.post('/:sessionId/players', authenticateUser, authorize([ 'superAdmin, headMediaAdmin' ]), controller.addPlayersToSession);
-router.delete('/:sessionId/players', authenticateUser, authorize([ 'superAdmin, headMediaAdmin' ]), controller.deletePlayersFromSession);
-router.put('/:sessionId/toggle', authenticateUser, authorize([ 'superAdmin, headMediaAdmin' ]), controller.toggleVote);
-router.post('/:sessionId/vote/admin', authenticateUser, authorize([ 'superAdmin, headMediaAdmin', 'mediaAdmin' ]), controller.submitAdminVote);
-router.post('/:sessionId/finalize', authenticateUser, authorize([ 'superAdmin, headMediaAdmin' ]), controller.calculateFinalResult);
+router.post('/', authenticateUser, authorize([ 'superAdmin', 'headMediaAdmin' ]), controller.createSession);
+router.post('/:sessionId/players', authenticateUser, authorize([ 'superAdmin', 'headMediaAdmin' ]), controller.addPlayersToSession);
+router.delete('/:sessionId/players', authenticateUser, authorize([ 'superAdmin', 'headMediaAdmin' ]), controller.deletePlayersFromSession);
+router.put('/:sessionId/toggle', authenticateUser, authorize([ 'superAdmin', 'headMediaAdmin' ]), controller.toggleVote);
+router.post('/:sessionId/vote/admin', authenticateUser, authorize([ 'superAdmin', 'headMediaAdmin', 'mediaAdmin' ]), controller.submitAdminVote);
+router.post('/:sessionId/finalize', authenticateUser, authorize([ 'superAdmin', 'headMediaAdmin' ]), controller.calculateFinalResult);
 
 module.exports = router;
