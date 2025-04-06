@@ -94,7 +94,19 @@ exports.loginUser = async ({ email, password }, { auditInfo }) => {
     });
 
     // Return success
-    return { success: true, message: 'User Logged In', data: token };
+    return { 
+        success: true, 
+        message: 'User Logged In', 
+        data: {
+            token,
+            user: {
+                id: foundUser._id,
+                name: foundUser.name,
+                email: foundUser.email,
+                role: foundUser.role,
+            }
+        }
+    };
 }
 
 exports.logoutUser = async ({ userId, auditInfo }) => {
