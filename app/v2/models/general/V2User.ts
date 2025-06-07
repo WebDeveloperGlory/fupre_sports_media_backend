@@ -1,6 +1,6 @@
 import { Schema, model, Document } from "mongoose";
 import bcrypt from 'bcrypt';
-import { UserRole, SportType, UserStatus } from "../../types/enums";
+import { UserRole, SportType, UserStatus } from "../../types/user.enums";
 
 export interface IV2User extends Document {
     name: string;
