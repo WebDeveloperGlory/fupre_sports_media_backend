@@ -1,8 +1,16 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, model, Document, ObjectId } from "mongoose";
 import bcrypt from 'bcrypt';
 import { UserRole, SportType, UserStatus } from "../../types/user.enums";
 
+export type UserPreference = {
+    notifications: {
+        inApp: boolean;
+        email: boolean;
+    }
+}
+
 export interface IV2User extends Document {
+    _id: ObjectId;
     name: string;
     password: string;
     email: string;
@@ -13,6 +21,7 @@ export interface IV2User extends Document {
     otpExpiresAt: Date | null;
     lastLogin: Date | null;
     passwordChangedAt: Date | null;
+    preferences: UserPreference;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -40,6 +49,12 @@ const v2userSchema = new Schema<IV2User>({
     otpExpiresAt: { type: Date, default: null },
     lastLogin: { type: Date, default: null },
     passwordChangedAt: { type: Date, default: null },
+    preferences: {
+        notifications: {
+            inApp: { type: Boolean, default: true },
+            email: { type: Boolean, default: false },
+        }
+    }
 }, {
     timestamps: true,
 });

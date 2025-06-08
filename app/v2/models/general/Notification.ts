@@ -1,6 +1,7 @@
 import { Schema, model, Document, ObjectId } from 'mongoose';
 
 export interface IV2Notification extends Document {
+    _id: ObjectId;
     recipient: ObjectId;
     title: string;
     message: string;

@@ -2,6 +2,7 @@ import { Schema, model, Document, ObjectId } from "mongoose";
 import { LogAction } from "../../types/auditlog.enums";
 
 export interface IV2AuditLog extends Document {
+    _id: ObjectId;
     userId: ObjectId;
     action: LogAction;
     entity: string;
