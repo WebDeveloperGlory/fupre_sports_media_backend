@@ -1,8 +1,21 @@
+import { ObjectId } from 'mongoose';
 import db from '../../config/db';
-import { IV2AuditLog } from '../../models/general/AuditLog';
+import { LogAction } from '../../types/auditlog.enums';
+
+type Log =  {
+    userId: ObjectId;
+    action: LogAction;
+    entity: string;
+    entityId: ObjectId;
+    details?: Object;
+    previousValues?: Object;
+    newValues?: Object;
+    ipAddress: string;
+    userAgent: string;
+}
 
 const logAction = async (
-    { userId, action, entity, entityId, details = {}, ipAddress, userAgent, previousValues = {}, newValues = {}  }: IV2AuditLog
+    { userId, action, entity, entityId, details = {}, ipAddress, userAgent, previousValues = {}, newValues = {}  }: Log
 ) => {
     // Check for user in request
     if ( !userId ) {

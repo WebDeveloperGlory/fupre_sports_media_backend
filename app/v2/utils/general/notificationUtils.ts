@@ -7,9 +7,9 @@ import { ObjectId } from 'mongoose';
 
 export type NotificationParams = { 
     preferences: UserPreference;
-    email: string | undefined;
-    subject: string | undefined;
-    html: string | undefined;
+    email?: string;
+    subject?: string;
+    html?: string;
     recipient: ObjectId;
     message: string;
     title: string;
