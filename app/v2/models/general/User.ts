@@ -22,6 +22,7 @@ export interface IV2User extends Document {
     lastLogin: Date | null;
     passwordChangedAt: Date | null;
     preferences: UserPreference;
+    comparePassword: ( password: string ) => Promise<boolean>;
     createdAt: Date;
     updatedAt: Date;
 }

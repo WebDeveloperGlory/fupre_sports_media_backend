@@ -45,7 +45,7 @@ const sendEmailNotification = async (
         }
     });
     const mailOptions = {
-        from: `"FSM Contact" <${ config.NODEMAILER_USER }>`,
+        from: `"FUPRE Sports Media" <noreply@fupresportsmedia.com>`,
         to: email,
         subject, html
     };
