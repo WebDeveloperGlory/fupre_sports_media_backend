@@ -1,4 +1,5 @@
 import { Request } from "express";
+import { ObjectId } from "mongoose";
 
 export interface AuditInfo {
     ipAddress: string;
@@ -10,6 +11,11 @@ export interface AuditInfo {
 
 declare module 'express-serve-static-core' {
     interface Request {
-        auditInfo?: AuditInfo
+        auditInfo: AuditInfo;  // Make this required
+        user?: {
+            userId: ObjectId;
+            email: string;
+            role: string;
+        };
     }
 }

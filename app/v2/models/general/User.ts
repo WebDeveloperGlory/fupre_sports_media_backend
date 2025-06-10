@@ -44,7 +44,7 @@ const v2userSchema = new Schema<IV2User>({
     status: {
         type: String,
         enum: Object.values( UserStatus ),
-        default: UserStatus.ACTIVE
+        default: UserStatus.INACTIVE
     },
     otp: { type: String, default: null },
     otpExpiresAt: { type: Date, default: null },

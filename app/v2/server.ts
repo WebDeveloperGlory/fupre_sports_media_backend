@@ -4,6 +4,10 @@ import cors from 'cors';
 import { config } from './config/env';
 // import { initializeWebSocket } from './config/socket';
 
+// ROUTE IMPORTS //
+import authRoutes from './routes/general/authRoutes';
+// END OF ROUTE IMPORTS //
+
 const app = express();
 const server = http.createServer(app);
 
@@ -23,6 +27,10 @@ app.use((req, res, next) => {
     next();
 });
 // END OF MIDDLEWARES //
+
+// ROUTES //
+app.use('/auth', authRoutes);
+// END OF ROUTES //
 
 // Export for testing
 export { app, server };

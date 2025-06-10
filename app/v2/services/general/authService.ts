@@ -1,12 +1,12 @@
 import { ObjectId } from "mongoose";
-import db from "../config/db";
-import { LogAction } from "../types/auditlog.enums";
-import { AuditInfo } from "../types/express";
-import { UserRole } from "../types/user.enums";
-import logutils from '../utils/general/auditLogUtils';
-import notificationutils from '../utils/general/notificationUtils';
-import otpUtils from "../utils/general/otpUtils";
-import { generateToken } from "../utils/general/jwtUtils";
+import db from "../../config/db";
+import { LogAction } from "../../types/auditlog.enums";
+import { AuditInfo } from "../../types/express";
+import { UserRole, UserStatus } from "../../types/user.enums";
+import logutils from '../../utils/general/auditLogUtils';
+import notificationutils from '../../utils/general/notificationUtils';
+import otpUtils from "../../utils/general/otpUtils";
+import { generateToken } from "../../utils/general/jwtUtils";
 
 const registrationMessage = ( name: string, role: string ) => `Welcome to FUPRE Sports Media, ${ name }. Your ${ role } account has been successfully created.`;
 const registrationHTML = ( name: string, role: string ) => {
@@ -230,6 +230,7 @@ const verifyOTP = async (
         // Clear otp from user
         user.otp = null;
         user.otpExpiresAt = null;
+        user.status = user.status === UserStatus.SUSPENDED ? UserStatus.SUSPENDED : UserStatus.ACTIVE;
         await user.save();
 
         // Generate jwt
@@ -247,7 +248,7 @@ const verifyOTP = async (
 }
 
 const changePassword = async (
-    { newPassword, confirmNewPassword, otp }: { newPassword: string, confirmNewPassword: string, otp: string },
+    { newPassword, confirmNewPassword }: { newPassword: string, confirmNewPassword: string },
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
     try {
@@ -258,10 +259,6 @@ const changePassword = async (
         // Check if passwords match
         const matchingPasswords = newPassword === confirmNewPassword;
         if( !matchingPasswords ) return { success: false, message: 'Passwords Do Not Match' };
-
-        // Validate otp
-        const verified = await verifyOTP({ email: foundUser.email, otp });
-        if( !verified.success ) return verified;
 
         // Change password
         foundUser.password = newPassword;
