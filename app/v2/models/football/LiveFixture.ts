@@ -30,7 +30,7 @@ export interface IV2FootballLiveFixture extends Document {
     streamLinks: FixtureStreamLinks[];
     cheerMeter: FixtureCheerMeter;
     playerOfTheMatch: FixturePlayerOfTheMatch;
-    playerRatings: FixturePlayerRatings;
+    playerRatings: FixturePlayerRatings[];
     odds: FixtureOdds;
     attendance: number;
     weather: {
@@ -224,7 +224,40 @@ const v2footballLivefixtureSchema = new Schema<IV2FootballLiveFixture>({
     playerRatings: [{
         player: { type: Schema.Types.ObjectId, ref: 'V2FootballPlayer' },
         team: { type: String, enum: TeamType },
-        rating: { type: Number, min: 0, max: 10 },
+        official: {
+            rating: {
+                type: Number, 
+                min: 0, 
+                max: 10,
+                set: ( v: number ) => parseFloat(v.toFixed(1))
+            },
+            ratedBy: { 
+                type: Schema.Types.ObjectId,
+                ref: 'V2User' // Ref to admin/staff account
+            },
+        },
+        fanRatings: {
+            average: {
+                type: Number,
+                min: 0,
+                max: 10,
+                default: 0,
+                set: (v: number) => parseFloat(v.toFixed(1))
+            },
+            count: { type: Number, default: 0 },
+            distribution: { // Track rating distribution
+                '1': { type: Number, default: 0 },
+                '2': { type: Number, default: 0 },
+                '3': { type: Number, default: 0 },
+                '4': { type: Number, default: 0 },
+                '5': { type: Number, default: 0 },
+                '6': { type: Number, default: 0 },
+                '7': { type: Number, default: 0 },
+                '8': { type: Number, default: 0 },
+                '9': { type: Number, default: 0 },
+                '10': { type: Number, default: 0 }
+            }
+        },
         stats: {
             goals: Number,
             assists: Number,

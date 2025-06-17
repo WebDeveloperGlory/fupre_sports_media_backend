@@ -28,6 +28,12 @@ app.use((req, res, next) => {
 });
 // END OF MIDDLEWARES //
 
+// TEST ROUTES //
+app.use('/test', (req, res) => {
+    res.json({ message: 'Test route working!' });
+});
+// END OF TEST ROUTES //
+
 // ROUTES //
 app.use('/auth', authRoutes);
 // END OF ROUTES //
