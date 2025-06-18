@@ -16,6 +16,7 @@ import V2AuditLog from '../models/general/AuditLog';
 
 // FOOTBALL MODEL IMPORTS //
 import V2FootballLiveFixture from '../models/football/LiveFixture';
+import V2FootballFixture from '../models/football/Fixture';
 // END OF FOOTBALL MODEL IMPORTS //
 
 const db = {
@@ -24,6 +25,8 @@ const db = {
     V2Notification,
     V2AuditLog,
     V2FootballLiveFixture,
+    V2FootballFixture,
+    
 };
 
 export default db;
