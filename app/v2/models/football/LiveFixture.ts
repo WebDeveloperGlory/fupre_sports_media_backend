@@ -38,6 +38,7 @@ export interface IV2FootballLiveFixture extends Document {
         temperature: number
         humidity: number
     };
+    admin: ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -300,6 +301,7 @@ const v2footballLivefixtureSchema = new Schema<IV2FootballLiveFixture>({
         temperature: Number,
         humidity: Number
     },
+    admin: { type: Schema.Types.ObjectId, ref: 'V2User' }
 }, {
     timestamps: true
 });

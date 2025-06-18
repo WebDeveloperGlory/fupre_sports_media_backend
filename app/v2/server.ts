@@ -2,7 +2,7 @@ import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import { config } from './config/env';
-// import { initializeWebSocket } from './config/socket';
+import { getSocketService } from './services/websocket/liveFixtureSocketService';
 
 // ROUTE IMPORTS //
 import authRoutes from './routes/general/authRoutes';
@@ -15,7 +15,9 @@ const server = http.createServer(app);
 app.use( cors( config.corsOptions ) );
 app.use( express.json() );
 
-// initializeWebSocket(server, config.corsOptions);
+// Initialize websockets
+getSocketService( server );
+
 app.use((req, res, next) => {
     req.auditInfo = {
         ipAddress: req.ip || '',
