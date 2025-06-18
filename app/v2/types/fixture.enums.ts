@@ -12,6 +12,14 @@ export enum LiveStatus {
     ABANDONED = 'abandoned'
 }
 
+export enum FixtureStatus {
+    SCHEDULED = 'scheduled', 
+    LIVE = 'live', 
+    COMPLETED = 'completed', 
+    POSTPONED = 'postponed', 
+    CANCELED = 'canceled'
+}
+
 export enum TeamType {
     HOME = 'home',
     AWAY = 'away'
@@ -59,6 +67,7 @@ export type FixtureResult = {
     halftimeAwayScore: number,
     homePenalty: number,
     awayPenalty: number,
+    winner?: 'home' | 'away' | 'draw'
 }
 
 export type FixtureStat = {
