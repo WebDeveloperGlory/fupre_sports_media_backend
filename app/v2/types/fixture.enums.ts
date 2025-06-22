@@ -1,4 +1,4 @@
-import { ObjectId, TypeExpressionOperatorReturningObjectId } from "mongoose"
+import { ObjectId } from "mongoose"
 
 export enum LiveStatus {
     PREMATCH = 'pre-match', 

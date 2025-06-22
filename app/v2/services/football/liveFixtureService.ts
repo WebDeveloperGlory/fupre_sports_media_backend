@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongoose';
 import db from '../../config/db';
 import { AuditInfo } from '../../types/express';
-import { FixtureStreamLinks } from '../../types/fixture.enums';
+import { FixtureLineup, FixtureStat, FixtureStreamLinks, FixtureTimeline, LiveStatus } from '../../types/fixture.enums';
 import { getSocketService } from '../websocket/liveFixtureSocketService';
 
 // CREATION //
@@ -10,7 +10,7 @@ const initializeLiveFixture = async (
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
         try {
-
+            const existingFixture = await db.V2FootballLiveFixture.findOne({ fixtureId });
         } catch ( err ) {
             console.error('', err);
             throw new Error('Error Performing Updates')
@@ -19,12 +19,30 @@ const initializeLiveFixture = async (
 // END OF CREATION //
 
 // UPDATES //
+
 const updateLiveFixtureStatus = async (
     { fixtureId }: { fixtureId: string },
+    { status }: { status: LiveStatus },
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
     try {
+        // Check value of status
+        if( !Object.values( LiveStatus ).includes( status ) ) return { success: false, message: `Invalid Status Type ${ status }` };
 
+        // Check if fixture exists and update
+        const updatedFixture = await db.V2FootballLiveFixture.findByIdAndUpdate(
+            fixtureId,
+            { status },
+            { new: true }
+        );
+        if( !updatedFixture ) return { success: false, message: 'Invalid Live Fixture' };
+
+        // Emit updates to websocket
+        const socketService = getSocketService();
+        await socketService.emitStatusUpdate(fixtureId, status, updatedFixture.currentMinute); 
+
+        // Return success
+        return { success: true, message: 'Status Updated', data: updatedFixture }
     } catch ( err ) {
         console.error('', err);
         throw new Error('Error Performing Updates')
@@ -32,10 +50,24 @@ const updateLiveFixtureStatus = async (
 }
 const updateLiveFixtureStatistics = async (
     { fixtureId }: { fixtureId: string },
+    { stats }: { stats: { home: FixtureStat, away: FixtureStat } },
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
         try {
+            // Check if fixture exists and update
+            const updatedFixture = await db.V2FootballLiveFixture.findByIdAndUpdate(
+                fixtureId,
+                { statistics: stats },
+                { new: true }
+            );
+            if( !updatedFixture ) return { success: false, message: 'Invalid Live Fixture' };
 
+            // Emit updates to websocket
+            const socketService = getSocketService();
+            await socketService.emitStatisticsUpdate(fixtureId); 
+
+            // Return success
+            return { success: true, message: 'Statistics Updated', data: updatedFixture }
         } catch ( err ) {
             console.error('', err);
             throw new Error('Error Performing Updates')
@@ -43,10 +75,24 @@ const updateLiveFixtureStatistics = async (
 }
 const updateLiveFixtureLineup = async (
     { fixtureId }: { fixtureId: string },
+    { lineups }: { lineups: { home: FixtureLineup, away: FixtureLineup } },
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
     try {
+        // Check if fixture exists and update
+        const updatedFixture = await db.V2FootballLiveFixture.findByIdAndUpdate(
+            fixtureId,
+            { lineups: lineups },
+            { new: true }
+        );
+        if( !updatedFixture ) return { success: false, message: 'Invalid Live Fixture' };
 
+        // Emit updates to websocket
+        const socketService = getSocketService();
+        await socketService.emitLineupUpdate(fixtureId); 
+
+        // Return success
+        return { success: true, message: 'Lineup Updated', data: updatedFixture }
     } catch ( err ) {
         console.error('', err);
         throw new Error('Error Performing Updates')
@@ -54,10 +100,28 @@ const updateLiveFixtureLineup = async (
 }
 const createTimeLineEvent = async (
     { fixtureId }: { fixtureId: string },
+    { event }: { event: FixtureTimeline },
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
     try {
+        // Check if fixture exists and update
+        const updatedFixture = await db.V2FootballLiveFixture.findByIdAndUpdate(
+            fixtureId,
+            {
+                $push: {
+                    timeline: event
+                }
+            },
+            { new: true }
+        );
+        if( !updatedFixture ) return { success: false, message: 'Invalid Live Fixture' };
 
+        // Emit updates to websocket
+        const socketService = getSocketService();
+        await socketService.emitStatisticsUpdate(fixtureId); 
+
+        // Return success
+        return { success: true, message: 'Timeline event created Updated', data: updatedFixture }
     } catch ( err ) {
         console.error('', err);
         throw new Error('Error Performing Updates')
@@ -87,10 +151,11 @@ const deleteTimelineEvent = async (
 }
 const createSubstitution = async (
     { fixtureId }: { fixtureId: string },
+    { team, playerOut, playerIn, minute, injury }: { team: 'home' | 'away', playerOut: ObjectId, playerIn: ObjectId, minute: number, injury: boolean },
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
     try {
-
+        // Confirm both players are part 
     } catch ( err ) {
         console.error('', err);
         throw new Error('Error Performing Updates')
@@ -241,7 +306,23 @@ const updateTime = async (
         const livefixture = await db.V2FootballLiveFixture.findById( fixtureId );
         if( !livefixture ) return { success: false, message: 'Invalid live Fixture' };
 
-        // const 
+        // Update time
+        if( time > livefixture.currentMinute ) {
+            livefixture.currentMinute = time;
+            await livefixture.save();
+        }
+
+        // In your service files when time changes:
+        const socketService = getSocketService();
+        await socketService.emitCustomEvent(fixtureId, 'minute-update', {
+            currentMinute: livefixture.currentMinute,
+            injuryTime: livefixture.injuryTime,
+            status: livefixture.status,
+            timestamp: new Date()
+        }); 
+
+        // Return success
+        return { success: true, message: 'Time Updated', data: livefixture }
     } catch( err ) {
         console.error('Error during live fixture update', err );
         throw new Error('Error With Live Time Updates');
