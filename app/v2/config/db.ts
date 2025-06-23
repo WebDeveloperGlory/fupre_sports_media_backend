@@ -19,6 +19,9 @@ import V2Faculty from '../models/general/Faculty';
 // FOOTBALL MODEL IMPORTS //
 import V2FootballLiveFixture from '../models/football/LiveFixture';
 import V2FootballFixture from '../models/football/Fixture';
+import V2FootballTeam from '../models/football/Team';
+import V2FootballCompetition from '../models/football/Competition';
+import V2FootballPlayer from '../models/football/Player';
 // END OF FOOTBALL MODEL IMPORTS //
 
 const db = {
@@ -28,6 +31,9 @@ const db = {
   V2AuditLog,
   V2FootballLiveFixture,
   V2FootballFixture,
+  V2FootballTeam,
+  V2FootballCompetition,
+  V2FootballPlayer,
   V2Department,
   V2Faculty,
 };
