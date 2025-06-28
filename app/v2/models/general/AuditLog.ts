@@ -12,6 +12,7 @@ export interface IV2AuditLog extends Document {
     newValues: Object;
     ipAddress: string;
     userAgent: string;
+    message: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -31,6 +32,7 @@ const v2auditlogSchema = new Schema<IV2AuditLog>({
     newValues: { type: Object, default: {} }, // For storing new values in case of updates
     ipAddress: { type: String },
     userAgent: { type: String },
+    message: { type: String },
 }, {
     timestamps: true
 });

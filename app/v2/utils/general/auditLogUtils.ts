@@ -12,10 +12,11 @@ type Log =  {
     newValues?: Object;
     ipAddress: string;
     userAgent: string;
+    message: string;
 }
 
 const logAction = async (
-    { userId, action, entity, entityId, details = {}, ipAddress, userAgent, previousValues = {}, newValues = {}  }: Log
+    { userId, action, entity, entityId, details = {}, ipAddress, userAgent, previousValues = {}, newValues = {}, message }: Log
 ) => {
     // Check for user in request
     if ( !userId ) {
@@ -27,7 +28,7 @@ const logAction = async (
         const auditLog = new db.V2AuditLog({
             userId, action, entity, entityId,
             details, previousValues, newValues,
-            ipAddress, userAgent
+            ipAddress, userAgent, message
         });
         await auditLog.save();
     } catch( err ) {

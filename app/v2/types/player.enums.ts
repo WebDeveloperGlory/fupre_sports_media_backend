@@ -7,6 +7,7 @@ export enum FavoriteFoot {
 export enum PlayerRole {
     PLAYER = 'player',
     CAPTAIN = 'captain',
+    VICE_CAPTAIN = 'vice-captain'
 }
 
 export enum PlayerClubStatus {

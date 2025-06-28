@@ -1,5 +1,8 @@
-import { Schema, model, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, model, Document, ObjectId } from 'mongoose';
 import { CoachRoles, FriendlyRequestStatus, TeamTypes } from '../../types/team.enums';
+import { IV2Department } from '../general/Department';
+import { IV2Faculty } from '../general/Faculty';
+import { IV2FootballCompetition } from './Competition';
 
 export interface IV2FootballTeam extends Document {
     _id: ObjectId;
@@ -8,8 +11,8 @@ export interface IV2FootballTeam extends Document {
 
     type: TeamTypes;
     academicYear: string;
-    department?: ObjectId;
-    faculty?: ObjectId;
+    department?: ObjectId | IV2Department;
+    faculty?: ObjectId | IV2Faculty;
 
     coaches: {
         name: string;
@@ -18,14 +21,16 @@ export interface IV2FootballTeam extends Document {
     players: ObjectId[];
 
     friendlyRequests: {
+        requestId: mongoose.Types.ObjectId,
         team: ObjectId,
         status: FriendlyRequestStatus,
         proposedDate: Date,
         message: String,
-        createdAt: Date,
+        type: 'recieved' | 'sent',
+        createdAt?: Date,
     }[];
     competitionPerformance: {
-        competition: ObjectId,
+        competition: ObjectId | IV2FootballCompetition,
         season: string,
         stats: {
             played: number,
@@ -102,6 +107,7 @@ const v2footballteamSchema = new Schema<IV2FootballTeam>({
 
     // Friendlies and Competitions
     friendlyRequests: [{
+        requestId: { type: mongoose.Types.ObjectId },
         team: { type: Schema.Types.ObjectId, ref: 'V2FootballTeam' },
         status: { 
             type: String, 
@@ -109,6 +115,7 @@ const v2footballteamSchema = new Schema<IV2FootballTeam>({
         },
         proposedDate: Date,
         message: String,
+        type: { type: String, enum: ['recieved', 'sent'] },
         createdAt: { type: Date, default: Date.now }
     }],
     competitionPerformance: [{

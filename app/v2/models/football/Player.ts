@@ -1,6 +1,7 @@
 import { Schema, model, Document, ObjectId } from 'mongoose';
 import { FavoriteFoot, PlayerClubStatus } from '../../types/player.enums';
 import { PlayerRole } from '../../types/player.enums';
+import db from '../../config/db';
 
 export interface IV2FootballPlayer extends Document {
     _id: ObjectId;
@@ -65,6 +66,11 @@ export interface IV2FootballPlayer extends Document {
     preferredFoot: FavoriteFoot;
     weight: string;
     height: string;
+
+    createdBy: ObjectId;
+    verificationStatus: 'pending' | 'verified' | 'rejected';
+    verifiedBy: ObjectId;
+    eligibleTeams: ObjectId[];
 
     createdAt: Date;
     updatedAt: Date;
@@ -150,8 +156,35 @@ const v2footballplayerSchema = new Schema<IV2FootballPlayer>({
     },
     height: Number, // in cm
     weight: Number, // in kg
+
+    // Creation Stats
+    createdBy: { type: Schema.Types.ObjectId, ref: 'V2User' },
+    verificationStatus: { 
+        type: String, 
+        enum: ['pending', 'verified', 'rejected'], 
+        default: 'pending' 
+    },
+    verifiedBy: { type: Schema.Types.ObjectId, ref: 'V2User' },
+    eligibleTeams: [{ type: Schema.Types.ObjectId, ref: 'V2FootballTeam' }],
 }, {
     timestamps: true
+});
+
+// Auto-set eligibleTeams based on player's department/level
+v2footballplayerSchema.pre('save', async function( next ) {
+    if (this.isNew) {
+        const eligibleTeams = await db.V2FootballTeam.find({
+            $or: [
+                { department: this.department, academicYear: this.admissionYear }, // Dept academic year
+                { department: this.department, type: 'departmental-general' }, // Whole dept
+                { type: 'club' }, // Clubs can add anyone
+                { type: 'school-general' } // School can add anyone
+            ]
+        }).select('_id');
+
+        this.eligibleTeams = eligibleTeams.map( team => team._id )
+    }
+    next();
 });
 
 export default model<IV2FootballPlayer>('V2FootballPlayer', v2footballplayerSchema, 'v2footballPlayers');

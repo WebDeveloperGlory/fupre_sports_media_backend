@@ -60,9 +60,7 @@ const registerRegularUser = async (
             action: LogAction.CREATE,
             entity: 'V2User',
             entityId: createdUser._id,
-            details: {
-                message: `Regular User Created`
-            }
+            message: `Regular User ${ createdUser.name } Signed Up`
         });
 
         // Return success
@@ -111,9 +109,7 @@ const registerAdmin = async (
             action: LogAction.CREATE,
             entity: 'V2User',
             entityId: createdUser._id,
-            details: {
-                message: `Admin Created`
-            }
+            message: `Admin ${ createdUser.email } Created By ${ userId }`
         });
 
         // Return success
@@ -151,9 +147,7 @@ const loginUser = async (
             action: LogAction.LOGIN,
             entity: 'V2User',
             entityId: foundUser._id,
-            details: {
-                message: `User Login`
-            }
+            message: `User ${ foundUser.email } Login`
         });
 
         // Return success
@@ -186,9 +180,7 @@ const logoutUser = async (
         action: LogAction.LOGOUT,
         entity: 'V2User',
         entityId: userId,
-        details: {
-            message: `User Login`
-        }
+        message: `User Logout`
     });
 
     // Return success
@@ -272,9 +264,7 @@ const changePassword = async (
             action: LogAction.UPDATE,
             entity: 'V2User',
             entityId: userId,
-            details: {
-                message: `User Password Changed`
-            }
+            message: `User ${ foundUser.email } Password Changed`
         });
 
         // Return success
