@@ -52,7 +52,6 @@ const v2footballLivefixtureSchema = new Schema<IV2FootballLiveFixture>({
     matchType: {
         type: String,
         enum: ['friendly', 'competition'],
-        default: 'competition'
     },
     stadium: { type: String },
     matchDate: { type: Date, required: true },
@@ -143,6 +142,7 @@ const v2footballLivefixtureSchema = new Schema<IV2FootballLiveFixture>({
     
     // Substitutions that have occurred
     substitutions: [{
+        id: { type: String },
         team: { type: String, enum: TeamType },
         playerOut: { type: Schema.Types.ObjectId, ref: 'V2FootballPlayer' },
         playerIn: { type: Schema.Types.ObjectId, ref: 'V2FootballPlayer' },
@@ -152,6 +152,7 @@ const v2footballLivefixtureSchema = new Schema<IV2FootballLiveFixture>({
     
     // Match events timeline
     timeline: [{
+        id: { type: String },
         type: {
             type: String,
             enum: FixtureTimelineType,
@@ -172,11 +173,12 @@ const v2footballLivefixtureSchema = new Schema<IV2FootballLiveFixture>({
         cardType: {
             type: String,
             enum: FixtureTimelineCardType
-        }
+        },
     }],
     
     // Commentary
     commentary: [{
+        id: String,
         minute: Number,
         injuryTime: Boolean,
         type: {
@@ -184,7 +186,7 @@ const v2footballLivefixtureSchema = new Schema<IV2FootballLiveFixture>({
             enum: FixtureCommentaryType
         },
         text: String,
-        eventId: Schema.Types.ObjectId // Reference to timeline event if applicable
+        eventId: String, // Reference to timeline event if applicable
     }],
     
     // Streaming information

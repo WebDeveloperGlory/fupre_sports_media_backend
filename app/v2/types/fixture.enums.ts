@@ -89,6 +89,7 @@ export type FixtureLineup = {
 }
 
 export type FixtureSubstitutions = {
+    id: string,
     team: TeamType,
     playerOut: ObjectId,
     playerIn: ObjectId,
@@ -97,6 +98,7 @@ export type FixtureSubstitutions = {
 }
 
 export type FixtureTimeline = {
+    id: string,
     type: FixtureTimelineType,
     team: ObjectId,
     player: ObjectId,
@@ -109,11 +111,12 @@ export type FixtureTimeline = {
 }
 
 export type FixtureCommentary = {
+    id: string,
     minute: number,
     injuryTime: boolean,
     type: FixtureCommentaryType,
     text: string,
-    eventId: ObjectId
+    eventId: string
 }
 
 export type FixtureStreamLinks = {

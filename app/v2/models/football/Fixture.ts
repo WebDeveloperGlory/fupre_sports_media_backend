@@ -53,7 +53,7 @@ const v2footballfixtureSchema = new Schema<IV2FootballFixture>({
     matchType: {
         type: String,
         enum: ['friendly', 'competition'],
-        default: 'friendly'
+        default: 'competition'
     },
     stadium: { type: String },
 
