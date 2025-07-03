@@ -100,14 +100,14 @@ export type FixtureSubstitutions = {
 export type FixtureTimeline = {
     id: string,
     type: FixtureTimelineType,
-    team: ObjectId,
+    team: TeamType,
     player: ObjectId,
-    relatedPlayer: ObjectId,
+    relatedPlayer?: ObjectId,
     minute: number,
-    injuryTime: boolean,
+    injuryTime?: boolean,
     description: string,
-    goalType: FixtureTimelineGoalType,
-    cardType: FixtureTimelineCardType
+    goalType?: FixtureTimelineGoalType,
+    cardType?: FixtureTimelineCardType
 }
 
 export type FixtureCommentary = {
@@ -147,9 +147,9 @@ export type FixturePlayerOfTheMatch = {
 export type FixturePlayerRatings = {
     player: ObjectId,
     team: TeamType,
-    official: {
+    official?: {
         rating: number,
-        ratedBy: string,
+        ratedBy: ObjectId,
     },
     fanRatings: {
         average: number,
@@ -161,13 +161,13 @@ export type FixturePlayerRatings = {
             '10': number
         },
     },
-    stats: {
-        goals: number,
-        assists: number,
-        shots: number,
-        passes: number,
-        tackles: number,
-        saves: number
+    stats?: {
+        goals?: number,
+        assists?: number,
+        shots?: number,
+        passes?: number,
+        tackles?: number,
+        saves?: number
     }
 }
 
