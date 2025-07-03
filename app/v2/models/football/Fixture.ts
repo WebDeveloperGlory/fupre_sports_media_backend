@@ -15,15 +15,16 @@ export interface IV2FootballFixture extends Document {
     rescheduledDate: Date;
 
     result: FixtureResult;
+    goalScorers: { player: ObjectId, team: ObjectId, time: number }[];
     statistics: {
         home: FixtureStat,
         away: FixtureStat
     };
 
     lineups: {
-            home: FixtureLineup,
-            away: FixtureLineup
-        };
+        home: FixtureLineup,
+        away: FixtureLineup
+    };
     substitutions: FixtureSubstitutions[];
     
     timeline: FixtureTimeline[];
@@ -52,7 +53,7 @@ const v2footballfixtureSchema = new Schema<IV2FootballFixture>({
     matchType: {
         type: String,
         enum: ['friendly', 'competition'],
-        default: 'competition'
+        default: 'friendly'
     },
     stadium: { type: String },
 
@@ -75,6 +76,11 @@ const v2footballfixtureSchema = new Schema<IV2FootballFixture>({
         homePenalty: { type: Number, default: null },
         awayPenalty: { type: Number, default: null }
     },
+    goalScorers: [{ 
+        player: { type: Schema.Types.ObjectId, ref: 'V2FootballPlayer', required: true },
+        team: { type: Schema.Types.ObjectId, ref: 'V2FootballTeam', required: true },
+        time: { type: Number },
+    }],
     statistics: {
         home: {
             shotsOnTarget: { type: Number, default: 0 },

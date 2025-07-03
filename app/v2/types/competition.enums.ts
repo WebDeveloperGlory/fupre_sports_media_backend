@@ -15,3 +15,10 @@ export enum CompetitionTeamForm {
     LOSS = 'L',
     DRAW = 'D'
 }
+
+export enum CompetitionStatus {
+    UPCOMING = 'upcoming',
+    COMPLETED = 'completed',
+    ONGOING = 'ongoing',
+    CANCELLED = 'cancelled'
+}

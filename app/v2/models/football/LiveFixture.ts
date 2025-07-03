@@ -16,6 +16,7 @@ export interface IV2FootballLiveFixture extends Document {
     currentMinute: number;
     injuryTime: number;
     result: FixtureResult;
+    goalScorers: { player: ObjectId, team: ObjectId, time: number, }[];
     statistics: {
         home: FixtureStat,
         away: FixtureStat
@@ -76,6 +77,11 @@ const v2footballLivefixtureSchema = new Schema<IV2FootballLiveFixture>({
         homePenalty: { type: Number, default: null },
         awayPenalty: { type: Number, default: null }
     },
+    goalScorers: [{ 
+        player: { type: Schema.Types.ObjectId, ref: 'V2FootballPlayer', required: true },
+        team: { type: Schema.Types.ObjectId, ref: 'V2FootballTeam', required: true },
+        time: { type: Number },
+    }],
     
     // Match statistics
     statistics: {

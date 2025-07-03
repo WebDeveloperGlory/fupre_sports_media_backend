@@ -10,7 +10,7 @@ const initializeLiveFixture = async (
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
         try {
-            const existingFixture = await db.V2FootballLiveFixture.findOne({ fixtureId });
+            const existingFixture = await db.V2FootballLiveFixture.findOne({ _id: fixtureId });
         } catch ( err ) {
             console.error('', err);
             throw new Error('Error Performing Updates')
@@ -328,3 +328,9 @@ const updateTime = async (
         throw new Error('Error With Live Time Updates');
     }
 }
+
+const liveFixtureService = {
+
+}
+
+export default liveFixtureService;

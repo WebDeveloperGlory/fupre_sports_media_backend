@@ -1,5 +1,5 @@
-import { Schema, model, Document, ObjectId, DataSizeOperatorReturningNumber } from 'mongoose';
-import { CompetitionSponsors, CompetitionTeamForm, CompetitionTypes } from '../../types/competition.enums';
+import { Schema, model, Document, ObjectId } from 'mongoose';
+import { CompetitionSponsors, CompetitionStatus, CompetitionTeamForm, CompetitionTypes } from '../../types/competition.enums';
 
 export interface IV2FootballCompetition extends Document {
     _id: ObjectId;
@@ -9,6 +9,8 @@ export interface IV2FootballCompetition extends Document {
     type: CompetitionTypes;
     logo: string;
     coverImage: string;
+    description: string;
+    status: CompetitionStatus;
 
     format: {
         groupStage?: {
@@ -51,22 +53,22 @@ export interface IV2FootballCompetition extends Document {
         averageGoalsPerMatch: Number,
         averageAttendance: Number,
         cleanSheets: Number,
-        topScorers: [{
-            player: { type: Schema.Types.ObjectId, ref: 'V2FootballPlayer' },
-            team: { type: Schema.Types.ObjectId, ref: 'V2FootballTeam' },
+        topScorers: {
+            player: ObjectId,
+            team: ObjectId,
             goals: Number,
             penalties: Number
-        }],
-        topAssists: [{
-            player: { type: Schema.Types.ObjectId, ref: 'V2FootballPlayer' },
-            team: { type: Schema.Types.ObjectId, ref: 'V2FootballTeam' },
+        }[],
+        topAssists: {
+            player: ObjectId,
+            team: ObjectId,
             assists: Number
-        }],
-        bestDefenses: [{
-            team: { type: Schema.Types.ObjectId, ref: 'V2FootballTeam' },
+        }[],
+        bestDefenses: {
+            team: ObjectId,
             cleanSheets: Number,
             goalsConceded: Number
-        }]
+        }[]
     },
 
     leagueTable: ILeagueStandings[],
@@ -79,11 +81,11 @@ export interface IV2FootballCompetition extends Document {
             winner: {
                 player: ObjectId,
                 team: ObjectId,
-            }
+            } | null
         }[],
         team: {
             name: string,
-            winner: ObjectId,
+            winner: ObjectId | null,
         }[]
     },
 
@@ -110,7 +112,7 @@ export interface IV2FootballCompetition extends Document {
     }[],
     sponsors: {
         name: string,
-        logo: string,
+        logo: string | null,
         tier: CompetitionSponsors
     }[],
 
@@ -128,7 +130,7 @@ export interface IV2FootballCompetition extends Document {
 }
 
 export interface ILeagueStandings {
-    _id: ObjectId;
+    _id?: ObjectId;
 
     team: ObjectId;
     played: number;
@@ -145,19 +147,31 @@ export interface ILeagueStandings {
 }
 
 export interface IKnockoutRounds {
-    _id: ObjectId;
+    _id?: ObjectId;
 
     name: string,
     fixtures: ObjectId[],
-    completed: boolean
+    completed: boolean,
 }
 
 export interface IGroupTable {
-    _id: ObjectId;
+    _id?: ObjectId;
 
     name: string;
     standings: ILeagueStandings[];
     fixtures: ObjectId[];
+    qualificationRules: {
+        position: number,
+        destination: 'knockout' | 'playoffs' | 'eliminated',
+        knockoutRound?: string,
+        isBestLoserCandidate?: boolean
+    }[];
+    qualifiedTeams: {
+        team: ObjectId,
+        originalPosition: number,
+        qualifiedAs: string,
+        destination: string
+    }[];
 }
 
 const leagueStandingsSchema = new Schema<ILeagueStandings>({
@@ -187,6 +201,18 @@ const groupSchema = new Schema<IGroupTable>({
         type: Schema.Types.ObjectId,
         ref: 'V2FootballFixture'
     }],
+    qualificationRules: [{
+        position: { type: Number },
+        destination: { type: String, enum: ['knockout', 'playoffs', 'eliminated'] },
+        knockoutRound: { type: String },
+        isBestLoserCandidate: { type: Boolean, default: false },
+    }],
+    qualifiedTeams: [{
+        team: { type: Schema.Types.ObjectId, ref: 'V2FootballTeam' },
+        originalPosition: { type: Number },
+        qualifiedAs: { type: String },
+        destination: { type: String }
+    }],
 }, { _id: true });
 const knockoutRoundSchema = new Schema<IKnockoutRounds>({
     name: { type: String, required: true }, // e.g., "Round of 16", "Quarter Finals"
@@ -208,6 +234,12 @@ const v2footballcompetitionSchema = new Schema<IV2FootballCompetition>({
     },
     logo: String,
     coverImage: String,
+    description: String,
+    status: {
+        type: String,
+        enum: Object.values( CompetitionStatus ),
+        default: CompetitionStatus.UPCOMING
+    },
 
     // Competition Structure
     format: {
