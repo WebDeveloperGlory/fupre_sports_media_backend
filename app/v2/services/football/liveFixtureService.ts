@@ -7,6 +7,7 @@ import { UserRole } from '../../types/user.enums';
 import { LogAction } from '../../types/auditlog.enums';
 import auditLogUtils from '../../utils/general/auditLogUtils';
 import { TeamTypes } from '../../types/team.enums';
+import { PlayerRole } from '../../types/player.enums';
 
 // CREATION AND END //
 const initializeLiveFixture = async (
@@ -67,7 +68,161 @@ const initializeLiveFixture = async (
 // END OF CREATION AND END //
 
 // GET REQUESTS //
+const getAllTodayFixtures = async () => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+
+        const fixtures = await db.V2FootballFixture.find({
+            $or: [
+                {
+                    status: { $in: [FixtureStatus.SCHEDULED, FixtureStatus.LIVE] },
+                    scheduledDate: { $gte: today, $lt: tomorrow }
+                },
+                {
+                    status: FixtureStatus.POSTPONED,
+                    rescheduledDate: { $gte: today, $lt: tomorrow }
+                }
+            ]
+        })
+            .populate([
+                {
+                    path: 'homeTeam awayTeam',
+                    select: 'name shorthand logo'
+                },
+                {
+                    path: 'competition',
+                    select: 'name type shorthand'
+                }
+            ]);
+
+        // Get necessary data only
+        const fixtureData = fixtures.map( fixture => {
+            const { _id, homeTeam, awayTeam, competition, scheduledDate, rescheduledDate, status, stadium } = fixture;
+            return { _id, homeTeam, awayTeam, competition, scheduledDate, rescheduledDate, status, stadium };
+        })
+
+        // Return success
+        return { success: true, message: 'Fixtures Acquired', data: fixtureData };
+    } catch ( err ) {
+        console.error('Error fetching live fixture', err);
+        throw new Error('Error Fetching Live Fixture')
+    }
+}
+const getLiveFixtureById = async (
+    { fixtureId }: { fixtureId: string },
+) => {
+    try {
+        // Check if fixture exists
+        const foundFixture = await db.V2FootballFixture.findById( fixtureId )
+            .populate([
+                {
+                    path: 'competition',
+                    select: 'name type'
+                },
+                {
+                    path: 'homeTeam awayTeam',
+                    select: 'name logo shorthand'
+                },
+                {
+                    path: 'goalScorers.player',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'goalScorers.team',
+                    select: 'name logo shorthand'
+                },
+                {
+                    path: 'lineups.home.startingXI.player lineups.home.substitutes.player lineups.away.startingXI.player lineups.away.substitutes.player',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'substitutions.playerOut substitutions.playerIn',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'timeline.player timeline.relatedPlayer',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'playerOfTheMatch.official playerOfTheMatch.fanVotes.player',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'playerRatings.player',
+                    select: 'name department admissionYear'
+                },
+            ]);
+        if( !foundFixture ) return { success: false, message: 'Invaid Fixture' };
+
+        // Return success
+        return { success: true, message: 'Live Fixture Acquired', data: foundFixture };
+    } catch ( err ) {
+        console.error('Error fetching live fixture', err);
+        throw new Error('Error Fetching Live Fixture')
+    }
+}
+type TeamPlayerDetails = {
+    _id: string;
+    name: string;
+    admissionYear: string;
+    role: PlayerRole;
+    position: string;
+    jerseyNumber: number;
+}
+const getLiveFixtureTeamPlayers = async (
+    { fixtureId }: { fixtureId: string },
+    { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
+) => {
+    try {
+        // Check if fixture exists
+        const foundFixture = await db.V2FootballFixture.findById( fixtureId );
+        if( !foundFixture ) return { success: false, message: 'Invaid Fixture' };
+
+        // Check for team players
+        const hPlayers = await db.V2FootballPlayer.find({ 'teams.team': foundFixture.homeTeam });
+        const aPlayers = await db.V2FootballPlayer.find({ 'teams.team': foundFixture.awayTeam });
+
+        // Map through teams
+        const homePlayers = hPlayers.map( player => {
+            const { _id, name, admissionYear } = player;
+            const inTeamDetails = player.teams.find( t => t.team.toString() === foundFixture.homeTeam.toString() );
+
+            const playerDetails: TeamPlayerDetails = { 
+                _id: _id.toString(),
+                name, admissionYear,
+                role: inTeamDetails!.role,
+                position: inTeamDetails!.position,
+                jerseyNumber: inTeamDetails!.jerseyNumber,
+            };
+
+            return { ...playerDetails };
+        });
+        const awayPlayers = aPlayers.map( player => {
+            const { _id, name, admissionYear } = player;
+            const inTeamDetails = player.teams.find( t => t.team.toString() === foundFixture.awayTeam.toString() );
+
+            const playerDetails: TeamPlayerDetails = {
+                _id: _id.toString(),
+                name, admissionYear,
+                role: inTeamDetails!.role,
+                position: inTeamDetails!.position,
+                jerseyNumber: inTeamDetails!.jerseyNumber,
+            };
+
+            return { ...playerDetails };
+        });
+
+        // Return success
+        return { success: true, message: 'Team Players Acquired', data: { homePlayers, awayPlayers } };
+    } catch ( err ) {
+        console.error('Error fetching live fixture team players', err);
+        throw new Error('Error Fetching Live Team Players')
+    }
+}
 // END OF GET REQUESTS //
 
 // UPDATES //
@@ -1021,6 +1176,10 @@ const handleTeamCheer = async (
 const liveFixtureService = {
     // Creation and End //
     initializeLiveFixture,
+
+    // Get Requests //
+    getLiveFixtureById,
+    getLiveFixtureTeamPlayers,
 
     // Updates //
     updateLiveFixtureStatus,
