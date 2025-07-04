@@ -5,13 +5,15 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npm run build:v2 && node index.js",
+    "start": "node index.js",
     "dev": "nodemon index.js",
-    "start:v2": "ts-node app/v2/server.ts",
+    "dev:v1": "nodemon index.js",
+    "dev:v2": "ts-node-dev --respawn app/v2/server.ts",
+    "dev:combined": "concurrently \"npm run dev:v2\" \"npm run dev:v1\"",
+    "build": "npm run build:v2",
     "build:v2": "tsc",
-    "dev:v2": "nodemon --exec ts-node app/v2/server.ts",
-    "dev:combined": "concurrently \"npm run dev:v2\" \"npm run dev\"",
-    "watch:v2": "tsc --watch"
+    "watch:v2": "tsc --watch",
+    "prestart": "npm run build"
   },
   "author": "WebDevGlory",
   "license": "ISC",
@@ -31,11 +33,15 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.15.30",
     "@types/nodemailer": "^6.4.17",
+    "@types/swagger-ui-express": "^4.1.8",
+    "concurrently": "^9.2.0",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
   }
 }
