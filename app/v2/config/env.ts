@@ -1,4 +1,7 @@
 import cors from 'cors';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 interface Config {
     PORT: number;
