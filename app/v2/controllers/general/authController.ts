@@ -117,7 +117,6 @@ export const changePassword = async ( req: AuditRequest, res: Response ) => {
         const result = await authService.changePassword(
             req.body,
             { 
-                userId: req.user!.userId,
                 auditInfo: req.auditInfo
             }
         );
@@ -155,6 +154,14 @@ export const verifyOTP = async ( req: AuditRequest, res: Response ) => {
         const result = await authService.verifyOTP( req.body );
 
         if( result.success ) {
+            // Send JWT as HTTP-only cookie
+            res.cookie('authToken', result.data?.token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none',
+                maxAge: 24 * 60 * 60 * 1000 // 1 day
+            });
+
             success( res, result.message, result.data );
             return;
         }

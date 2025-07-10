@@ -14,6 +14,7 @@ import V2Notification from '../models/general/Notification';
 import V2AuditLog from '../models/general/AuditLog';
 import V2Department from '../models/general/Department';
 import V2Faculty from '../models/general/Faculty';
+import V2Blog from '../models/general/Blog';
 // END OF GENERAL MODEL IMPORTS //
 
 // FOOTBALL MODEL IMPORTS //
@@ -29,6 +30,7 @@ const db = {
   V2User,
   V2Notification,
   V2AuditLog,
+  V2Blog,
   V2FootballLiveFixture,
   V2FootballFixture,
   V2FootballTeam,

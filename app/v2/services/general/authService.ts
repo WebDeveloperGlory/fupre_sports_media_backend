@@ -28,7 +28,9 @@ const registerRegularUser = async (
     try {
         // Check if user already exists
         const foundUser = await db.V2User.findOne({ email });
-        if( foundUser ) return { success: false, message: 'Email Already Registered In DB' }
+        if( foundUser && foundUser.status === UserStatus.INACTIVE ) return { success: false, message: 'Verify OTP' }
+        if( foundUser && foundUser.status === UserStatus.SUSPENDED ) return { success: false, message: 'Banned User Contact An Admin' }
+        if( foundUser && foundUser.status === UserStatus.ACTIVE ) return { success: false, message: 'Email Already Registered In DB' }
 
         // Create user
         const createdUser = new db.V2User({ name, email, password });
@@ -211,6 +213,7 @@ const verifyOTP = async (
     { email, otp }: { email: string, otp: string }
 ) => {
     try {
+        console.log(otp)
         // Find user
         const user = await db.V2User.findOne({ email });
         if( !user ) return { success: false, message: 'Invalid User' };
@@ -240,12 +243,12 @@ const verifyOTP = async (
 }
 
 const changePassword = async (
-    { newPassword, confirmNewPassword }: { newPassword: string, confirmNewPassword: string },
-    { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
+    { email, newPassword, confirmNewPassword }: { email: string, newPassword: string, confirmNewPassword: string },
+    { auditInfo }: { auditInfo: AuditInfo }
 ) => {
     try {
         // Find user in database
-        const foundUser = await db.V2User.findById( userId );
+        const foundUser = await db.V2User.findOne({ email });
         if( !foundUser ) return { success: false, message: 'User Not Found' };
 
         // Check if passwords match
@@ -258,12 +261,12 @@ const changePassword = async (
 
         // Log action
         await logutils.logAction({
-            userId,
+            userId: foundUser._id,
             ipAddress: auditInfo.ipAddress,
             userAgent: auditInfo.userAgent,
             action: LogAction.UPDATE,
             entity: 'V2User',
-            entityId: userId,
+            entityId: foundUser._id,
             message: `User ${ foundUser.email } Password Changed`
         });
 

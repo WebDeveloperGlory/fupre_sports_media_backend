@@ -926,7 +926,7 @@ const generalUpdates = async (
 }
 const updateTime = async (
     { fixtureId }: { fixtureId: string },
-    { time }: { time: number },
+    { regularTime, injuryTime }: { regularTime: number, injuryTime?: number },
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
     try {
@@ -935,10 +935,11 @@ const updateTime = async (
         if( !livefixture ) return { success: false, message: 'Invalid live Fixture' };
 
         // Update time
-        if( time > livefixture.currentMinute ) {
-            livefixture.currentMinute = time;
-            await livefixture.save();
+        if( regularTime > livefixture.currentMinute ) {
+            livefixture.currentMinute = regularTime;
         }
+        if( injuryTime ) livefixture.injuryTime = injuryTime;
+        await livefixture.save();
 
         // In your service files when time changes:
         const socketService = getSocketService();

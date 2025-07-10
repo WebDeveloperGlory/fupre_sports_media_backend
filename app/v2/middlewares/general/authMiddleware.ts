@@ -12,7 +12,7 @@ export const authenticateUser = (
     res: Response,
     next: NextFunction
 ) => {
-    const auth = req.header('Authorization');
+    const auth = req.header('Authorization') || req.cookies['authToken'];
     if ( !auth ) return error(res, 'Login Required', 401);
 
     const token = auth.split(' ')[1];
