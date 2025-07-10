@@ -172,19 +172,8 @@ const loginUser = async (
 }
 
 const logoutUser = async (
-    { userId, auditInfo }: { userId: ObjectId | string, auditInfo: AuditInfo }
+    { auditInfo }: { auditInfo: AuditInfo }
 ) => {
-    // Log action
-    await logutils.logAction({
-        userId,
-        ipAddress: auditInfo.ipAddress,
-        userAgent: auditInfo.userAgent,
-        action: LogAction.LOGOUT,
-        entity: 'V2User',
-        entityId: userId,
-        message: `User Logout`
-    });
-
     // Return success
     return { success: true, message: 'User Logged Out', data: null };
 }

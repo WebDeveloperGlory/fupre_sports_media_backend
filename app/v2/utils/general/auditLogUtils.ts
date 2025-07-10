@@ -3,10 +3,10 @@ import db from '../../config/db';
 import { LogAction } from '../../types/auditlog.enums';
 
 type Log =  {
-    userId: ObjectId | string;
+    userId: ObjectId;
     action: LogAction;
     entity: string;
-    entityId: ObjectId | string;
+    entityId: ObjectId;
     details?: Object;
     previousValues?: Object;
     newValues?: Object;
