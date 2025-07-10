@@ -172,7 +172,7 @@ const loginUser = async (
 }
 
 const logoutUser = async (
-    { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
+    { userId, auditInfo }: { userId: ObjectId | string, auditInfo: AuditInfo }
 ) => {
     // Log action
     await logutils.logAction({

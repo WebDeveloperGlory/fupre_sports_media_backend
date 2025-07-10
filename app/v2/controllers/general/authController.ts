@@ -83,7 +83,7 @@ export const loginUser = async ( req: AuditRequest, res: Response ) => {
 export const logoutUser = async ( req: AuditRequest, res: Response ) => {
     try {
         const result = await authService.logoutUser({ 
-            userId: req.user!.userId,
+            userId: req.user ? req.user.userId : 'unknown',
             auditInfo: req.auditInfo
         });
 
