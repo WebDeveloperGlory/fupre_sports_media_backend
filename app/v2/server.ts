@@ -1,11 +1,13 @@
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { config } from './config/env';
 import { getSocketService } from './services/websocket/liveFixtureSocketService';
 
 // ROUTE IMPORTS //
-import authRoutes from './routes/general/authRoutes';
+import authRoutes from './routes/general/authRoutes'; 
+import adminDashboardRoutes from './routes/views/adminDashboardRoutes'; 
 // END OF ROUTE IMPORTS //
 
 const app = express();
@@ -14,6 +16,7 @@ const server = http.createServer(app);
 // MIDDLEWARES //
 app.use( cors( config.corsOptions ) );
 app.use( express.json() );
+app.use(cookieParser());
 
 // Initialize websockets
 getSocketService( server );
@@ -38,6 +41,7 @@ app.use('/test', (req, res) => {
 
 // ROUTES //
 app.use('/auth', authRoutes);
+app.use('/views', adminDashboardRoutes);
 // END OF ROUTES //
 
 // Export for testing

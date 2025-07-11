@@ -13,6 +13,7 @@ export const authenticateUser = (
     next: NextFunction
 ) => {
     const auth = req.header('Authorization') || req.cookies['authToken'];
+    console.log({ cookies: req.cookies, auth })
     if ( !auth ) return error(res, 'Login Required', 401);
 
     const token = auth.split(' ')[1];

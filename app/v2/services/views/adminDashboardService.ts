@@ -1,6 +1,6 @@
 import db from '../../config/db'
 
-const getSuperAdminDashboardAnalytics = async () => {
+const getSuperAdminFootballDashboardAnalytics = async () => {
     try {
         const totalTeams = await db.V2FootballTeam.countDocuments({});
         const totalCompetitions = await db.V2FootballCompetition.countDocuments({});
@@ -34,6 +34,8 @@ const getSuperAdminDashboardAnalytics = async () => {
 }
 
 const services = {
-    getSuperAdminDashboardAnalytics,
+    getSuperAdminFootballDashboardAnalytics,
 
 }
+
+export default services;
