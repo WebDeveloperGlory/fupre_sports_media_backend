@@ -6,7 +6,6 @@ import auditLogUtils from '../../utils/general/auditLogUtils';
 import { LogAction } from '../../types/auditlog.enums';
 import { UserRole } from '../../types/user.enums';
 import { getTeamFixtureStats } from '../../utils/sport/football/teamUtils';
-import { success } from '../../utils/general/responseUtils';
 
 type TeamCreateDetails = {
     name: string;
@@ -22,7 +21,7 @@ type TeamFilters = {
     academicYear?: string,
     type?: TeamTypes
 }
-type StatQuery = {
+export type StatQuery = {
     startDate?: Date,
     endDate?: Date,
     competitionId?: string,
@@ -355,7 +354,7 @@ const updateTeamCoaches = async (
         });
 
         // Return success
-        return { success: true, message: 'Coach added successfully', team: updatedTeam };
+        return { success: true, message: 'Coach added successfully', data: updatedTeam };
     } catch( err ) {
         console.error('Error during team coach update', err );
         throw new Error('Error With Team Coach Updates');
@@ -403,7 +402,7 @@ const updateTeamLifetimeStats = async (
         });
 
         // Return success
-        return { success: true, message: 'Team Stats Updated', team: updatedTeam };
+        return { success: true, message: 'Team Stats Updated', data: updatedTeam };
     } catch( err ) {
         console.error('Error during updating team info', err );
         throw new Error('Error With Team Basic Info Update');
@@ -443,6 +442,8 @@ const setTeamAdmin = async (
             newValues: { admin: adminId }
         });
         
+        // Return success
+        return { success: true, message: 'Team Admin Updated', data: foundTeam.admin }
     } catch( err ) {
         console.error('Error during updating team admin', err );
         throw new Error('Error With Team Admin Update');

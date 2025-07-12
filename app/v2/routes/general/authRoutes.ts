@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateUser } from "../../middlewares/general/authMiddleware";
-import { changePassword, generateOTP, loginUser, logoutUser, registerAdmin, registerRegularUser, verifyOTP } from "../../controllers/general/authController";
+import { changePassword, checkStatus, generateOTP, loginUser, logoutUser, registerAdmin, registerRegularUser, verifyOTP } from "../../controllers/general/authController";
 import { isSuperAdmin } from "../../middlewares/general/adminMiddleware";
 
 const router = Router();
@@ -20,6 +20,7 @@ router.post('/password/reset', changePassword);
 
 // ADMIN ROUTES //
 router.post('/signup/admin', authenticateUser, isSuperAdmin, registerAdmin);
+router.get('/check/super-admin', authenticateUser, isSuperAdmin, checkStatus);
 // END OF ADMIN ROUTES //
 
 export default router;

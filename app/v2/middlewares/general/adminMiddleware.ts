@@ -10,6 +10,7 @@ export const isSuperAdmin = (
     const { role } = req.user!;
     
     try {
+        console.log(role)
         if( role !== UserRole.SUPER_ADMIN ) return error( res, 'Invalid User Permissions', 401 );
 
         next();

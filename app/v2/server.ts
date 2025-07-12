@@ -7,6 +7,8 @@ import { getSocketService } from './services/websocket/liveFixtureSocketService'
 
 // ROUTE IMPORTS //
 import authRoutes from './routes/general/authRoutes'; 
+import departmentAndFacultyRoutes from './routes/general/departmentAndFacultyRoutes'; 
+import teamRoutes from './routes/football/teamRoutes'; 
 import adminDashboardRoutes from './routes/views/adminDashboardRoutes'; 
 // END OF ROUTE IMPORTS //
 
@@ -41,6 +43,8 @@ app.use('/test', (req, res) => {
 
 // ROUTES //
 app.use('/auth', authRoutes);
+app.use('/deptnfac', departmentAndFacultyRoutes);
+app.use('/teams', teamRoutes);
 app.use('/views', adminDashboardRoutes);
 // END OF ROUTES //
 

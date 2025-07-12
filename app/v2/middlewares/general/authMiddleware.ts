@@ -12,11 +12,12 @@ export const authenticateUser = (
     res: Response,
     next: NextFunction
 ) => {
-    const auth = req.header('Authorization') || req.cookies['authToken'];
-    console.log({ cookies: req.cookies, auth })
-    if ( !auth ) return error(res, 'Login Required', 401);
+    const authA = req.header('Authorization');
+    const authC = req.cookies['authToken'];
+    if ( !authA && !authC ) return error(res, 'Login Required', 401);
+    console.log({ authA, authC });
 
-    const token = auth.split(' ')[1];
+    const token = authA ? authA.split(' ')[1] : authC;
     if (!token) return error(res, 'Token Not Provided', 401);
 
     try {

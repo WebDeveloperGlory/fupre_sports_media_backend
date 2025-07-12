@@ -62,7 +62,7 @@ export const loginUser = async ( req: AuditRequest, res: Response ) => {
 
         if( result.success ) {
             // Send JWT as HTTP-only cookie
-            res.cookie('authToken', result.data, {
+            res.cookie('authToken', result.data?.token, {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'none',
@@ -165,6 +165,16 @@ export const verifyOTP = async ( req: AuditRequest, res: Response ) => {
             return;
         }
         error( res, result.message );
+        return;
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+        return;
+    }
+}
+
+export const checkStatus = async ( req: AuditRequest, res: Response ) => {
+    try {
+        success( res, 'Check Passed', null );
         return;
     } catch ( err: Error | any ) {
         serverError( res, err );
