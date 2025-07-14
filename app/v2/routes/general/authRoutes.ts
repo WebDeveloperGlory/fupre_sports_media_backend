@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticateUser } from "../../middlewares/general/authMiddleware";
 import { changePassword, checkStatus, generateOTP, loginUser, logoutUser, registerAdmin, registerRegularUser, verifyOTP } from "../../controllers/general/authController";
-import { isSuperAdmin } from "../../middlewares/general/adminMiddleware";
+import { isHeadMediaAdmin, isLiveFixtureAdmin, isMediaAdmin, isSuperAdmin } from "../../middlewares/general/adminMiddleware";
 
 const router = Router();
 
@@ -21,6 +21,9 @@ router.post('/password/reset', changePassword);
 // ADMIN ROUTES //
 router.post('/signup/admin', authenticateUser, isSuperAdmin, registerAdmin);
 router.get('/check/super-admin', authenticateUser, isSuperAdmin, checkStatus);
+router.get('/check/live-fixture-admin', authenticateUser, isLiveFixtureAdmin, checkStatus);
+router.get('/check/media-admin', authenticateUser, isMediaAdmin, checkStatus);
+router.get('/check/head-media-admin', authenticateUser, isHeadMediaAdmin, checkStatus);
 // END OF ADMIN ROUTES //
 
 export default router;

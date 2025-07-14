@@ -2,11 +2,10 @@ import mongoose, { ObjectId } from 'mongoose';
 import db from '../../config/db';
 import { AuditInfo } from '../../types/express';
 import { FixtureLineup, FixtureStat, FixtureStatus, FixtureStreamLinks, FixtureSubstitutions, FixtureTimeline, FixtureTimelineCardType, FixtureTimelineGoalType, FixtureTimelineType, LiveStatus, TeamType } from '../../types/fixture.enums';
-import { getSocketService, SocketService } from '../websocket/liveFixtureSocketService';
+import { getSocketService } from '../websocket/liveFixtureSocketService';
 import { UserRole } from '../../types/user.enums';
 import { LogAction } from '../../types/auditlog.enums';
 import auditLogUtils from '../../utils/general/auditLogUtils';
-import { TeamTypes } from '../../types/team.enums';
 import { PlayerRole } from '../../types/player.enums';
 
 // CREATION AND END //
@@ -31,12 +30,12 @@ const initializeLiveFixture = async (
             if ( existingLiveFixture ) return { success: false, message: 'Live fixture already exists' };
 
             // Create live fixture
-            const { homeTeam, awayTeam, matchType, competition, stadium, scheduledDate } = existingFixture;
+            const { homeTeam, awayTeam, status, matchType, competition, stadium, scheduledDate, rescheduledDate } = existingFixture;
             const liveFixture = new db.V2FootballLiveFixture({
                 fixture: existingFixture._id,
                 homeTeam, awayTeam,
                 matchType, stadium,
-                matchDate: scheduledDate,
+                matchDate: status === FixtureStatus.POSTPONED ? rescheduledDate : scheduledDate,
                 admin: foundAdmin._id,
             });
             if( matchType === 'competition' && existingFixture.competition ) liveFixture.competition = competition;
@@ -68,48 +67,54 @@ const initializeLiveFixture = async (
 // END OF CREATION AND END //
 
 // GET REQUESTS //
-const getAllTodayFixtures = async () => {
+const getAllLiveFixtures = async () => {
     try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-
-        const fixtures = await db.V2FootballFixture.find({
-            $or: [
-                {
-                    status: { $in: [FixtureStatus.SCHEDULED, FixtureStatus.LIVE] },
-                    scheduledDate: { $gte: today, $lt: tomorrow }
-                },
-                {
-                    status: FixtureStatus.POSTPONED,
-                    rescheduledDate: { $gte: today, $lt: tomorrow }
-                }
-            ]
-        })
+        // Get all live fixtures
+        const foundFixtures = await db.V2FootballFixture.find({})
             .populate([
                 {
-                    path: 'homeTeam awayTeam',
-                    select: 'name shorthand logo'
+                    path: 'competition',
+                    select: 'name type'
                 },
                 {
-                    path: 'competition',
-                    select: 'name type shorthand'
-                }
+                    path: 'homeTeam awayTeam',
+                    select: 'name logo shorthand'
+                },
+                {
+                    path: 'goalScorers.player',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'goalScorers.team',
+                    select: 'name logo shorthand'
+                },
+                {
+                    path: 'lineups.home.startingXI.player lineups.home.substitutes.player lineups.away.startingXI.player lineups.away.substitutes.player',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'substitutions.playerOut substitutions.playerIn',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'timeline.player timeline.relatedPlayer',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'playerOfTheMatch.official playerOfTheMatch.fanVotes.player',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'playerRatings.player',
+                    select: 'name department admissionYear'
+                },
             ]);
 
-        // Get necessary data only
-        const fixtureData = fixtures.map( fixture => {
-            const { _id, homeTeam, awayTeam, competition, scheduledDate, rescheduledDate, status, stadium } = fixture;
-            return { _id, homeTeam, awayTeam, competition, scheduledDate, rescheduledDate, status, stadium };
-        })
-
         // Return success
-        return { success: true, message: 'Fixtures Acquired', data: fixtureData };
+        return { success: true, message: 'Live Fixtures Acquired', data: foundFixtures };
     } catch ( err ) {
-        console.error('Error fetching live fixture', err);
-        throw new Error('Error Fetching Live Fixture')
+        console.error('Error fetching live fixtures', err);
+        throw new Error('Error Fetching Live Fixtures')
     }
 }
 const getLiveFixtureById = async (
@@ -175,7 +180,6 @@ type TeamPlayerDetails = {
 }
 const getLiveFixtureTeamPlayers = async (
     { fixtureId }: { fixtureId: string },
-    { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
     try {
         // Check if fixture exists
@@ -968,7 +972,6 @@ type UserPlayerRating = {
 const submitUserPlayerRating = async (
     { fixtureId }: { fixtureId: string },
     { playerId, rating, isHomePlayer }: UserPlayerRating,
-    { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
     try {
         // Validate rating
@@ -1132,7 +1135,7 @@ const submitUserPOTMVote = async (
 const handleTeamCheer = async (
     { fixtureId }: { fixtureId: string },
     { team, isOfficial }: { team: TeamType, isOfficial: boolean },
-    { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
+    { userId, auditInfo }: { userId?: ObjectId, auditInfo?: AuditInfo }
 ) => {
     try {
         const fixture = await db.V2FootballLiveFixture.findById(fixtureId)
@@ -1179,6 +1182,7 @@ const liveFixtureService = {
     initializeLiveFixture,
 
     // Get Requests //
+    getAllLiveFixtures,
     getLiveFixtureById,
     getLiveFixtureTeamPlayers,
 

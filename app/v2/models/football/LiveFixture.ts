@@ -55,7 +55,7 @@ const v2footballLivefixtureSchema = new Schema<IV2FootballLiveFixture>({
     },
     stadium: { type: String },
     matchDate: { type: Date, required: true },
-    kickoffTime: { type: Date, required: true },
+    kickoffTime: { type: Date },
     referee: { type: String },
     
     // Match status and progress

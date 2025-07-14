@@ -89,7 +89,10 @@ const registerAdmin = async (
             id: createdUser._id,
             name: createdUser.name,
             email: createdUser.email,
-            role: createdUser.role
+            role: createdUser.role,
+            status: createdUser.status,
+            createdAt: createdUser.createdAt,
+            lastLogin: createdUser.lastLogin,
         }
 
         // Send notification
