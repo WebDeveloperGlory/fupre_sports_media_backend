@@ -22,6 +22,9 @@ const getAllTodayFixtures = async () => {
                 {
                     status: FixtureStatus.POSTPONED,
                     rescheduledDate: { $gte: today, $lt: tomorrow }
+                },
+                {
+                    status: FixtureStatus.LIVE,
                 }
             ]
         })

@@ -37,6 +37,11 @@ const initializeLiveFixture = async (
                 matchType, stadium,
                 matchDate: status === FixtureStatus.POSTPONED ? rescheduledDate : scheduledDate,
                 admin: foundAdmin._id,
+                weather: {
+                    condition: 'sunny',
+                    humidity: 10,
+                    temperature: 10
+                }
             });
             if( matchType === 'competition' && existingFixture.competition ) liveFixture.competition = competition;
 
@@ -70,7 +75,7 @@ const initializeLiveFixture = async (
 const getAllLiveFixtures = async () => {
     try {
         // Get all live fixtures
-        const foundFixtures = await db.V2FootballFixture.find({})
+        const foundFixtures = await db.V2FootballLiveFixture.find({})
             .populate([
                 {
                     path: 'competition',
@@ -122,7 +127,7 @@ const getLiveFixtureById = async (
 ) => {
     try {
         // Check if fixture exists
-        const foundFixture = await db.V2FootballFixture.findById( fixtureId )
+        const foundFixture = await db.V2FootballLiveFixture.findOne({ fixture: fixtureId })
             .populate([
                 {
                     path: 'competition',
@@ -183,7 +188,7 @@ const getLiveFixtureTeamPlayers = async (
 ) => {
     try {
         // Check if fixture exists
-        const foundFixture = await db.V2FootballFixture.findById( fixtureId );
+        const foundFixture = await db.V2FootballLiveFixture.findOne({ fixture: fixtureId });
         if( !foundFixture ) return { success: false, message: 'Invaid Fixture' };
 
         // Check for team players
@@ -290,8 +295,8 @@ const updateLiveFixtureLineup = async (
 ) => {
     try {
         // Check if fixture exists and update
-        const updatedFixture = await db.V2FootballLiveFixture.findByIdAndUpdate(
-            fixtureId,
+        const updatedFixture = await db.V2FootballLiveFixture.findOneAndUpdate(
+            { fixture: fixtureId },
             { lineups: lineups },
             { new: true }
         );
@@ -314,6 +319,7 @@ const createTimeLineEvent = async (
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
     try {
+        console.log(event);
         // Check if fixture exists and update
         const updatedFixture = await db.V2FootballLiveFixture.findByIdAndUpdate(
             fixtureId,
@@ -360,7 +366,7 @@ const editTimelineEvent = async (
         if( !foundLiveFixture ) return { success: false, message: 'Invalid Live Fixture' };
 
         // Check if event exists
-        const event = foundLiveFixture.timeline.find( event => event.id === eventId );
+        const event = foundLiveFixture.timeline.find( event => event._id.toString() === eventId.toString() );
         if( !event ) return { success: false, message: 'Invalid/Deleted Event' };
 
         // Perform updates
@@ -374,7 +380,7 @@ const editTimelineEvent = async (
         if( updates.goalType ) event.goalType = updates.goalType;
 
         const updatedTimeline = foundLiveFixture.timeline.map( evnt => {
-            if( evnt.id === eventId ) {
+            if( evnt._id.toString() === eventId.toString() ) {
                 return event;
             } else {
                 return evnt;
@@ -401,11 +407,11 @@ const deleteTimelineEvent = async (
         if( !foundLiveFixture ) return { success: false, message: 'Invalid Live Fixture' };
 
         // Check if event exists
-        const event = foundLiveFixture.timeline.some( event => event.id === eventId );
+        const event = foundLiveFixture.timeline.some( event => event._id.toString() === eventId.toString() );
         if( !event ) return { success: false, message: 'Invalid/Deleted Event' };
 
         // Delete event
-        const updatedTimeline = foundLiveFixture.timeline.filter( event => event.id !== eventId );
+        const updatedTimeline = foundLiveFixture.timeline.filter( event => event._id.toString() === eventId.toString() );
         foundLiveFixture.timeline = updatedTimeline;
         await foundLiveFixture.save();
 
@@ -449,7 +455,7 @@ const addSubstitution = async (
 
         // Add to timeline
         const timelineEvent: FixtureTimeline = {
-            id: new mongoose.Types.ObjectId().toString(),
+            _id: new mongoose.Types.ObjectId().toString(),
             type: FixtureTimelineType.SUBSTITUTION,
             team,
             player: playerOutId as unknown as ObjectId,
@@ -646,7 +652,7 @@ const addGoalScorer = async (
 
         // Add to timeline
         const timelineEvent: FixtureTimeline = {
-            id: new mongoose.Types.ObjectId().toString(),
+            _id: new mongoose.Types.ObjectId().toString(),
             type: FixtureTimelineType.GOAL,
             team: teamId === fixture.homeTeam.toString() ? TeamType.HOME : TeamType.AWAY,
             player: playerId as unknown as ObjectId,
@@ -878,15 +884,13 @@ const generalUpdates = async (
 
         // Check what was passed in body and perform updates
         if( weather ) {
-            if( !weather.condition || !weather.temperature || !weather.humidity ) return { success: false, message: 'Missing required weather fields' }
-
             livefixture.weather = weather;
         }
         if( attendance ) livefixture.attendance = attendance;
         if( referee ) livefixture.referee = referee;
         if( kickoff ) livefixture.kickoffTime = kickoff;
         if( stream ) {
-            if( !stream.platform || !stream.url || !stream.requiresSubscription || !stream.isOfficial ) return { success: false, message: 'Missing required stream fields' };
+            if( !stream.platform || !stream.url  ) return { success: false, message: 'Missing required stream fields' };
 
             livefixture.streamLinks.push( stream );
         }

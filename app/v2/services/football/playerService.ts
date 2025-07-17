@@ -14,7 +14,6 @@ type PlayerCreateDetails = {
     preferredFoot?: FavoriteFoot;
     height?: number;
     weight?: number;
-    createdBy: ObjectId;
 }
 
 type PlayerUpdateDetails = {
@@ -37,11 +36,10 @@ type TeamAssignmentDetails = {
 type PlayerVerificationDetails = {
     status: 'verified' | 'rejected';
     reason?: string;
-    verifiedBy: ObjectId;
 }
 
 const createPlayer = async (
-    { name, department, admissionYear, preferredFoot, height, weight, createdBy }: PlayerCreateDetails,
+    { name, department, admissionYear, preferredFoot, height, weight }: PlayerCreateDetails,
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
     try {
@@ -64,8 +62,8 @@ const createPlayer = async (
             preferredFoot,
             height,
             weight,
-            createdBy,
-            verificationStatus: 'pending'
+            createdBy: userId,
+            verificationStatus: 'verified'
         });
 
         await newPlayer.save();
@@ -189,7 +187,7 @@ const registerUnverifiedPlayer = async (
 
 const verifyPlayerRegistration = async (
     { playerId }: { playerId: string },
-    { status, reason, verifiedBy }: PlayerVerificationDetails,
+    { status, reason }: PlayerVerificationDetails,
     { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
 ) => {
     try {
@@ -200,7 +198,7 @@ const verifyPlayerRegistration = async (
         }
 
         // Check if user has verification permissions
-        const verifier = await db.V2User.findById(verifiedBy);
+        const verifier = await db.V2User.findById(userId);
         if (!verifier || ![UserRole.SUPER_ADMIN].includes(verifier.role)) {
             return { success: false, message: 'Unauthorized verification attempt' };
         }
@@ -210,7 +208,7 @@ const verifyPlayerRegistration = async (
 
         // Update verification status
         player.verificationStatus = status;
-        player.verifiedBy = verifiedBy;
+        player.verifiedBy = userId;
 
         if (status === 'rejected' && reason) {
             // Add rejection reason to player document if needed
@@ -283,8 +281,9 @@ const addPlayerToTeam = async (
             isActive: true,
             joinedAt: new Date()
         });
-
+        team.players.push(player._id)
         await player.save();
+        await team.save();
 
         // Log action
         await auditLogUtils.logAction({
@@ -302,7 +301,7 @@ const addPlayerToTeam = async (
         return { 
             success: true, 
             message: 'Player added to team successfully', 
-            data: player 
+            data: player
         };
     } catch (err) {
         console.error('Error adding player to team', err);
@@ -311,8 +310,7 @@ const addPlayerToTeam = async (
 }
 
 const getTeamSuggestedPlayers = async (
-    { teamId }: { teamId: string },
-    { limit = 10, page = 1 }: { limit?: number; page?: number }
+    { teamId, limit = 20, page = 1 }: { limit?: number; page?: number; teamId: string }
 ) => {
     try {
         // Find team
@@ -368,13 +366,38 @@ const getTeamSuggestedPlayers = async (
     }
 }
 
+const getPlayerById = async (
+    { playerId }: { playerId: string }
+) => {
+    try {
+        // Check if player exists
+        const player = await db.V2FootballPlayer.findById(playerId)
+            .populate([
+                { path: 'department', select: 'name' },
+                { path: 'competitionStats.competition', select: 'name type' },
+                {
+                    path: 'teams.team',
+                    select: 'name shorthand logo academicYear'
+                },
+            ])
+        if(!player) return { success: false, message: 'Invalid Player' };
+
+        // Return success
+        return { success: true, message: 'Player Acquired', data: player };
+    } catch (err) {
+        console.error('Error getting player', err);
+        throw new Error('Error getting player');
+    }
+}
+
 const playerService = {
     createPlayer,
     updatePlayer,
     registerUnverifiedPlayer,
     verifyPlayerRegistration,
     addPlayerToTeam,
-    getTeamSuggestedPlayers
+    getTeamSuggestedPlayers,
+    getPlayerById,
 };
 
 export default playerService;

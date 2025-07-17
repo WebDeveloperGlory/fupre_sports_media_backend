@@ -133,3 +133,23 @@ export const hasCommentaryPermissions = (
         return;
     }
 }
+
+export const hasTeamPermissions = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { role } = req.user!;
+    
+    try {
+        console.log(role)
+        if( role === UserRole.SUPER_ADMIN || role === UserRole.TEAM_ADMIN ) {
+            next();
+        } else {
+            return error( res, 'Invalid User Permissions', 401 );
+        }
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+        return;
+    }
+}

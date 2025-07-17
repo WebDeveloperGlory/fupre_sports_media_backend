@@ -98,7 +98,7 @@ export type FixtureSubstitutions = {
 }
 
 export type FixtureTimeline = {
-    id: string,
+    _id: string,
     type: FixtureTimelineType,
     team: TeamType,
     player: ObjectId,

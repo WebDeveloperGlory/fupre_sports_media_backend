@@ -9,8 +9,9 @@ import { getSocketService } from './services/websocket/liveFixtureSocketService'
 import authRoutes from './routes/general/authRoutes'; 
 import departmentAndFacultyRoutes from './routes/general/departmentAndFacultyRoutes'; 
 import teamRoutes from './routes/football/teamRoutes'; 
-import fixtureRoutes from './routes/football/fixtureRoutes'; 
+import fixtureRoutes from './routes/football/fixtureRoutes';
 import liveFixtureRoutes from './routes/football/liveFixtureRoutes';
+import playerRoutes from './routes/football/playerRoutes';
 import adminRoutes from './routes/football/adminRoutes';
 import adminDashboardRoutes from './routes/views/adminDashboardRoutes'; 
 // END OF ROUTE IMPORTS //
@@ -51,6 +52,7 @@ app.use('/live', liveFixtureRoutes);
 app.use('/admin', adminRoutes);
 app.use('/teams', teamRoutes);
 app.use('/fixture', fixtureRoutes);
+app.use('/player', playerRoutes);
 app.use('/views', adminDashboardRoutes);
 // END OF ROUTES //
 
