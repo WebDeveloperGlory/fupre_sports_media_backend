@@ -2,11 +2,11 @@ import mongoose, { ObjectId } from 'mongoose';
 import db from '../../config/db';
 import { AuditInfo } from '../../types/express';
 import { FixtureLineup, FixtureStat, FixtureStatus, FixtureStreamLinks, FixtureSubstitutions, FixtureTimeline, FixtureTimelineCardType, FixtureTimelineGoalType, FixtureTimelineType, LiveStatus, TeamType } from '../../types/fixture.enums';
-import { getSocketService } from '../websocket/liveFixtureSocketService';
 import { UserRole } from '../../types/user.enums';
 import { LogAction } from '../../types/auditlog.enums';
 import auditLogUtils from '../../utils/general/auditLogUtils';
 import { PlayerRole } from '../../types/player.enums';
+import { emitCheerUpdate, emitGeneralInfoUpdate, emitGoalScorersUpdate, emitMinuteUpdate, emitPlayerOfTheMatchUpdate, emitScoreUpdate, emitStatisticsUpdate, emitStatusUpdate, emitSubstitutionUpdate, emitTimelineUpdate } from '../../events/socketEmits';
 
 // CREATION AND END //
 const initializeLiveFixture = async (
@@ -253,8 +253,7 @@ const updateLiveFixtureStatus = async (
         if( !updatedFixture ) return { success: false, message: 'Invalid Live Fixture' };
 
         // Emit updates to websocket
-        const socketService = getSocketService();
-        await socketService.emitStatusUpdate(fixtureId, status, updatedFixture.currentMinute); 
+        emitStatusUpdate(updatedFixture.fixture.toString(), status); 
 
         // Return success
         return { success: true, message: 'Status Updated', data: updatedFixture.status }
@@ -278,8 +277,7 @@ const updateLiveFixtureStatistics = async (
         if( !updatedFixture ) return { success: false, message: 'Invalid Live Fixture' };
 
         // Emit updates to websocket
-        const socketService = getSocketService();
-        await socketService.emitStatisticsUpdate(fixtureId); 
+        emitStatisticsUpdate(updatedFixture.fixture.toString(), updatedFixture.statistics); 
 
         // Return success
         return { success: true, message: 'Statistics Updated', data: updatedFixture.statistics }
@@ -303,8 +301,7 @@ const updateLiveFixtureLineup = async (
         if( !updatedFixture ) return { success: false, message: 'Invalid Live Fixture' };
 
         // Emit updates to websocket
-        const socketService = getSocketService();
-        await socketService.emitLineupUpdate(fixtureId); 
+        // socketService.emitLineupUpdate(fixtureId); 
 
         // Return success
         return { success: true, message: 'Lineup Updated', data: updatedFixture.lineups }
@@ -333,8 +330,7 @@ const createTimeLineEvent = async (
         if( !updatedFixture ) return { success: false, message: 'Invalid Live Fixture' };
 
         // Emit updates to websocket
-        const socketService = getSocketService();
-        await socketService.emitTimelineEvent(fixtureId, event); 
+        emitTimelineUpdate(updatedFixture.fixture.toString(), event); 
 
         // Return success
         return { success: true, message: 'Timeline event created Updated', data: updatedFixture.timeline }
@@ -469,9 +465,8 @@ const addSubstitution = async (
         await fixture.save();
 
         // Emit updates to websocket
-        const socketService = getSocketService();
-        await socketService.emitLineupUpdate(fixtureId);
-        await socketService.emitTimelineEvent(fixtureId, timelineEvent);
+        emitSubstitutionUpdate(fixture.fixture.toString(), substitution);
+        emitTimelineUpdate(fixture.fixture.toString(), timelineEvent);
 
         return {
             success: true,
@@ -613,8 +608,7 @@ const updateFixtureScore = async (
         await fixture.save();
 
         // Emit updates to websocket
-        const socketService = getSocketService();
-        await socketService.emitScoreUpdate(fixtureId);
+        emitScoreUpdate(fixture.fixture.toString(), fixture.result);
 
         return {
             success: true,
@@ -666,9 +660,9 @@ const addGoalScorer = async (
         await fixture.save();
 
         // Emit updates to websocket
-        const socketService = getSocketService();
-        await socketService.emitScoreUpdate(fixtureId);
-        await socketService.emitTimelineEvent(fixtureId, timelineEvent);
+       emitScoreUpdate(fixture.fixture.toString(), fixture.result);
+       emitGoalScorersUpdate(fixture.fixture.toString(), fixture.goalScorers);
+       emitTimelineUpdate(fixture.fixture.toString(), timelineEvent);
 
         return {
             success: true,
@@ -721,12 +715,8 @@ const removeGoalScorer = async (
         await fixture.save();
 
         // Emit updates to websocket
-        const socketService = getSocketService();
-        await socketService.emitScoreUpdate(fixtureId);
-        await socketService.emitCustomEvent(fixtureId, 'goal-removed', {
-            goalScorerId,
-            timelineIndex
-        });
+        emitScoreUpdate(fixture.fixture.toString(), fixture.result);
+        emitGoalScorersUpdate(fixture.fixture.toString(), fixture.goalScorers);
 
         return {
             success: true,
@@ -780,8 +770,7 @@ const updateOfficialPOTM = async (
         await fixture.save();
 
         // Emit update via socket
-        const socketService = getSocketService();
-        await socketService.emitPlayerOfTheMatchUpdate(fixtureId);
+        emitPlayerOfTheMatchUpdate(fixture.fixture.toString(), fixture.playerOfTheMatch);
 
         return {
             success: true,
@@ -849,10 +838,9 @@ const updateOfficialPlayerRatings = async (
         await fixture.save();
 
         // Emit update via socket
-        const socketService = getSocketService();
-        await socketService.emitCustomEvent(fixtureId, 'player-ratings-updated', {
-            ratings: fixture.playerRatings
-        });
+        // socketService.emitCustomEvent(fixtureId, 'player-ratings-updated', {
+            // ratings: fixture.playerRatings
+        // });
 
         return {
             success: true,
@@ -896,30 +884,15 @@ const generalUpdates = async (
         }
         await livefixture.save();
 
-        // Get the pre-initialized socket service
-        const socketService = getSocketService();
-
         // Emit updates
         if (weather || attendance || referee || kickoff) {
-            await socketService.emitCustomEvent(
-                fixtureId,
-                'general-update',
+            emitGeneralInfoUpdate(
+                livefixture.fixture.toString(),
                 {
                     weather: livefixture.weather,
                     attendance: livefixture.attendance,
                     referee: livefixture.referee,
                     kickoffTime: livefixture.kickoffTime,
-                    updatedAt: new Date()
-                }
-            );
-        }
-
-        if (stream) {
-            await socketService.emitCustomEvent(
-                fixtureId,
-                'stream-update',
-                { 
-                    streams: livefixture.streamLinks,
                     updatedAt: new Date()
                 }
             );
@@ -950,13 +923,8 @@ const updateTime = async (
         await livefixture.save();
 
         // In your service files when time changes:
-        const socketService = getSocketService();
-        await socketService.emitCustomEvent(fixtureId, 'minute-update', {
-            currentMinute: livefixture.currentMinute,
-            injuryTime: livefixture.injuryTime,
-            status: livefixture.status,
-            timestamp: new Date()
-        }); 
+        emitMinuteUpdate(livefixture.fixture.toString(), livefixture.currentMinute, livefixture.injuryTime );
+        emitStatusUpdate(livefixture.fixture.toString(), livefixture.status );
 
         // Return success
         return { success: true, message: 'Time Updated', data: livefixture }
@@ -1035,14 +1003,6 @@ const submitUserPlayerRating = async (
         };
 
         await fixture.save();
-
-        // Emit update via socket
-        const socketService = getSocketService();
-        await socketService.emitCustomEvent(fixtureId, 'player-rating-added', {
-            playerId,
-            newAverage: playerRating.fanRatings.average,
-            newCount: playerRating.fanRatings.count
-        });
 
         return {
             success: true,
@@ -1123,8 +1083,7 @@ const submitUserPOTMVote = async (
         await fixture.save();
 
         // Emit update via socket
-        const socketService = getSocketService();
-        await socketService.emitPlayerOfTheMatchUpdate(fixtureId);
+        emitPlayerOfTheMatchUpdate(fixture.fixture.toString(), fixture.playerOfTheMatch);
 
         return {
             success: true,
@@ -1143,7 +1102,7 @@ const handleTeamCheer = async (
 ) => {
     try {
         const fixture = await db.V2FootballLiveFixture.findById(fixtureId)
-            .select('cheerMeter');
+            .select('cheerMeter fixture');
         
         if (!fixture) {
             return { success: false, message: 'Fixture not found' };
@@ -1166,8 +1125,7 @@ const handleTeamCheer = async (
         await fixture.save();
 
         // Emit update via socket
-        const socketService = getSocketService();
-        await socketService.emitCheerUpdate(fixtureId);
+        emitCheerUpdate(fixture.fixture.toString(), fixture.cheerMeter);
 
         return {
             success: true,

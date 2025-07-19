@@ -3,7 +3,6 @@ import http from 'http';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { config } from './config/env';
-import { getSocketService } from './services/websocket/liveFixtureSocketService';
 
 // ROUTE IMPORTS //
 import authRoutes from './routes/general/authRoutes'; 
@@ -14,6 +13,7 @@ import liveFixtureRoutes from './routes/football/liveFixtureRoutes';
 import playerRoutes from './routes/football/playerRoutes';
 import adminRoutes from './routes/football/adminRoutes';
 import adminDashboardRoutes from './routes/views/adminDashboardRoutes'; 
+import { initializeSocket } from './config/socket';
 // END OF ROUTE IMPORTS //
 
 const app = express();
@@ -25,7 +25,7 @@ app.use( express.json() );
 app.use(cookieParser());
 
 // Initialize websockets
-getSocketService( server );
+initializeSocket( server );
 
 app.use((req, res, next) => {
     req.auditInfo = {
