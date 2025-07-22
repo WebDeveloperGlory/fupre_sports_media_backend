@@ -7,8 +7,11 @@ export interface IV2Blog extends Document {
     author: ObjectId;
     category: BlogCategories;
     title: string;
-    subTitle?: string;
+    content: string;
     coverImage?: string;
+    isReviewed: boolean;
+    isPublished: boolean;
+    views: number;
 
     createdAt: Date;
     updatedAt: Date;
@@ -18,8 +21,11 @@ const v2blogSchema = new Schema<IV2Blog>({
     author: { type: Schema.Types.ObjectId, ref: 'V2User', required: true },
     category: { type: String, enum: Object.values( BlogCategories ), required: true },
     title: { type: String, required: true },
-    subTitle: { type: String },
-    coverImage: { type: String }
+    content: { type: String, required: true },
+    coverImage: { type: String },
+    views: { type: Number, default: 0 },
+    isReviewed: { type: Boolean, default: false },
+    isPublished: { type: Boolean, default: false }
 }, {
     timestamps: true
 });

@@ -747,7 +747,7 @@ const updateOfficialPOTM = async (
     try {
         // Validate player exists and is in the fixture
         const fixture = await db.V2FootballLiveFixture.findById(fixtureId)
-            .select('lineups playerOfTheMatch');
+            .select('lineups playerOfTheMatch fixture');
         
         if (!fixture) {
             return { success: false, message: 'Invalid Live Fixture' };
@@ -805,6 +805,7 @@ const updateOfficialPlayerRatings = async (
         if (!fixture) {
             return { success: false, message: 'Fixture not found' };
         }
+        if(!ratings) return { success: false, message: 'Must Provide Ratings' };
 
         // Update each player's official rating
         ratings.forEach(rating => {
@@ -820,6 +821,7 @@ const updateOfficialPlayerRatings = async (
             if (existingRatingIndex >= 0) {
                 // Update existing rating
                 fixture.playerRatings[existingRatingIndex].official = ratingData;
+                fixture.playerRatings[existingRatingIndex].stats = rating.stats ? rating.stats : undefined;
             } else {
                 // Add new rating
                 fixture.playerRatings.push({
@@ -991,7 +993,7 @@ const submitUserPlayerRating = async (
         const prevAverage = playerRating.fanRatings.average;
         const newCount = prevCount + 1;
         const newAverage = ((prevAverage * prevCount) + rating) / newCount;
-        const key = rating.toString() as keyof typeof playerRating.fanRatings.distribution;
+        const key = Math.round(rating).toString() as keyof typeof playerRating.fanRatings.distribution;
 
         playerRating.fanRatings = {
             average: parseFloat(newAverage.toFixed(1)),

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticateUser } from "../../middlewares/general/authMiddleware";
-import { isSuperAdmin } from "../../middlewares/general/adminMiddleware";
-import { getSuperAdminFootballDashboardAnalytics } from "../../controllers/views/adminDashboardController";
+import { isHeadMediaAdmin, isSuperAdmin } from "../../middlewares/general/adminMiddleware";
+import { getHeadMediaAdminDashboardAnalytics, getHeadMediaAdminFixturesForRating, getSuperAdminFootballDashboardAnalytics } from "../../controllers/views/adminDashboardController";
 
 const router = Router();
 
@@ -14,6 +14,9 @@ const router = Router();
 // END OF GENERAL ROUTES //
 
 // ADMIN ROUTES //
+router.get('/media-admin/dashboard', authenticateUser, isHeadMediaAdmin, getHeadMediaAdminDashboardAnalytics);
+router.get('/media-admin/potm-fixtures', authenticateUser, isHeadMediaAdmin, getHeadMediaAdminFixturesForRating);
+
 router.get('/super-admin/dashboard/football', authenticateUser, isSuperAdmin, getSuperAdminFootballDashboardAnalytics);
 // END OF ADMIN ROUTES //
 

@@ -42,3 +42,18 @@ export const getAllAdmins = async ( req: AuditRequest, res: Response ) => {
         serverError( res, err );
     }
 }
+
+export const getMediaAdmins = async ( req: AuditRequest, res: Response ) => {
+    try {
+        const result = await adminService.getMediaAdmins();
+
+        if( result.success ) {
+            success( res, result.message, result.data );
+            return;
+        }
+        error( res, result.message );
+        return;
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+    }
+}

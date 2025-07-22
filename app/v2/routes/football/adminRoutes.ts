@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticateUser } from '../../middlewares/general/authMiddleware';
-import { isSuperAdmin } from "../../middlewares/general/adminMiddleware";
-import { getAllAdmins, getLiveFixtureAdmins } from "../../controllers/football/adminController";
+import { isHeadMediaAdmin, isSuperAdmin } from "../../middlewares/general/adminMiddleware";
+import { getAllAdmins, getLiveFixtureAdmins, getMediaAdmins } from "../../controllers/football/adminController";
 
 const router = Router();
 
@@ -13,6 +13,7 @@ const router = Router();
 
 // ADMIN ROUTES //
 router.get('/all', authenticateUser, isSuperAdmin, getAllAdmins);
+router.get('/media', authenticateUser, isHeadMediaAdmin, getMediaAdmins);
 router.get('/live-fixture', authenticateUser, isSuperAdmin, getLiveFixtureAdmins);
 // END OF ADMIN ROUTES //
 

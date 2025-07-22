@@ -27,3 +27,33 @@ export const getSuperAdminFootballDashboardAnalytics = async ( req: AuditRequest
         serverError( res, err );
     }
 }
+
+export const getHeadMediaAdminDashboardAnalytics = async ( req: AuditRequest, res: Response ) => {
+    try {
+        const result = await adminDashboardService.getHeadMediaAdminDashboardAnalytics();
+
+        if( result.success ) {
+            success( res, result.message, result.data );
+            return;
+        }
+        error( res, result.message );
+        return;
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+    }
+}
+
+export const getHeadMediaAdminFixturesForRating = async ( req: AuditRequest, res: Response ) => {
+    try {
+        const result = await adminDashboardService.getHeadMediaAdminFixturesForRating();
+
+        if( result.success ) {
+            success( res, result.message, result.data );
+            return;
+        }
+        error( res, result.message );
+        return;
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+    }
+}

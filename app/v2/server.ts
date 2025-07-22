@@ -6,7 +6,8 @@ import { config } from './config/env';
 
 // ROUTE IMPORTS //
 import authRoutes from './routes/general/authRoutes'; 
-import departmentAndFacultyRoutes from './routes/general/departmentAndFacultyRoutes'; 
+import departmentAndFacultyRoutes from './routes/general/departmentAndFacultyRoutes';
+import blogRoutes from './routes/general/blogRoutes';
 import teamRoutes from './routes/football/teamRoutes'; 
 import fixtureRoutes from './routes/football/fixtureRoutes';
 import liveFixtureRoutes from './routes/football/liveFixtureRoutes';
@@ -48,6 +49,7 @@ app.use('/test', (req, res) => {
 // ROUTES //
 app.use('/auth', authRoutes);
 app.use('/deptnfac', departmentAndFacultyRoutes);
+app.use('/blog', blogRoutes);
 app.use('/live', liveFixtureRoutes);
 app.use('/admin', adminRoutes);
 app.use('/teams', teamRoutes);

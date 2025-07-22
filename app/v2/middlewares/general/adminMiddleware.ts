@@ -153,3 +153,43 @@ export const hasTeamPermissions = (
         return;
     }
 }
+
+export const hasSignUpPermissions = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { role } = req.user!;
+    
+    try {
+        console.log(role)
+        if( role === UserRole.SUPER_ADMIN || role === UserRole.HEAD_MEDIA_ADMIN ) {
+            next();
+        } else {
+            return error( res, 'Invalid User Permissions', 401 );
+        }
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+        return;
+    }
+}
+
+export const hasGeneralBlogPermissions = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { role } = req.user!;
+    
+    try {
+        console.log(role)
+        if( role === UserRole.SUPER_ADMIN || role === UserRole.HEAD_MEDIA_ADMIN || role === UserRole.MEDIA_ADMIN ) {
+            next();
+        } else {
+            return error( res, 'Invalid User Permissions', 401 );
+        }
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+        return;
+    }
+}

@@ -27,9 +27,29 @@ const getAllAdmins = async () => {
     }
 }
 
+const getMediaAdmins = async () => {
+    try {
+        // Check for live fixture admins
+        const foundAdmins = await db.V2User.find({
+            $or: [
+                { role: UserRole.HEAD_MEDIA_ADMIN },
+                { role: UserRole.MEDIA_ADMIN },
+            ]
+        })
+
+        // Return success
+        return { success: true, message: 'All Admins Acquired', data: foundAdmins };
+    } catch ( err ) {
+        console.error('Error fetching all admins', err);
+        throw new Error('Error Fetching All Admins')
+    }
+}
+
 const adminService = {
     getLiveFixtureAdmins,
     getAllAdmins,
+    getMediaAdmins,
+    
 }
 
 export default adminService;
