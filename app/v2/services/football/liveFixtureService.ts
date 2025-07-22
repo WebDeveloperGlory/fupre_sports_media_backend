@@ -106,7 +106,7 @@ const getAllLiveFixtures = async () => {
                     select: 'name department admissionYear'
                 },
                 {
-                    path: 'playerOfTheMatch.official playerOfTheMatch.fanVotes.player',
+                    path: 'playerOfTheMatch.official playerOfTheMatch.userVotes.playerId playerOfTheMatch.fanVotes.player',
                     select: 'name department admissionYear'
                 },
                 {
@@ -158,7 +158,7 @@ const getLiveFixtureById = async (
                     select: 'name department admissionYear'
                 },
                 {
-                    path: 'playerOfTheMatch.official playerOfTheMatch.fanVotes.player',
+                    path: 'playerOfTheMatch.official playerOfTheMatch.userVotes.playerId playerOfTheMatch.fanVotes.player',
                     select: 'name department admissionYear'
                 },
                 {
@@ -769,8 +769,20 @@ const updateOfficialPOTM = async (
         fixture.playerOfTheMatch.official = playerId as unknown as ObjectId;
         await fixture.save();
 
+        const refreshedFixture = await db.V2FootballLiveFixture.findById(fixtureId)
+            .populate([
+                {
+                    path: 'playerOfTheMatch.official playerOfTheMatch.userVotes.playerId playerOfTheMatch.fanVotes.player',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'playerRatings.player',
+                    select: 'name department admissionYear'
+                },
+            ]);
+
         // Emit update via socket
-        emitPlayerOfTheMatchUpdate(fixture.fixture.toString(), fixture.playerOfTheMatch);
+        emitPlayerOfTheMatchUpdate(fixture.fixture.toString(), refreshedFixture!.playerOfTheMatch);
 
         return {
             success: true,
@@ -1027,7 +1039,7 @@ const submitUserPOTMVote = async (
 ) => {
     try {
         const fixture = await db.V2FootballLiveFixture.findById(fixtureId)
-            .select('playerOfTheMatch currentMinute status lineups');
+            .select('playerOfTheMatch currentMinute status lineups fixture');
         
         if (!fixture) {
             return { success: false, message: 'Fixture not found' };
@@ -1083,14 +1095,25 @@ const submitUserPOTMVote = async (
         }
 
         await fixture.save();
+        const refreshedFixture = await db.V2FootballLiveFixture.findById(fixtureId)
+            .populate([
+                {
+                    path: 'playerOfTheMatch.official playerOfTheMatch.userVotes.playerId playerOfTheMatch.fanVotes.player',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'playerRatings.player',
+                    select: 'name department admissionYear'
+                },
+            ]);
 
         // Emit update via socket
-        emitPlayerOfTheMatchUpdate(fixture.fixture.toString(), fixture.playerOfTheMatch);
+        emitPlayerOfTheMatchUpdate(fixture.fixture.toString(), refreshedFixture!.playerOfTheMatch);
 
         return {
             success: true,
             message: 'POTM vote submitted',
-            data: fixture.playerOfTheMatch
+            data: refreshedFixture!.playerOfTheMatch
         };
     } catch (err) {
         console.error('Error submitting POTM vote:', err);
