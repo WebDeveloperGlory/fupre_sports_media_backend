@@ -15,7 +15,7 @@ export const authenticateUser = (
     const authA = req.header('Authorization');
     const authC = req.cookies['authToken'];
     if ( !authA && !authC ) return error(res, 'Login Required', 401);
-    console.log({ authA, authC });
+    console.log({ authA, authC, cookie: req.cookies });
 
     const token = authA ? authA.split(' ')[1] : authC;
     if (!token) return error(res, 'Token Not Provided', 401);
