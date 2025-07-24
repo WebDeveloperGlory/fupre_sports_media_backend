@@ -1,7 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { PORT, ALLOWED_ORIGINS } = require('./app/v1/config/env');
-const { initializeWebSocket } = require('./app/v1/config/socket');
+// const { initializeWebSocket } = require('./app/v1/config/socket');
 
 // Import v1 server
 const createV1Server = require('./app/v1/server');
@@ -19,16 +19,16 @@ const mainApp = express();
 const server = http.createServer(mainApp);
 
 // Initialize WebSocket
-initializeWebSocket(server, {
-    origin: (origin, callback) => {
-        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true
-});
+// initializeWebSocket(server, {
+//     origin: (origin, callback) => {
+//         if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+//             callback(null, true);
+//         } else {
+//             callback(new Error('Not allowed by CORS'));
+//         }
+//     },
+//     credentials: true
+// });
 
 // Mount v1 and v2 apps
 mainApp.use( v1.app );
