@@ -14,7 +14,8 @@ import fixtureRoutes from './routes/football/fixtureRoutes';
 import liveFixtureRoutes from './routes/football/liveFixtureRoutes';
 import playerRoutes from './routes/football/playerRoutes';
 import adminRoutes from './routes/football/adminRoutes';
-import adminDashboardRoutes from './routes/views/adminDashboardRoutes'; 
+import adminDashboardRoutes from './routes/views/adminDashboardRoutes';
+import homepageRoutes from './routes/views/homepageRoutes';
 import { initializeSocket } from './config/socket';
 // END OF ROUTE IMPORTS //
 
@@ -58,10 +59,11 @@ app.use('/teams', teamRoutes);
 app.use('/fixture', fixtureRoutes);
 app.use('/player', playerRoutes);
 app.use('/views', adminDashboardRoutes);
+app.use('/views/pages', homepageRoutes);
 // END OF ROUTES //
 
 // Export for testing
-export { app, server };
+export { app, server, initializeSocket };
 
 // START SERVER //
 if ( require.main === module ) {

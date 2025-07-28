@@ -34,6 +34,7 @@ const server = http.createServer(mainApp);
 mainApp.use( v1.app );
 if (v2) {
     mainApp.use( '/api/v2', v2.app );
+    v2.initializeSocket(server);
 }
 
 // Health check
