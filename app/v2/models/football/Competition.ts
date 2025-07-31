@@ -291,9 +291,9 @@ const v2footballcompetitionSchema = new Schema<IV2FootballCompetition>({
 
     // Statistics (Aggregated)
     stats: {
-        averageGoalsPerMatch: Number,
-        averageAttendance: Number,
-        cleanSheets: Number,
+        averageGoalsPerMatch: {type: Number, default: 0},
+        averageAttendance: {type: Number, default: 0},
+        cleanSheets: {type: Number, default: 0},
         topScorers: [{
             player: { type: Schema.Types.ObjectId, ref: 'V2FootballPlayer' },
             team: { type: Schema.Types.ObjectId, ref: 'V2FootballTeam' },
