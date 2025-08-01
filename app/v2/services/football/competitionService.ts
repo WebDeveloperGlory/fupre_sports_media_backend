@@ -188,6 +188,14 @@ const getCompetitionById = async (
                     path: 'teams.squad.player',
                     select: 'name'
                 },
+                {
+                    path: 'awards.player.winner.player',
+                    select: 'name'
+                },
+                {
+                    path: 'awards.player.winner.team awards.team.winner',
+                    select: 'name shorthand logo'
+                },
             ]);
         if( !foundCompetition ) return { success: false, message: 'Invalid Competition' };
 
