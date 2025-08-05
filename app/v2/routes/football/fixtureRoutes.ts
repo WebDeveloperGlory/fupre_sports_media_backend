@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticateUser } from "../../middlewares/general/authMiddleware";
 import { isSuperAdmin } from "../../middlewares/general/adminMiddleware";
-import { getAllTodayFixtures, rescheduleFixture } from "../../controllers/football/fixtureController";
+import { getAllTodayFixtures, getRecentFixtures, rescheduleFixture } from "../../controllers/football/fixtureController";
 
 const router = Router();
 
@@ -10,6 +10,7 @@ const router = Router();
 
 // GENERAL ROUTES //
 router.get('/today', getAllTodayFixtures);
+router.get('/recent', getRecentFixtures);
 // END OF GENERAL ROUTES //
 
 // ADMIN ROUTES //

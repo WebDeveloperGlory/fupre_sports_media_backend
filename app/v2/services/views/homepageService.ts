@@ -142,9 +142,15 @@ const footballCompetitionPage = async () => {
                 { path: 'leagueTable.team', select: 'name logo shorthand' },
                 { path: 'stats.topScorers.player', select: 'name department admissionYear' },
                 { path: 'stats.topScorers.team', select: 'name logo shorthand' },
+                { path: 'awards.team.winner', select: 'name logo shorthand' },
             ]);
         const allActiveCompetitions = await db.V2FootballCompetition.find({ isActive: true });
-        const featuredCompetitions = await db.V2FootballCompetition.find({ isFeatured: true });
+        const featuredCompetitions = await db.V2FootballCompetition.find({ isFeatured: true })
+            .populate([
+                { path: 'leagueTable.team', select: 'name logo shorthand' },
+                { path: 'stats.topScorers.player', select: 'name department admissionYear' },
+                { path: 'stats.topScorers.team', select: 'name logo shorthand' },
+            ]);
 
         return {
             success: true,

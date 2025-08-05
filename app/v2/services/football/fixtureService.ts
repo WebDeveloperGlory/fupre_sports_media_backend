@@ -102,9 +102,39 @@ const rescheduleFixture = async (
     }
 }
 
+const getRecentFixtures = async (
+    {limit = 5}: { limit: number }
+) => {
+    try {
+        const fixtures = await db.V2FootballFixture.find({
+            status: FixtureStatus.COMPLETED,
+        })
+            .populate([
+                {
+                    path: 'homeTeam awayTeam',
+                    select: 'name shorthand logo'
+                },
+                {
+                    path: 'competition',
+                    select: 'name type shorthand'
+                }
+            ])
+            .sort({ scheduledDate: -1 })
+            .limit(limit);
+
+        // Return success
+        return { success: true, message: 'Recent Fixtures Acquired', data: fixtures };
+    } catch ( err ) {
+        console.error('Error fetching recent fixtures', err);
+        throw new Error('Error Fetching Recent Fixtures')
+    }
+}
+
 const fixtureService = {
     getAllTodayFixtures,
     rescheduleFixture,
+    getRecentFixtures,
+    
 }
 
 export default fixtureService;

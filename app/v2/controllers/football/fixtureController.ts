@@ -51,3 +51,20 @@ export const rescheduleFixture = async ( req: AuditRequest, res: Response ) => {
         serverError( res, err );
     }
 }
+
+export const getRecentFixtures = async ( req: AuditRequest, res: Response ) => {
+    try {
+        const result = await fixtureService.getRecentFixtures(
+            req.query as unknown as {limit: number},
+        );
+
+        if( result.success ) {
+            success( res, result.message, result.data );
+            return;
+        }
+        error( res, result.message );
+        return;
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+    }
+}
