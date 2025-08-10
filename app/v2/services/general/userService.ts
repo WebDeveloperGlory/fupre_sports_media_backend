@@ -11,7 +11,7 @@ const getProfile = async (
 ) => {
     try {
         // Get user profile
-        const user = await db.V2User.findById(userId);
+        const user = await db.V2User.findById(userId).select('-password');
         if (!user) return { success: false, message: 'User not found' };
 
         // Return success
