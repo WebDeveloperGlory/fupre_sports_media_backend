@@ -2,14 +2,17 @@ import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import swaggerUI from 'swagger-ui-express';
 import { config } from './config/env';
+import { swaggerSpecV2 } from './config/swagger';
 
 // ROUTE IMPORTS //
 import authRoutes from './routes/general/authRoutes'; 
 import departmentAndFacultyRoutes from './routes/general/departmentAndFacultyRoutes';
 import blogRoutes from './routes/general/blogRoutes';
 import userRoutes from './routes/general/userRoutes';
-import teamRoutes from './routes/football/teamRoutes'; 
+import competitionRoutes from './routes/football/competitionRoutes';
+import teamRoutes from './routes/football/teamRoutes';
 import fixtureRoutes from './routes/football/fixtureRoutes';
 import liveFixtureRoutes from './routes/football/liveFixtureRoutes';
 import playerRoutes from './routes/football/playerRoutes';
@@ -29,6 +32,9 @@ app.use(cookieParser());
 
 // Initialize websockets
 initializeSocket( server );
+
+// Swagger docs
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpecV2));
 
 app.use((req, res, next) => {
     req.auditInfo = {
@@ -55,6 +61,7 @@ app.use('/blog', blogRoutes);
 app.use('/user', userRoutes);
 app.use('/live', liveFixtureRoutes);
 app.use('/admin', adminRoutes);
+app.use('/competition', competitionRoutes);
 app.use('/teams', teamRoutes);
 app.use('/fixture', fixtureRoutes);
 app.use('/player', playerRoutes);
