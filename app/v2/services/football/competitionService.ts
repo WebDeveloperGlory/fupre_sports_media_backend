@@ -320,7 +320,7 @@ type CompetitionFixtureFilter = {
 }
 const getCompetitiionFixtures = async (
     { competitionId }: { competitionId: string },
-    { limit = 10, page = 1, fromDate, toDate }: { limit: number, page: number, fromDate: Date, toDate: Date }
+    { limit = 10, page = 1, fromDate, toDate }: { limit: number, page: number, fromDate?: Date, toDate?: Date }
 ) => {
     try {
         // Check if competition exists
@@ -1093,6 +1093,8 @@ const createCompetitionKnockoutRound = async (
             newValues: foundCompetition.knockoutRounds
         });
 
+        // Return success
+        return { success: true, message: 'Knockout Bracket Created', data: foundCompetition.knockoutRounds };
     } catch (err) {
         console.error('Error Creating Knockout Bracket', err);
         throw new Error('Error Creating Knockout Bracket');
@@ -1153,7 +1155,8 @@ const deleteCompetitionGroup = async (
 
         return { 
             success: true, 
-            message: 'Group deleted successfully' 
+            message: 'Group deleted successfully',
+            data: foundCompetition.groupStage
         };
     } catch (err) {
         console.error('Error Deleting Group', err);
@@ -1215,7 +1218,8 @@ const deleteCompetitionKnockoutRound = async (
         
         return { 
             success: true, 
-            message: 'Knockout round deleted successfully' 
+            message: 'Knockout round deleted successfully',
+            data: foundCompetition.knockoutRounds
         };
     } catch (err) {
         console.error('Error Deleting Knockout Round', err);
