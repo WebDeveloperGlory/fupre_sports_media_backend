@@ -655,7 +655,7 @@
 
 /**
  * @swagger
- * /competition/{competitionId}/groups:
+ * /competition/{competitionId}/group:
  *   get:
  *     tags: [Competitions (General)]
  *     summary: Get competition groups
@@ -690,7 +690,7 @@
 
 /**
  * @swagger
- * /competition/{competitionId}/teams:
+ * /competition/{competitionId}/team:
  *   get:
  *     tags: [Competitions (General)]
  *     summary: Get competition teams and squads
@@ -741,7 +741,7 @@
 
 /**
  * @swagger
- * /competition/{competitionId}/fixtures:
+ * /competition/{competitionId}/fixture:
  *   get:
  *     tags: [Competitions (General)]
  *     summary: Get competition fixtures
@@ -826,7 +826,7 @@
 
 /**
  * @swagger
- * /competition/{competitionId}/stats:
+ * /competition/{competitionId}/stat:
  *   get:
  *     tags: [Competitions (General)]
  *     summary: Get competition statistics
