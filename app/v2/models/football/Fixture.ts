@@ -1,5 +1,5 @@
 import { Schema, model, Document, ObjectId } from 'mongoose';
-import { FixtureCommentary, FixtureCommentaryType, FixtureLineup, FixturePlayerOfTheMatch, FixturePlayerRatings, FixtureResult, FixtureStat, FixtureStatus, FixtureStreamLinks, FixtureSubstitutions, FixtureTimeline, FixtureTimelineCardType, FixtureTimelineGoalType, FixtureTimelineType, TeamType } from '../../types/fixture.enums';
+import { FixtureCommentary, FixtureCommentaryType, FixtureLineup, FixtureOdds, FixturePlayerOfTheMatch, FixturePlayerRatings, FixtureResult, FixtureStat, FixtureStatus, FixtureStreamLinks, FixtureSubstitutions, FixtureTimeline, FixtureTimelineCardType, FixtureTimelineGoalType, FixtureTimelineType, TeamType } from '../../types/fixture.enums';
 
 export interface IV2FootballFixture extends Document {
     _id: ObjectId;
@@ -41,6 +41,7 @@ export interface IV2FootballFixture extends Document {
     };
     highlights: FixtureStreamLinks[];
     isDerby: Boolean;
+    odds: FixtureOdds;
 
     createdAt: Date;
     updatedAt: Date;
@@ -260,6 +261,29 @@ const v2footballfixtureSchema = new Schema<IV2FootballFixture>({
         requiresSubscription: Boolean
     }],
     isDerby: { type: Boolean, default: false },
+    odds: {
+        preMatch: {
+            homeWin: Number,
+            draw: Number,
+            awayWin: Number,
+            overUnder: [{
+                line: Number, // e.g., 2.5 for over/under 2.5 goals
+                over: Number,
+                under: Number
+            }]
+        },
+        live: {
+            updatedAt: Date,
+            homeWin: Number,
+            draw: Number,
+            awayWin: Number,
+            overUnder: [{
+                line: Number,
+                over: Number,
+                under: Number
+            }]
+        }
+    },
 }, {
     timestamps: true
 });

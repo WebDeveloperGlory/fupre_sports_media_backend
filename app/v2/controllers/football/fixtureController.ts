@@ -3,6 +3,7 @@ import fixtureService from "../../services/football/fixtureService";
 import { success, error, serverError } from "../../utils/general/responseUtils";
 import { AuditInfo } from "../../types/express";
 import { ObjectId } from "mongoose";
+import { FixtureStatus } from "../../types/fixture.enums";
 
 interface AuditRequest extends Request {
     auditInfo: AuditInfo;
@@ -56,6 +57,40 @@ export const getRecentFixtures = async ( req: AuditRequest, res: Response ) => {
     try {
         const result = await fixtureService.getRecentFixtures(
             req.query as unknown as {limit: number},
+        );
+
+        if( result.success ) {
+            success( res, result.message, result.data );
+            return;
+        }
+        error( res, result.message );
+        return;
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+    }
+}
+
+export const getFixtures = async ( req: AuditRequest, res: Response ) => {
+    try {
+        const result = await fixtureService.getFixtures(
+            req.query as unknown as {status: FixtureStatus, limit?: number},
+        );
+
+        if( result.success ) {
+            success( res, result.message, result.data );
+            return;
+        }
+        error( res, result.message );
+        return;
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+    }
+}
+
+export const getFixtureById = async ( req: AuditRequest, res: Response ) => {
+    try {
+        const result = await fixtureService.getFixtureById(
+            req.params as unknown as FixStrParams,
         );
 
         if( result.success ) {

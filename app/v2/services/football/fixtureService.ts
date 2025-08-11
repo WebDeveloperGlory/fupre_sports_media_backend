@@ -130,11 +130,85 @@ const getRecentFixtures = async (
     }
 }
 
+const getFixtureById = async (
+    {fixtureId}: {fixtureId: string}
+) => {
+    const fixture = await db.V2FootballFixture.findById( fixtureId )
+        .populate([
+            {
+                path: 'homeTeam awayTeam',
+                select: 'name shorthand logo'
+            },
+            {
+                path: 'competition',
+                select: 'name type shorthand'
+            },
+            {
+                path: 'goalScorers.player',
+                select: 'name department admissionYear'
+            },
+            {
+                path: 'goalScorers.team',
+                select: 'name logo shorthand'
+            },
+            {
+                path: 'lineups.home.startingXI.player lineups.home.substitutes.player lineups.away.startingXI.player lineups.away.substitutes.player',
+                select: 'name department admissionYear'
+            },
+            {
+                path: 'substitutions.playerOut substitutions.playerIn',
+                select: 'name department admissionYear'
+            },
+            {
+                path: 'timeline.player timeline.relatedPlayer',
+                select: 'name department admissionYear'
+            },
+            {
+                path: 'playerOfTheMatch.official playerOfTheMatch.userVotes.playerId playerOfTheMatch.fanVotes.player',
+                select: 'name department admissionYear'
+            },
+            {
+                path: 'playerRatings.player',
+                select: 'name department admissionYear'
+            },
+        ]);
+    if(!fixture) return {success: false, message: 'Invalid Fixture'};
+
+    // Return success
+    return { success: true, message: 'Fixture Acquired', data: fixture.toObject() };
+}
+
+const getFixtures = async (
+    {status, limit=5}: {status: FixtureStatus, limit?: number}
+) => {
+    const filters: {status?: FixtureStatus} = {};
+    if(status) filters.status = status;
+
+    const fixtures = await db.V2FootballFixture.find(filters)
+        .populate([
+            {
+                path: 'homeTeam awayTeam',
+                select: 'name shorthand logo'
+            },
+            {
+                path: 'competition',
+                select: 'name type shorthand'
+            }
+        ])
+        .sort({ scheduledDate: -1 })
+        .limit(limit);
+
+    // Return success
+    return { success: true, message: 'Fixture Acquired', data: fixtures };
+}
+
 const fixtureService = {
     getAllTodayFixtures,
     rescheduleFixture,
     getRecentFixtures,
-    
+    getFixtures,
+    getFixtureById,
+
 }
 
 export default fixtureService;
