@@ -114,14 +114,17 @@ const endCompetitionLiveFixture = async (
         if(!updatedFixture) throw new Error('Associated fixture not found');
 
         // 3. Update competition standings based on type
-        if (competition.type === CompetitionTypes.LEAGUE) {
-            await liveFixtureHelperFunctions.updateLeagueStandings({
+        const isGroupFixture = competition.groupStage.some(group => group.fixtures.includes(updatedFixture._id))
+        console.log('Competition Type:', competition.type);
+        console.log('Group Fixture:', isGroupFixture);
+        if(isGroupFixture && competition.type === CompetitionTypes.HYBRID) {
+            await liveFixtureHelperFunctions.updateGroupStageStandings({
                 competition,
                 fixture: updatedFixture,
                 session
             });
-        } else if (competition.type === CompetitionTypes.HYBRID || competition.type === CompetitionTypes.KNOCKOUT) {
-            await liveFixtureHelperFunctions.updateGroupStageStandings({
+        } else if( competition.type === CompetitionTypes.LEAGUE ) {
+            await liveFixtureHelperFunctions.updateLeagueStandings({
                 competition,
                 fixture: updatedFixture,
                 session

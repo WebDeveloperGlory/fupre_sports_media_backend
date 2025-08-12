@@ -48,35 +48,37 @@ async function updateLeagueStandings(
         loss: 0
     };
 
-    competition.leagueTable = competition.leagueTable.map(standing => {
-        if (standing.team.toString() === homeTeamId.toString()) {
-            return updateStanding({
-                standing,
-                goalsFor: homeScore,
-                goalsAgainst: awayScore,
-                pointsSystem,
-                isHome: true
-            });
-        }
-        
-        if (standing.team.toString() === awayTeamId.toString()) {
-            return updateStanding({
-                standing,
-                goalsFor: awayScore,
-                goalsAgainst: homeScore,
-                pointsSystem,
-                isHome: false
-            });
-        }
-        
-        return standing;
-    });
+    if(competition.leagueTable && competition.leagueTable.length > 0) {
+        competition.leagueTable = competition.leagueTable.map(standing => {
+            if (standing.team.toString() === homeTeamId.toString()) {
+                return updateStanding({
+                    standing,
+                    goalsFor: homeScore,
+                    goalsAgainst: awayScore,
+                    pointsSystem,
+                    isHome: true
+                });
+            }
+            
+            if (standing.team.toString() === awayTeamId.toString()) {
+                return updateStanding({
+                    standing,
+                    goalsFor: awayScore,
+                    goalsAgainst: homeScore,
+                    pointsSystem,
+                    isHome: false
+                });
+            }
+            
+            return standing;
+        });
 
-    // Sort and re-position teams
-    competition.leagueTable.sort(sortStandings);
-    competition.leagueTable.forEach((standing, index) => {
-        standing.position = index + 1;
-    });
+        // Sort and re-position teams
+        competition.leagueTable.sort(sortStandings);
+        competition.leagueTable.forEach((standing, index) => {
+            standing.position = index + 1;
+        });
+    }
 
     await competition.save({ session });
 }
@@ -92,44 +94,46 @@ async function updateGroupStageStandings(
         ? competition.format.leagueStage?.pointsSystem || { win: 3, draw: 1, loss: 0 }
         : { win: 3, draw: 1, loss: 0 };
 
-    competition.groupStage = competition.groupStage.map(group => {
-        if (group.fixtures.includes(fixture._id)) {
-            const updatedGroup = { ...group };
-            
-            updatedGroup.standings = updatedGroup.standings.map(standing => {
-                if (standing.team.toString() === homeTeamId.toString()) {
-                    return updateStanding({
-                        standing,
-                        goalsFor: homeScore,
-                        goalsAgainst: awayScore,
-                        pointsSystem,
-                        isHome: true
-                    });
-                }
+    if(competition.groupStage && competition.groupStage.length > 0) {
+        competition.groupStage = competition.groupStage.map(group => {
+            if (group.fixtures.includes(fixture._id)) {
+                const updatedGroup = { ...group };
                 
-                if (standing.team.toString() === awayTeamId.toString()) {
-                    return updateStanding({
-                        standing,
-                        goalsFor: awayScore,
-                        goalsAgainst: homeScore,
-                        pointsSystem,
-                        isHome: false
-                    });
-                }
-            
-                return standing;
-            });
+                updatedGroup.standings = updatedGroup.standings.map(standing => {
+                    if (standing.team.toString() === homeTeamId.toString()) {
+                        return updateStanding({
+                            standing,
+                            goalsFor: homeScore,
+                            goalsAgainst: awayScore,
+                            pointsSystem,
+                            isHome: true
+                        });
+                    }
+                    
+                    if (standing.team.toString() === awayTeamId.toString()) {
+                        return updateStanding({
+                            standing,
+                            goalsFor: awayScore,
+                            goalsAgainst: homeScore,
+                            pointsSystem,
+                            isHome: false
+                        });
+                    }
+                
+                    return standing;
+                });
 
-            // Sort group standings
-            updatedGroup.standings.sort(sortStandings);
-            updatedGroup.standings.forEach((standing, index) => {
-                standing.position = index + 1;
-            });
+                // Sort group standings
+                updatedGroup.standings.sort(sortStandings);
+                updatedGroup.standings.forEach((standing, index) => {
+                    standing.position = index + 1;
+                });
 
-            return updatedGroup;
-        }
-        return group;
-    });
+                return updatedGroup;
+            }
+            return group;
+        });
+    }
 
     await competition.save({ session });
 }
