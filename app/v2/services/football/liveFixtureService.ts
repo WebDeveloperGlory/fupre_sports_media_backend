@@ -99,7 +99,7 @@ const endCompetitionLiveFixture = async (
         if (!liveFixture || !nonPopLiveFixture) throw new Error('Live fixture not found');
         if (!liveFixture.fixture) throw new Error('Associated fixture not found');
 
-        const competition = await db.V2FootballCompetition.findById(liveFixture.competition)
+        const competition = await db.V2FootballCompetition.findById(nonPopLiveFixture.competition)
             .session(session);
         if (!competition) throw new Error('Competition not found');
 
