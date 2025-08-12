@@ -36,6 +36,36 @@ export const initializeLiveFixture = async ( req: AuditRequest, res: Response ) 
     }
 }
 
+export const endCompetitionLiveFixture = async ( req: AuditRequest, res: Response ) => {
+    try {
+        const { fixtureId } = req.params;
+
+        if (!fixtureId) {
+            error(res, 'Live fixture ID is required');
+            return;
+        }
+
+        // Execute the service
+        await liveFixtureService.endCompetitionLiveFixture({ liveFixtureId: fixtureId });
+        success(res, 'Fixture ended successfully', null, 200);
+    } catch (err: any) {
+        // Handle specific error cases
+        if (err.message.includes('not found')) {
+            error(res, err.message, 404);
+            return;
+        }
+
+        // Handle transaction errors
+        if (err.message.includes('transaction')) {
+            error(res, 'Failed to complete fixture ending process', 500);
+            return;
+        }
+
+        // Fallback to server error
+        serverError(res, err);
+    }
+}
+
 export const getAllLiveFixtures = async ( req: AuditRequest, res: Response ) => {
     try {
         const result = await liveFixtureService.getAllLiveFixtures();

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticateUser } from "../../middlewares/general/authMiddleware";
 import { isSuperAdmin, hasLiveFixturePermissions, hasCommentaryPermissions, hasRatingPermissions } from "../../middlewares/general/adminMiddleware";
-import { getAllLiveFixtures, getLiveFixtureById, getLiveFixtureTeamPlayers, updateLiveFixtureStatus, updateLiveFixtureStatistics, updateLiveFixtureLineup, createTimeLineEvent, editTimelineEvent, deleteTimelineEvent, addSubstitution, updateSubstitution, removeSubstitution, updateFixtureScore, addGoalScorer, removeGoalScorer, updateOfficialPOTM, updateOfficialPlayerRatings, generalUpdates, updateTime, submitUserPlayerRating, submitUserPOTMVote, handleTeamCheer, initializeLiveFixture } from "../../controllers/football/liveFixtureController";
+import { getAllLiveFixtures, getLiveFixtureById, getLiveFixtureTeamPlayers, updateLiveFixtureStatus, updateLiveFixtureStatistics, updateLiveFixtureLineup, createTimeLineEvent, editTimelineEvent, deleteTimelineEvent, addSubstitution, updateSubstitution, removeSubstitution, updateFixtureScore, addGoalScorer, removeGoalScorer, updateOfficialPOTM, updateOfficialPlayerRatings, generalUpdates, updateTime, submitUserPlayerRating, submitUserPOTMVote, handleTeamCheer, initializeLiveFixture, endCompetitionLiveFixture } from "../../controllers/football/liveFixtureController";
 
 const router = Router();
 
@@ -20,6 +20,7 @@ router.get('/:fixtureId/players', getLiveFixtureTeamPlayers);
 
 // ADMIN ROUTES //
 router.post('/', authenticateUser, isSuperAdmin, initializeLiveFixture);
+router.post('/:fixtureId/end', authenticateUser, isSuperAdmin, endCompetitionLiveFixture);
 
 router.put('/:fixtureId/status/update', authenticateUser, hasLiveFixturePermissions, updateLiveFixtureStatus);
 router.put('/:fixtureId/stats/update', authenticateUser, hasLiveFixturePermissions, updateLiveFixtureStatistics);

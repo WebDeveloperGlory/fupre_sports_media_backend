@@ -1,4 +1,4 @@
-import mongoose, { ObjectId } from 'mongoose';
+import mongoose, { ObjectId, ClientSession } from 'mongoose';
 import db from '../../config/db';
 import { AuditInfo } from '../../types/express';
 import { FixtureLineup, FixtureStat, FixtureStatus, FixtureStreamLinks, FixtureSubstitutions, FixtureTimeline, FixtureTimelineCardType, FixtureTimelineGoalType, FixtureTimelineType, LiveStatus, TeamType } from '../../types/fixture.enums';
@@ -7,6 +7,9 @@ import { LogAction } from '../../types/auditlog.enums';
 import auditLogUtils from '../../utils/general/auditLogUtils';
 import { PlayerRole } from '../../types/player.enums';
 import { emitCheerUpdate, emitGeneralInfoUpdate, emitGoalScorersUpdate, emitMinuteUpdate, emitPlayerOfTheMatchUpdate, emitScoreUpdate, emitStatisticsUpdate, emitStatusUpdate, emitSubstitutionUpdate, emitTimelineUpdate } from '../../events/socketEmits';
+import { CompetitionTypes } from '../../types/competition.enums';
+import liveFixtureHelperFunctions from '../../utils/general/liveFixtureUtils';
+import { IV2FootballFixture } from '../../models/football/Fixture';
 
 // CREATION AND END //
 const initializeLiveFixture = async (
@@ -30,7 +33,7 @@ const initializeLiveFixture = async (
             if ( existingLiveFixture ) return { success: false, message: 'Live fixture already exists' };
 
             // Create live fixture
-            const { homeTeam, awayTeam, status, matchType, competition, stadium, scheduledDate, rescheduledDate } = existingFixture;
+            const { homeTeam, awayTeam, status, matchType, competition, stadium, scheduledDate, rescheduledDate, odds } = existingFixture;
             const liveFixture = new db.V2FootballLiveFixture({
                 fixture: existingFixture._id,
                 homeTeam, awayTeam,
@@ -41,7 +44,8 @@ const initializeLiveFixture = async (
                     condition: 'sunny',
                     humidity: 10,
                     temperature: 10
-                }
+                },
+                odds,
             });
             if( matchType === 'competition' && existingFixture.competition ) liveFixture.competition = competition;
 
@@ -68,6 +72,96 @@ const initializeLiveFixture = async (
             console.error('Error Creating Live Fixture', err);
             throw new Error('Error Initializing Fixture')
         }
+}
+
+const endCompetitionLiveFixture = async (
+    { liveFixtureId }: { liveFixtureId: string }
+) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // 1. Retrieve live fixture with populated data
+        const liveFixture = await db.V2FootballLiveFixture.findById(liveFixtureId)
+            .populate([
+                { path: 'fixture' },
+                { path: 'competition' },
+                { path: 'homeTeam' },
+                { path: 'awayTeam' },
+                { path: 'goalScorers.player' },
+                { path: 'timeline.player' },
+                { path: 'timeline.relatedPlayer' },
+            ])
+            .session(session)
+            .lean();
+        const nonPopLiveFixture = await db.V2FootballLiveFixture.findById(liveFixtureId);
+
+        if (!liveFixture || !nonPopLiveFixture) throw new Error('Live fixture not found');
+        if (!liveFixture.fixture) throw new Error('Associated fixture not found');
+
+        const competition = await db.V2FootballCompetition.findById(liveFixture.competition)
+            .session(session);
+        if (!competition) throw new Error('Competition not found');
+
+        // 2. Update main fixture document
+        await liveFixtureHelperFunctions.updateFixtureDocument({
+            liveFixture: nonPopLiveFixture,
+            session
+        });
+
+        // Get Updated Fixture
+        const updatedFixture = await db.V2FootballFixture.findById(nonPopLiveFixture.fixture);
+        if(!updatedFixture) throw new Error('Associated fixture not found');
+
+        // 3. Update competition standings based on type
+        if (competition.type === CompetitionTypes.LEAGUE) {
+            await liveFixtureHelperFunctions.updateLeagueStandings({
+                competition,
+                fixture: updatedFixture,
+                session
+            });
+        } else if (competition.type === CompetitionTypes.HYBRID || competition.type === CompetitionTypes.KNOCKOUT) {
+            await liveFixtureHelperFunctions.updateGroupStageStandings({
+                competition,
+                fixture: updatedFixture,
+                session
+            });
+        }
+
+        // 4. Update player statistics
+        await liveFixtureHelperFunctions.updatePlayerStats({
+            liveFixture: nonPopLiveFixture,
+            competition: competition,
+            session
+        });
+
+        // 5. Update team statistics
+        await liveFixtureHelperFunctions.updateTeamStats({
+            liveFixture: nonPopLiveFixture,
+            result: updatedFixture.result,
+            session
+        });
+
+        // 6. Update competition statistics
+        await liveFixtureHelperFunctions.updateCompetitionStats({
+            competition,
+            fixture: updatedFixture,
+            session
+        });
+
+        // 7. Delete live fixture
+        await db.V2FootballLiveFixture.deleteOne(
+            { _id: liveFixtureId },
+            { session }
+        );
+
+        await session.commitTransaction();
+    } catch (error) {
+        await session.abortTransaction();
+        throw error;
+    } finally {
+        session.endSession();
+    }
 }
 // END OF CREATION AND END //
 
@@ -1167,6 +1261,7 @@ const handleTeamCheer = async (
 const liveFixtureService = {
     // Creation and End //
     initializeLiveFixture,
+    endCompetitionLiveFixture,
 
     // Get Requests //
     getAllLiveFixtures,
