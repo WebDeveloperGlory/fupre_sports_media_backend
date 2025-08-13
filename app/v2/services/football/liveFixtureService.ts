@@ -744,15 +744,26 @@ const addGoalScorer = async (
         await fixture.save();
 
         // Emit updates to websocket
+        const updatedFixture = await db.V2FootballLiveFixture.findById(fixtureId)
+            .populate([
+                {
+                    path: 'goalScorers.player',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'goalScorers.team',
+                    select: 'name logo shorthand'
+                },
+            ]);
        emitScoreUpdate(fixture.fixture.toString(), fixture.result);
-       emitGoalScorersUpdate(fixture.fixture.toString(), fixture.goalScorers);
+       emitGoalScorersUpdate(fixture.fixture.toString(), updatedFixture!.goalScorers);
        emitTimelineUpdate(fixture.fixture.toString(), timelineEvent);
 
         return {
             success: true,
             message: 'Goal scorer added',
             data: {
-                goalScorers: fixture.goalScorers,
+                goalScorers: updatedFixture!.goalScorers,
                 timelineEvent
             }
         };
@@ -799,13 +810,24 @@ const removeGoalScorer = async (
         await fixture.save();
 
         // Emit updates to websocket
+        const updatedFixture = await db.V2FootballLiveFixture.findById(fixtureId)
+            .populate([
+                {
+                    path: 'goalScorers.player',
+                    select: 'name department admissionYear'
+                },
+                {
+                    path: 'goalScorers.team',
+                    select: 'name logo shorthand'
+                },
+            ]);
         emitScoreUpdate(fixture.fixture.toString(), fixture.result);
-        emitGoalScorersUpdate(fixture.fixture.toString(), fixture.goalScorers);
+        emitGoalScorersUpdate(fixture.fixture.toString(), updatedFixture!.goalScorers);
 
         return {
             success: true,
             message: 'Goal scorer removed',
-            data: fixture.goalScorers
+            data: updatedFixture!.goalScorers
         };
     } catch (err) {
         console.error('Error removing goal scorer:', err);

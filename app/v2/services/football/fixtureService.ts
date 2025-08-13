@@ -25,6 +25,10 @@ const getAllTodayFixtures = async () => {
                 },
                 {
                     status: FixtureStatus.LIVE,
+                },
+                {
+                    status: FixtureStatus.SCHEDULED,
+                    scheduledDate: { $lte: tomorrow }
                 }
             ]
         })
