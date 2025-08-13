@@ -77,9 +77,6 @@ const initializeLiveFixture = async (
 const endCompetitionLiveFixture = async (
     { liveFixtureId }: { liveFixtureId: string }
 ) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
         // 1. Retrieve live fixture with populated data
         const liveFixture = await db.V2FootballLiveFixture.findById(liveFixtureId)
@@ -92,26 +89,23 @@ const endCompetitionLiveFixture = async (
                 { path: 'timeline.player' },
                 { path: 'timeline.relatedPlayer' },
             ])
-            .session(session)
             .lean();
         const nonPopLiveFixture = await db.V2FootballLiveFixture.findById(liveFixtureId);
 
-        if (!liveFixture || !nonPopLiveFixture) throw new Error('Live fixture not found');
-        if (!liveFixture.fixture) throw new Error('Associated fixture not found');
+        if (!liveFixture || !nonPopLiveFixture) return { success: false, message: 'Live fixture not found' };
+        if (!liveFixture.fixture) return { success: false, message: 'Associated fixture not found' };
 
-        const competition = await db.V2FootballCompetition.findById(nonPopLiveFixture.competition)
-            .session(session);
-        if (!competition) throw new Error('Competition not found');
+        const competition = await db.V2FootballCompetition.findById(nonPopLiveFixture.competition);
+        if (!competition) return { success: false, message: 'Competition not found' };
 
         // 2. Update main fixture document
         await liveFixtureHelperFunctions.updateFixtureDocument({
             liveFixture: nonPopLiveFixture,
-            session
         });
 
         // Get Updated Fixture
         const updatedFixture = await db.V2FootballFixture.findById(nonPopLiveFixture.fixture);
-        if(!updatedFixture) throw new Error('Associated fixture not found');
+        if(!updatedFixture) return { success: false, message: 'Associated fixture not found' };
 
         // 3. Update competition standings based on type
         const isGroupFixture = competition.groupStage.some(group => group.fixtures.includes(updatedFixture._id))
@@ -121,13 +115,11 @@ const endCompetitionLiveFixture = async (
             await liveFixtureHelperFunctions.updateGroupStageStandings({
                 competition,
                 fixture: updatedFixture,
-                session
             });
         } else if( competition.type === CompetitionTypes.LEAGUE ) {
             await liveFixtureHelperFunctions.updateLeagueStandings({
                 competition,
                 fixture: updatedFixture,
-                session
             });
         }
 
@@ -135,35 +127,30 @@ const endCompetitionLiveFixture = async (
         await liveFixtureHelperFunctions.updatePlayerStats({
             liveFixture: nonPopLiveFixture,
             competition: competition,
-            session
         });
 
         // 5. Update team statistics
         await liveFixtureHelperFunctions.updateTeamStats({
             liveFixture: nonPopLiveFixture,
             result: updatedFixture.result,
-            session
         });
 
         // 6. Update competition statistics
         await liveFixtureHelperFunctions.updateCompetitionStats({
             competition,
             fixture: updatedFixture,
-            session
         });
 
         // 7. Delete live fixture
         await db.V2FootballLiveFixture.deleteOne(
             { _id: liveFixtureId },
-            { session }
         );
 
-        await session.commitTransaction();
-    } catch (error) {
-        await session.abortTransaction();
-        throw error;
-    } finally {
-        session.endSession();
+        // Retrun success
+        return { success: true, message: 'All Is Well', data: { competition: competition.toObject(), fixture: updatedFixture.toObject() } }
+    } catch (err) {
+        console.error('Error Ending Live Fixture', err);
+        throw new Error('Error Ending Fixture')
     }
 }
 // END OF CREATION AND END //

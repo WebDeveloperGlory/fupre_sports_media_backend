@@ -1,5 +1,4 @@
 import db from "../../config/db";
-import { ClientSession } from "mongoose";
 import { IV2FootballLiveFixture } from "../../models/football/LiveFixture";
 import { FixtureResult, FixtureStatus } from "../../types/fixture.enums";
 import { ILeagueStandings, IV2FootballCompetition } from "../../models/football/Competition";
@@ -7,7 +6,7 @@ import { IV2FootballFixture } from "../../models/football/Fixture";
 import { CompetitionTeamForm } from "../../types/competition.enums";
 
 async function updateFixtureDocument(
-    { liveFixture, session }: { liveFixture: IV2FootballLiveFixture, session: ClientSession }
+    { liveFixture }: { liveFixture: IV2FootballLiveFixture }
 ) {
     const fixtureUpdates = {
         status: FixtureStatus.COMPLETED,
@@ -31,115 +30,119 @@ async function updateFixtureDocument(
     return await db.V2FootballFixture.findByIdAndUpdate(
         liveFixture.fixture,
         fixtureUpdates,
-        { new: true, session }
+        { new: true }
     );
 }
 
-async function updateLeagueStandings(
-    { competition, fixture, session }: { competition: IV2FootballCompetition, fixture: IV2FootballFixture, session: ClientSession }
+function safeUpdateStanding(
+    { standing, goalsFor, goalsAgainst, pointsSystem }:
+    {
+        standing: ILeagueStandings;
+        goalsFor: number;
+        goalsAgainst: number;
+        pointsSystem: { win: number; draw: number; loss: number };
+    }
 ) {
-    const homeTeamId = fixture.homeTeam;
-    const awayTeamId = fixture.awayTeam;
-    const { homeScore, awayScore } = fixture.result;
+    if (!Array.isArray(standing.form)) standing.form = [];
 
-    const pointsSystem = competition.format.leagueStage?.pointsSystem || {
-        win: 3,
-        draw: 1,
-        loss: 0
-    };
+    standing.played += 1;
+    standing.goalsFor += goalsFor;
+    standing.goalsAgainst += goalsAgainst;
+    standing.goalDifference = standing.goalsFor - standing.goalsAgainst;
 
-    if(competition.leagueTable && competition.leagueTable.length > 0) {
+    if (goalsFor > goalsAgainst) {
+        standing.wins += 1;
+        standing.points += pointsSystem.win;
+        standing.form.push(CompetitionTeamForm.WIN);
+    } else if (goalsFor < goalsAgainst) {
+        standing.losses += 1;
+        standing.points += pointsSystem.loss;
+        standing.form.push(CompetitionTeamForm.LOSS);
+    } else {
+        standing.draws += 1;
+        standing.points += pointsSystem.draw;
+        standing.form.push(CompetitionTeamForm.DRAW);
+    }
+
+    if (standing.form.length > 5) standing.form.shift();
+
+    return standing; // still a mongoose doc
+}
+
+function sortStandings(a: ILeagueStandings, b: ILeagueStandings) {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+    return 0;
+}
+
+async function updateLeagueStandings(
+    { competition, fixture }: { competition: IV2FootballCompetition; fixture: IV2FootballFixture }
+) {
+    const { homeTeam, awayTeam, result } = fixture;
+    const { homeScore, awayScore } = result;
+
+    const pointsSystem = competition.format.leagueStage?.pointsSystem ?? { win: 3, draw: 1, loss: 0 };
+
+    if (Array.isArray(competition.leagueTable) && competition.leagueTable.length) {
         competition.leagueTable = competition.leagueTable.map(standing => {
-            if (standing.team.toString() === homeTeamId.toString()) {
-                return updateStanding({
-                    standing,
-                    goalsFor: homeScore,
-                    goalsAgainst: awayScore,
-                    pointsSystem,
-                    isHome: true
-                });
+            if (standing.team.toString() === homeTeam.toString()) {
+                return safeUpdateStanding({ standing, goalsFor: homeScore, goalsAgainst: awayScore, pointsSystem });
             }
-            
-            if (standing.team.toString() === awayTeamId.toString()) {
-                return updateStanding({
-                    standing,
-                    goalsFor: awayScore,
-                    goalsAgainst: homeScore,
-                    pointsSystem,
-                    isHome: false
-                });
+            if (standing.team.toString() === awayTeam.toString()) {
+                return safeUpdateStanding({ standing, goalsFor: awayScore, goalsAgainst: homeScore, pointsSystem });
             }
-            
             return standing;
         });
 
-        // Sort and re-position teams
         competition.leagueTable.sort(sortStandings);
-        competition.leagueTable.forEach((standing, index) => {
-            standing.position = index + 1;
-        });
+        competition.leagueTable.forEach((standing, idx) => standing.position = idx + 1);
     }
 
-    await competition.save({ session });
+    await competition.save();
 }
 
 async function updateGroupStageStandings(
-    { competition, fixture, session }: { competition: IV2FootballCompetition, fixture: IV2FootballFixture, session: ClientSession }
+    { competition, fixture }: { competition: IV2FootballCompetition; fixture: IV2FootballFixture }
 ) {
-    const homeTeamId = fixture.homeTeam;
-    const awayTeamId = fixture.awayTeam;
-    const { homeScore, awayScore } = fixture.result;
+    const { homeTeam, awayTeam, result, _id: fixtureId } = fixture;
+    const { homeScore, awayScore } = result;
 
-    const pointsSystem = competition.format.groupStage
-        ? competition.format.leagueStage?.pointsSystem || { win: 3, draw: 1, loss: 0 }
-        : { win: 3, draw: 1, loss: 0 };
+    const pointsSystem = competition.format.leagueStage?.pointsSystem
+        ?? competition.format.leagueStage?.pointsSystem
+        ?? { win: 3, draw: 1, loss: 0 };
 
-    if(competition.groupStage && competition.groupStage.length > 0) {
+    if (Array.isArray(competition.groupStage) && competition.groupStage.length) {
         competition.groupStage = competition.groupStage.map(group => {
-            if (group.fixtures.includes(fixture._id)) {
-                const updatedGroup = { ...group };
-                
-                updatedGroup.standings = updatedGroup.standings.map(standing => {
-                    if (standing.team.toString() === homeTeamId.toString()) {
-                        return updateStanding({
-                            standing,
-                            goalsFor: homeScore,
-                            goalsAgainst: awayScore,
-                            pointsSystem,
-                            isHome: true
-                        });
-                    }
-                    
-                    if (standing.team.toString() === awayTeamId.toString()) {
-                        return updateStanding({
-                            standing,
-                            goalsFor: awayScore,
-                            goalsAgainst: homeScore,
-                            pointsSystem,
-                            isHome: false
-                        });
-                    }
-                
-                    return standing;
-                });
-
-                // Sort group standings
-                updatedGroup.standings.sort(sortStandings);
-                updatedGroup.standings.forEach((standing, index) => {
-                    standing.position = index + 1;
-                });
-
-                return updatedGroup;
+            if (!group.fixtures.some(fId => fId.toString() === fixtureId.toString())) {
+                return group;
             }
-            return group;
+
+            const updatedGroup = group;
+            updatedGroup.standings = updatedGroup.standings.map(standing => {
+                if (standing.team.toString() === homeTeam.toString()) {
+                    return safeUpdateStanding({ standing, goalsFor: homeScore, goalsAgainst: awayScore, pointsSystem });
+                }
+                if (standing.team.toString() === awayTeam.toString()) {
+                    return safeUpdateStanding({ standing, goalsFor: awayScore, goalsAgainst: homeScore, pointsSystem });
+                }
+                return standing;
+            });
+
+            updatedGroup.standings.sort(sortStandings);
+            updatedGroup.standings.forEach((standing, idx) => standing.position = idx + 1);
+
+            return updatedGroup;
         });
+
+        competition.markModified('groupStage');
     }
 
-    await competition.save({ session });
+    await competition.save();
 }
 
 async function updatePlayerStats(
-    { liveFixture, competition, session }: { liveFixture: IV2FootballLiveFixture, competition: IV2FootballCompetition, session: ClientSession }
+    { liveFixture, competition }: { liveFixture: IV2FootballLiveFixture, competition: IV2FootballCompetition }
 ) {
     const playersToUpdate = new Set<string>();
     const goalScorers = liveFixture.goalScorers || [];
@@ -168,7 +171,7 @@ async function updatePlayerStats(
 
     // Update each player's stats
     for (const playerId of playersToUpdate) {
-        const player = await db.V2FootballPlayer.findById(playerId).session(session);
+        const player = await db.V2FootballPlayer.findById(playerId);
         if (!player) continue;
 
         // Update career stats
@@ -214,15 +217,15 @@ async function updatePlayerStats(
         //     });
         // }
 
-        await player.save({ session });
+        await player.save();
     }
 }
 
 async function updateTeamStats(
-    { liveFixture, result, session } : { liveFixture: IV2FootballLiveFixture, result: FixtureResult, session: ClientSession }
+    { liveFixture, result } : { liveFixture: IV2FootballLiveFixture, result: FixtureResult }
 ) {
-    const homeTeam = await db.V2FootballTeam.findById(liveFixture.homeTeam).session(session);
-    const awayTeam = await db.V2FootballTeam.findById(liveFixture.awayTeam).session(session);
+    const homeTeam = await db.V2FootballTeam.findById(liveFixture.homeTeam);
+    const awayTeam = await db.V2FootballTeam.findById(liveFixture.awayTeam);
     if (!homeTeam || !awayTeam) return;
 
     // Update home team stats
@@ -260,27 +263,33 @@ async function updateTeamStats(
     }
 
     await Promise.all([
-        homeTeam.save({ session }),
-        awayTeam.save({ session })
+        homeTeam.save(),
+        awayTeam.save()
     ]);
 }
 
 async function updateCompetitionStats(
-    { competition, fixture, session }: { competition: IV2FootballCompetition, fixture: IV2FootballFixture, session: ClientSession }
+    { competition, fixture }: { competition: IV2FootballCompetition, fixture: IV2FootballFixture }
 ) {
-    const totalGoals = fixture.result.homeScore + fixture.result.awayScore;
-    const totalMatches = await db.V2FootballFixture.countDocuments({ competition: competition._id });
-    const { averageGoalsPerMatch, averageAttendance } = competition.stats;
-    
-    // Update averages
-    competition.stats.averageGoalsPerMatch = 
-        (((Number(averageGoalsPerMatch) || 0) * totalMatches) + totalGoals) / 
-        (totalMatches + 1);
-        
-    competition.stats.averageAttendance = 
-        (((Number(averageAttendance) || 0) * totalMatches) + (fixture.attendance || 0)) / 
-        (totalMatches + 1);
-    
+    // Update after fixture is saved
+    const stats = await db.V2FootballFixture.aggregate([
+        { $match: { competition: competition._id, status: FixtureStatus.COMPLETED } },
+        {
+            $group: {
+                _id: null,
+                totalGoals: { $sum: { $add: ["$result.homeScore", "$result.awayScore"] } },
+                totalAttendance: { $sum: "$attendance" },
+                matches: { $sum: 1 }
+            }
+        }
+    ]);
+
+    if (stats.length) {
+        const { totalGoals, totalAttendance, matches } = stats[0];
+        competition.stats.averageGoalsPerMatch = matches ? totalGoals / matches : 0;
+        competition.stats.averageAttendance = matches ? totalAttendance / matches : 0;
+    }
+
     // Update top scorers
     for (const scorer of fixture.goalScorers) {
         const existing = competition.stats.topScorers.find(
@@ -298,10 +307,8 @@ async function updateCompetitionStats(
             });
         }
     }
-    
-    // Update top assists (requires timeline event analysis)
-    
-    await competition.save({ session });
+
+    await competition.save();
 }
 
 function updateStanding(
@@ -339,14 +346,6 @@ function updateStanding(
     if (updated.form.length > 5) updated.form.shift();
     
     return updated;
-}
-
-function sortStandings(a: ILeagueStandings, b: ILeagueStandings) {
-    // Sort by: Points > GD > Goals For > Head-to-head
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
-    return 0;
 }
 
 const liveFixtureHelperFunctions = {

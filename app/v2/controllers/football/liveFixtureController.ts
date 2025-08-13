@@ -46,8 +46,13 @@ export const endCompetitionLiveFixture = async ( req: AuditRequest, res: Respons
         }
 
         // Execute the service
-        await liveFixtureService.endCompetitionLiveFixture({ liveFixtureId: fixtureId });
-        success(res, 'Fixture ended successfully', null, 200);
+        const result = await liveFixtureService.endCompetitionLiveFixture({ liveFixtureId: fixtureId });
+        if( result.success ) {
+            success( res, result.message, result.data );
+            return;
+        }
+        error( res, result.message );
+        return;
     } catch (err: any) {
         // Handle specific error cases
         if (err.message.includes('not found')) {
