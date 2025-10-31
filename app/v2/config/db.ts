@@ -25,19 +25,34 @@ import V2FootballCompetition from '../models/football/Competition';
 import V2FootballPlayer from '../models/football/Player';
 // END OF FOOTBALL MODEL IMPORTS //
 
+// BASKETBALL MODEL IMPORTS //
+import V2BasketballPlayer from '../models/basketball/Player';
+import V2BasketballPlayerCareerStat from '../models/basketball/PlayerCareerStat';
+import V2BasketballPlayerContract from '../models/basketball/PlayerContract';
+import V2BasketballPlayerSeasonStat from '../models/basketball/PlayerSeasonStat';
+import V2BasketballTeam from '../models/basketball/Team';
+// END OF BASKETBALL MODEL IMPORTS //
+
 const db = {
   mongoose,
   V2User,
   V2Notification,
   V2AuditLog,
   V2Blog,
+  V2Department,
+  V2Faculty,
+
   V2FootballLiveFixture,
   V2FootballFixture,
   V2FootballTeam,
   V2FootballCompetition,
   V2FootballPlayer,
-  V2Department,
-  V2Faculty,
+
+  V2BasketballPlayer,
+  V2BasketballPlayerCareerStat,
+  V2BasketballPlayerContract,
+  V2BasketballPlayerSeasonStat,
+  V2BasketballTeam,
 };
 
 export default db;
