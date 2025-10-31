@@ -1,10 +1,10 @@
-import { Schema, model, Document, ObjectId } from "mongoose";
+import { Schema, model, Document, Types } from "mongoose";
 
 export interface IV2Department extends Document {
-    _id: ObjectId;
+    _id: Types.ObjectId;
 
     name: string;
-    faculty: ObjectId;
+    faculty: Types.ObjectId;
 
     createdAt: Date;
     updatedAt: Date;
