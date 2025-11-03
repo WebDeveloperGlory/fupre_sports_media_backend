@@ -1,12 +1,12 @@
-import { ObjectId } from 'mongoose';
+import { ObjectId, Types } from 'mongoose';
 import db from '../../config/db';
 import { LogAction } from '../../types/auditlog.enums';
 
 type Log =  {
-    userId: ObjectId;
+    userId: ObjectId | Types.ObjectId;
     action: LogAction;
     entity: string;
-    entityId: ObjectId;
+    entityId: ObjectId | Types.ObjectId;
     details?: Object;
     previousValues?: Object;
     newValues?: Object;

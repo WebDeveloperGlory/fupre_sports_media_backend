@@ -1,9 +1,9 @@
 import { Schema, Document, model, Types } from 'mongoose';
 import { IV2Department } from '../general/Department';
 import { BasketBallPlayerHands, BasketBallPlayerPosition } from '../../types/player.enums';
-import { IV2BasketballPlayerSeasonStatUnpop } from './PlayerSeasonStats';
-import { IV2BasketballPlayerCareerStatUnpop } from './PlayerCareerStats';
-import { IV2BasketballPlayerContractUnpop } from './PlayerContracts';
+import { IV2BasketballPlayerSeasonStatUnpop } from './PlayerSeasonStat';
+import { IV2BasketballPlayerCareerStatUnpop } from './PlayerCareerStat';
+import { IV2BasketballPlayerContractUnpop } from './PlayerContract';
 
 interface BasketballPlayer extends Document {
     _id: Types.ObjectId;

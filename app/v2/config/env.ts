@@ -12,6 +12,9 @@ interface Config {
     OTP_EXPIRATION: number;
     ALLOWED_ORIGINS: string[];
     corsOptions: cors.CorsOptions;
+    CLOUDINARY_API_KEY: string;
+    CLOUDINARY_API_SECRET: string;
+    CLOUDINARY_CLOUD_NAME: string;
 }
 
 export const config: Config = {
@@ -32,4 +35,7 @@ export const config: Config = {
         },
         credentials: true,
     },
+    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || '',
+    CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '',
+    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || '',
 };

@@ -5,12 +5,14 @@ import cookieParser from 'cookie-parser';
 import swaggerUI from 'swagger-ui-express';
 import { config } from './config/env';
 import { swaggerSpecV2 } from './config/swagger';
+import { initializeSocket } from './config/socket';
 
 // ROUTE IMPORTS //
 import authRoutes from './routes/general/authRoutes'; 
 import departmentAndFacultyRoutes from './routes/general/departmentAndFacultyRoutes';
 import blogRoutes from './routes/general/blogRoutes';
 import userRoutes from './routes/general/userRoutes';
+
 import competitionRoutes from './routes/football/competitionRoutes';
 import teamRoutes from './routes/football/teamRoutes';
 import fixtureRoutes from './routes/football/fixtureRoutes';
@@ -19,7 +21,8 @@ import playerRoutes from './routes/football/playerRoutes';
 import adminRoutes from './routes/football/adminRoutes';
 import adminDashboardRoutes from './routes/views/adminDashboardRoutes';
 import homepageRoutes from './routes/views/homepageRoutes';
-import { initializeSocket } from './config/socket';
+
+import basketballPlayerRoutes from './routes/basketball/playerRoutes';
 // END OF ROUTE IMPORTS //
 
 const app = express();
@@ -67,6 +70,8 @@ app.use('/fixture', fixtureRoutes);
 app.use('/player', playerRoutes);
 app.use('/views', adminDashboardRoutes);
 app.use('/views/pages', homepageRoutes);
+
+app.use('/basketball/player', basketballPlayerRoutes);
 // END OF ROUTES //
 
 // Export for testing
