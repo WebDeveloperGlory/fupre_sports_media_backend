@@ -1,4 +1,4 @@
-import { Request, RequestHandler, Response } from "express";
+import { Request, Response } from "express";
 import playerService from "../../services/football/playerService";
 import { success, error, serverError } from "../../utils/general/responseUtils";
 import { AuditInfo } from "../../types/express";

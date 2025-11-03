@@ -1,5 +1,5 @@
 import { Document, model, Types, Schema } from 'mongoose';
-import { CoachRoles } from '../../types/team.enums';
+import { CoachRoles, TeamTypes } from '../../types/team.enums';
 import { IV2BasketballPlayerUnpop } from './Player';
 import { IV2Department } from '../general/Department';
 import { IV2Faculty } from '../general/Faculty';
@@ -10,6 +10,7 @@ interface Team extends Document {
     name: string;
     shorthand: string;
     logo: string;
+    type: TeamTypes;
     colors: {
         primary: string;
         secondary: string;
@@ -69,6 +70,7 @@ const v2basketballTeamSchema = new Schema<IV2BasketballTeamUnpop>({
         secondary: { type: String },
     },
     academicYear: { type: String, required: true },
+    type: { type: String, required: true, enum: Object.values(TeamTypes) },
     department: { type: Schema.Types.ObjectId, ref: 'V2Department' },
     faculty: { type: Schema.Types.ObjectId, ref: 'V2Faculty' },
 
@@ -77,7 +79,7 @@ const v2basketballTeamSchema = new Schema<IV2BasketballTeamUnpop>({
     coaches: [
         {
             name: { type: String, required: true },
-            role: { type: String, required: true, enum: CoachRoles },
+            role: { type: String, required: true, enum: Object.values(CoachRoles) },
         },
     ],
 

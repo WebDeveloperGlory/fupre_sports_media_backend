@@ -57,8 +57,8 @@ const v2basketballPlayerSchema = new Schema<IV2BasketballPlayerUnpop>({
     weight: { type: Number, min: 50 },
     height: { type: Number, min: 100 },
     nationality: { type: String, required: true },
-    preferredHand: { type: String, required: true, enum: BasketBallPlayerHands },
-    position: { type: String, required: true, enum: BasketBallPlayerPosition },
+    preferredHand: { type: String, required: true, enum: Object.values(BasketBallPlayerHands) },
+    position: { type: String, required: true, enum: Object.values(BasketBallPlayerPosition) },
     photo: { type: String },
 
     // Relationships

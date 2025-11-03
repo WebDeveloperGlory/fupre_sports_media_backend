@@ -23,6 +23,7 @@ import adminDashboardRoutes from './routes/views/adminDashboardRoutes';
 import homepageRoutes from './routes/views/homepageRoutes';
 
 import basketballPlayerRoutes from './routes/basketball/playerRoutes';
+import basketballTeamRoutes from './routes/basketball/teamRoutes';
 // END OF ROUTE IMPORTS //
 
 const app = express();
@@ -72,6 +73,7 @@ app.use('/views', adminDashboardRoutes);
 app.use('/views/pages', homepageRoutes);
 
 app.use('/basketball/player', basketballPlayerRoutes);
+app.use('/basketball/team', basketballTeamRoutes);
 // END OF ROUTES //
 
 // Export for testing

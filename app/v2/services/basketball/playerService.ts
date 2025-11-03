@@ -1,5 +1,4 @@
 import { ObjectId, Types } from 'mongoose';
-import '../../config/db';
 import { AuditInfo } from '../../types/express';
 import { BasketBallPlayerContractType, BasketBallPlayerHands, BasketBallPlayerPosition } from '../../types/player.enums';
 import db from '../../config/db';

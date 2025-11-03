@@ -33,7 +33,7 @@ const v2basketballPlayerContractSchema = new Schema<IV2BasketballPlayerContractU
     // Contract Details
     startDate: { type: Date, required: true },
     endDate: { type: Date },
-    contractType: { type: String, required: true, enum: BasketBallPlayerContractType },
+    contractType: { type: String, required: true, enum: Object.values(BasketBallPlayerContractType) },
     jerseyNumber: { type: Number },
     isActive: { type: Boolean, default: true },
 },{ timestamps: true });
