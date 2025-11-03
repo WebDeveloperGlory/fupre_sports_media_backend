@@ -9,6 +9,7 @@
 
 # testing
 /coverage
+/uploads
 test.js
 
 # next.js
