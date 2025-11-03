@@ -127,3 +127,47 @@ export const updatePlayerImage = async ( req: AuditRequest, res: Response ) => {
         serverError( res, err );
     }
 }
+
+export const signPlayerContract = async ( req: AuditRequest, res: Response ) => {
+    try {
+        const result = await playerService.signPlayerContract(
+            req.params as unknown as { playerId: Types.ObjectId },
+            req.body,
+            {
+                userId: req.user!.userId,
+                auditInfo: req.auditInfo
+            }
+        );
+
+        if( result.success ) {
+            success( res, result.message, result.data, 201 );
+            return;
+        }
+        error( res, result.message );
+        return;
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+    }
+}
+
+export const extendPlayerContract = async ( req: AuditRequest, res: Response ) => {
+    try {
+        const result = await playerService.extendPlayerContract(
+            req.params as unknown as { playerId: Types.ObjectId },
+            req.body,
+            {
+                userId: req.user!.userId,
+                auditInfo: req.auditInfo
+            }
+        );
+
+        if( result.success ) {
+            success( res, result.message, result.data, 201 );
+            return;
+        }
+        error( res, result.message );
+        return;
+    } catch ( err: Error | any ) {
+        serverError( res, err );
+    }
+}

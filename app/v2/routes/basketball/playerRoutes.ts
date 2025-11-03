@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticateUser } from "../../middlewares/general/authMiddleware";
-import { isSuperAdmin, hasTeamPermissions } from "../../middlewares/general/adminMiddleware";
-import { createPlayer, getAllPlayers, getPlayerDetails, updatePlayer, updatePlayerImage } from "../../controllers/basketball/playerController";
+import { isSuperAdmin } from "../../middlewares/general/adminMiddleware";
+import { createPlayer, extendPlayerContract, getAllPlayers, getPlayerDetails, signPlayerContract, updatePlayer, updatePlayerImage } from "../../controllers/basketball/playerController";
 import { singleImageUpload } from "../../utils/general/cloudinaryUtils";
 
 const router = Router();
@@ -19,6 +19,8 @@ router.get('/:playerId', getPlayerDetails );
 router.post('/register/verified', authenticateUser, isSuperAdmin, singleImageUpload, createPlayer);
 router.put('/:playerId/update', authenticateUser, isSuperAdmin, updatePlayer);
 router.put('/:playerId/update/image', authenticateUser, isSuperAdmin, singleImageUpload, updatePlayerImage);
+router.put('/:playerId/contracts/sign', authenticateUser, isSuperAdmin, singleImageUpload, signPlayerContract);
+router.put('/:playerId/contracts/extend', authenticateUser, isSuperAdmin, singleImageUpload, extendPlayerContract);
 // END OF ADMIN ROUTES //
 
 export default router;

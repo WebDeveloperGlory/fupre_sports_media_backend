@@ -1,7 +1,7 @@
 import { ObjectId, Types } from 'mongoose';
 import '../../config/db';
 import { AuditInfo } from '../../types/express';
-import { BasketBallPlayerHands, BasketBallPlayerPosition } from '../../types/player.enums';
+import { BasketBallPlayerContractType, BasketBallPlayerHands, BasketBallPlayerPosition } from '../../types/player.enums';
 import db from '../../config/db';
 import auditLogUtils from '../../utils/general/auditLogUtils';
 import { LogAction } from '../../types/auditlog.enums';
@@ -30,6 +30,17 @@ type PlayerUpdateDetails = {
     nationality?: string;
     preferredHand?: BasketBallPlayerHands;
     position?: BasketBallPlayerPosition;
+}
+type PlayerContractBody = {
+    teamId: Types.ObjectId;
+    startDate: Date;
+    endDate?: Date;
+    contractType: BasketBallPlayerContractType;
+    jerseyNumber: number;
+}
+type PlayerExtendContractBody = {
+    endDate: Date;
+    jerseyNumber?: number;
 }
 
 const createPlayer = async (
@@ -248,6 +259,118 @@ const updatePlayerImage = async (
     }
 }
 
+const signPlayerContract = async (
+    { playerId }: { playerId: Types.ObjectId },
+    { teamId, startDate, endDate, contractType, jerseyNumber }: PlayerContractBody,
+    { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
+) => {
+    try {
+        // Validate player and team
+        const foundPlayer = await db.V2BasketballPlayer.findById(playerId);
+        const foundTeam = await db.V2BasketballTeam.findById(teamId);
+        if(!foundPlayer) return { success: false, message: 'Invalid player ID' };
+        if(!foundTeam) return { success: false, message: 'Invalid team ID' };
+
+        // Validate input field
+        if(!Object.values(BasketBallPlayerContractType).includes(contractType)) return { success: false, message: `Invalid contact type: ${contractType}. Valid types: ${Object.values(BasketBallPlayerContractType)}`} ;
+
+        // Check for last contract
+        if( foundPlayer.contracts.length > 0 ) {
+            const lastPlayerContractID = foundPlayer.contracts[foundPlayer.contracts.length - 1];
+            const lastPlayerContract = await db.V2BasketballPlayerContract.findById(lastPlayerContractID);
+
+            // End last contact
+            if(lastPlayerContract && (lastPlayerContract.endDate === null || lastPlayerContract.endDate > startDate)) {
+                lastPlayerContract.endDate = startDate;
+            }
+        }
+
+        // Create new contract
+        const newContract = new db.V2BasketballPlayerContract({
+            player: playerId,
+            team: teamId,
+            startDate, endDate, contractType, jerseyNumber
+        });
+        await newContract.save();
+
+        // Save contract to player
+        foundPlayer.contracts.push(newContract._id);
+        await foundPlayer.save();
+
+        // Log actions
+        await auditLogUtils.logAction({
+            userId,
+            action: LogAction.CREATE,
+            entity: 'V2BasketballPlayerContract',
+            entityId: newContract._id,
+            message: `Basketball player, ${foundPlayer.name}, contract signed by ${userId}`,
+            ipAddress: auditInfo.ipAddress,
+            userAgent: auditInfo.userAgent,
+            previousValues: undefined,
+            newValues: newContract.toObject(),
+        });
+        await auditLogUtils.logAction({
+            userId,
+            action: LogAction.UPDATE,
+            entity: 'V2BasketballPlayer',
+            entityId: foundPlayer._id,
+            message: `Basketball player contacts updated by ${userId}`,
+            ipAddress: auditInfo.ipAddress,
+            userAgent: auditInfo.userAgent,
+            previousValues: foundPlayer.contracts.pop(),
+            newValues: foundPlayer.contracts,
+        });
+
+        // Return success
+        return { success: true, message: 'Player contract signed', data: newContract }
+    } catch(err) {
+        console.error('Error creating basketball player contract', err);
+        throw new Error(`Error creating basketball player contract: ${err}`);
+    }
+}
+
+const extendPlayerContract = async (
+    { playerId }: { playerId: Types.ObjectId },
+    { endDate, jerseyNumber }: PlayerExtendContractBody,
+    { userId, auditInfo }: { userId: ObjectId, auditInfo: AuditInfo }
+) => {
+    try {
+        // Validate player and team
+        const foundPlayer = await db.V2BasketballPlayer.findById(playerId);
+        if(!foundPlayer) return { success: false, message: 'Invalid player ID' };
+
+        // Validate previous contact
+        const lastPlayerContractID = foundPlayer.contracts[foundPlayer.contracts.length - 1];
+        const lastPlayerContract = await db.V2BasketballPlayerContract.findById(lastPlayerContractID);
+        if(!lastPlayerContract) return { success: false, message: 'Invalid contract' };
+        
+        // Extend previous contract
+        const previousEndDate = lastPlayerContract.endDate;
+        lastPlayerContract.endDate = endDate;
+        if(jerseyNumber) lastPlayerContract.jerseyNumber = jerseyNumber;
+        await lastPlayerContract.save();
+
+        // Log actions
+        await auditLogUtils.logAction({
+            userId,
+            action: LogAction.UPDATE,
+            entity: 'V2BasketballPlayerContract',
+            entityId: lastPlayerContract._id,
+            message: `Basketball player contract extended by ${userId}`,
+            ipAddress: auditInfo.ipAddress,
+            userAgent: auditInfo.userAgent,
+            previousValues: previousEndDate ? previousEndDate : undefined,
+            newValues: lastPlayerContract.endDate,
+        });
+
+        // Return success
+        return { success: true, message: 'Contract extended', data: lastPlayerContract };
+    } catch(err) {
+        console.error('Error creating basketball player contract', err);
+        throw new Error(`Error creating basketball player contract: ${err}`);
+    }
+}
+
 const comparePlayers = async(
     { playerAId, playerBId }: { playerAId: Types.ObjectId, playerBId: Types.ObjectId }
 ) => {
@@ -278,7 +401,9 @@ const playerService = {
     getAllPlayers,
     updatePlayer,
     updatePlayerImage,
-    
+    signPlayerContract,
+    extendPlayerContract,
+
 }
 
 export default playerService;
