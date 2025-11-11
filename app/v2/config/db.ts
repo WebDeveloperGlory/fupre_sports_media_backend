@@ -26,6 +26,9 @@ import V2FootballPlayer from '../models/football/Player';
 // END OF FOOTBALL MODEL IMPORTS //
 
 // BASKETBALL MODEL IMPORTS //
+import V2BasketballFixture from '../models/basketball/Fixture';
+import V2BasketballFixturePlayerStat from '../models/basketball/FixturePlayerStat';
+import V2BasketballLiveFixture from '../models/basketball/LiveFixture';
 import V2BasketballPlayer from '../models/basketball/Player';
 import V2BasketballPlayerCareerStat from '../models/basketball/PlayerCareerStat';
 import V2BasketballPlayerContract from '../models/basketball/PlayerContract';
@@ -48,6 +51,9 @@ const db = {
   V2FootballCompetition,
   V2FootballPlayer,
 
+  V2BasketballFixture,
+  V2BasketballFixturePlayerStat,
+  V2BasketballLiveFixture,
   V2BasketballPlayer,
   V2BasketballPlayerCareerStat,
   V2BasketballPlayerContract,

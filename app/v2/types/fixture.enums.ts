@@ -60,6 +60,27 @@ export enum FixtureCommentaryType {
     HIGHLIGHT = 'highlight'
 }
 
+export enum BasketballEventType {
+    FIELD_GOAL_MADE = 'field_goal_made',
+    FIELD_GOAL_MISSED = 'field_goal_missed',
+    THREE_POINT_MADE = 'three_point_made',
+    THREE_POINT_MISSED = 'three_point_missed',
+    FREE_THROW_MADE = 'free_throw_made',
+    FREE_THROW_MISSED = 'free_throw_missed',
+    REBOUND = 'rebound',
+    ASSIST = 'assist',
+    STEAL = 'steal',
+    BLOCK = 'block',
+    TURNOVER = 'turnover',
+    FOUL = 'foul',
+    TIMEOUT = 'timeout',
+    SUBSTITUTION = 'substitution',
+    QUARTER_START = 'quarter_start',
+    QUARTER_END = 'quarter_end',
+    GAME_START = 'game_start',
+    GAME_END = 'game_end',
+}
+
 export type FixtureResult = {
     homeScore: number,
     awayScore: number,
